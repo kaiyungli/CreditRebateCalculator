@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import CardSelector from '../components/CardSelector';
+import Header from './components/Header';
+import Hero from './components/Hero';
+import ExpenseInput from './components/ExpenseInput';
+import ExpenseList from './components/ExpenseList';
+import ResultCard from './components/ResultCard';
+import Footer from './components/Footer';
 import { mockCards, getUserCards } from '../lib/userCards';
 
 export default function Home() {
@@ -11,6 +17,7 @@ export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [showCardSelector, setShowCardSelector] = useState(false);
   const [userCards, setUserCards] = useState([]);
+  const [results, setResults] = useState([]);
 
   // 初始化時載入用戶已選卡片
   useEffect(() => {
@@ -88,7 +95,6 @@ export default function Home() {
     }, 1000);
   }
 
-  const [results, setResults] = useState([]);
   const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
   const totalRebate = results.reduce((sum, r) => sum + r.rebate, 0);
 
@@ -103,311 +109,52 @@ export default function Home() {
       <CardSelector onComplete={(cards) => setUserCards(cards)} />
 
       <div className={darkMode ? 'dark' : ''}>
-        {/* 導航欄 */}
-        <nav className="navbar container">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '28px' }}>💳</span>
-            <span style={{ fontSize: '24px', fontWeight: '800' }}>CardCal</span>
-          </div>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <button
-              onClick={() => setShowCardSelector(true)}
-              style={{ 
-                background: 'transparent', 
-                border: 'none', 
-                cursor: 'pointer',
-                fontSize: '14px',
-                color: 'var(--text-secondary)'
-              }}
-            >
-              🎴 我的卡片 ({userCards.length})
-            </button>
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              style={{ fontSize: '24px', background: 'transparent', border: 'none', cursor: 'pointer' }}
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
-          </div>
-        </nav>
+        <Header 
+          darkMode={darkMode} 
+          setDarkMode={setDarkMode}
+          userCards={userCards}
+          onOpenCardSelector={() => setShowCardSelector(true)}
+        />
 
-        {/* Hero 區域 */}
-        <div className="hero container">
-          <h1>找出最適合你的信用卡</h1>
-          <p>輸入你想食嘢同買嘢的地方，幫你計算最佳回贈組合</p>
-          {userCards.length > 0 && (
-            <div style={{ marginTop: '16px', padding: '8px 16px', background: 'rgba(255,255,255,0.2)', borderRadius: '20px', fontSize: '14px' }}>
-              🎴 已選擇 {userCards.length} 張信用卡 | 會優先推薦你有的卡
-            </div>
-          )}
-        </div>
+        <Hero userCards={userCards} />
 
-        {/* 消費輸入區域 */}
         <div className="container">
-          <div className="card calculator-card">
-            <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '24px', textAlign: 'center' }}>
-              🛒 添加消費
-            </h2>
+          <ExpenseInput 
+            amount={amount}
+            setAmount={setAmount}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            categories={categories}
+            onAdd={addExpense}
+            disabled={!amount || !selectedCategory}
+          />
 
-            {/* 消費金額 */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '8px', 
-                fontWeight: '600',
-                color: 'var(--text-secondary)'
-              }}>
-                消費金額 (HKD)
-              </label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="輸入金額，例如：500"
-                className="input-field"
-              />
-            </div>
+          <ExpenseList 
+            expenses={expenses}
+            onRemove={removeExpense}
+            totalAmount={totalAmount}
+          />
 
-            {/* 商戶類別 */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '8px', 
-                fontWeight: '600',
-                color: 'var(--text-secondary)'
-              }}>
-                商戶類別
-              </label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="input-field"
-                style={{ cursor: 'pointer' }}
-              >
-                <option value="">選擇類別</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* 新增按鈕 */}
-            <button
-              onClick={addExpense}
-              disabled={!amount || !selectedCategory}
-              className="btn-primary calculate-btn"
-              style={{ marginBottom: '24px' }}
-            >
-              ➕ 新增消費
-            </button>
-
-            {/* 已添加的消費列表 */}
-            {expenses.length > 0 && (
-              <div style={{ marginBottom: '24px' }}>
-                <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-secondary)' }}>
-                  已添加 ({expenses.length})
-                </h4>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {expenses.map((expense, index) => (
-                    <div 
-                      key={expense.id}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '12px 16px',
-                        background: 'var(--background)',
-                        borderRadius: '10px',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ 
-                          width: '32px', 
-                          height: '32px', 
-                          background: 'var(--primary)', 
-                          color: 'white',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '14px',
-                        }}>
-                          {index + 1}
-                        </span>
-                        <div>
-                          <div style={{ fontWeight: '600' }}>
-                            {expense.categoryIcon} {expense.categoryName}
-                          </div>
-                          <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                            HK${expense.amount.toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => removeExpense(expense.id)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#FF6B6B',
-                          cursor: 'pointer',
-                          fontSize: '20px',
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* 總金額 */}
-                <div style={{ 
-                  marginTop: '16px', 
-                  padding: '16px', 
-                  background: 'linear-gradient(135deg, #0066FF 0%, #00D4AA 100%)',
-                  borderRadius: '12px',
-                  color: 'white',
-                  textAlign: 'center',
-                }}>
-                  <div style={{ fontSize: '14px', opacity: 0.9 }}>總消費金額</div>
-                  <div style={{ fontSize: '28px', fontWeight: '800' }}>
-                    HK${totalAmount.toLocaleString()}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 計算按鈕 */}
+          {/* 計算按鈕 */}
+          {expenses.length > 0 && (
             <button
               onClick={calculateBestCombination}
-              disabled={expenses.length === 0 || loading}
+              disabled={loading}
               className="btn-primary calculate-btn"
+              style={{ marginTop: '16px', marginBottom: '40px' }}
             >
               {loading ? '計算緊...' : '🔥 計算最佳組合'}
             </button>
-          </div>
-
-          {/* 計算結果 */}
-          {results.length > 0 && (
-            <div style={{ marginTop: '40px' }}>
-              <h3 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '24px', textAlign: 'center' }}>
-                🎯 最佳信用卡組合
-              </h3>
-
-              {/* 總回贈 */}
-              <div style={{ 
-                marginBottom: '32px',
-                padding: '32px', 
-                background: 'linear-gradient(135deg, #00D4AA 0%, #0066FF 100%)',
-                borderRadius: '20px',
-                color: 'white',
-                textAlign: 'center',
-              }}>
-                <div style={{ fontSize: '18px', opacity: 0.9, marginBottom: '8px' }}>
-                  💰 總回贈
-                </div>
-                <div style={{ fontSize: '48px', fontWeight: '800' }}>
-                  HK${totalRebate.toFixed(2)}
-                </div>
-                <div style={{ fontSize: '16px', opacity: 0.9, marginTop: '8px' }}>
-                  實際回贈率: {((totalRebate / totalAmount) * 100).toFixed(2)}%
-                </div>
-              </div>
-
-              {/* 每筆消費的最佳卡 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {results.map((result, index) => (
-                  <div 
-                    key={result.id}
-                    className="card result-card"
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                      <span style={{ 
-                        width: '40px', 
-                        height: '40px', 
-                        background: 'var(--primary)', 
-                        color: 'white',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '18px',
-                        fontWeight: '700',
-                      }}>
-                        {index + 1}
-                      </span>
-                      <div>
-                        <div style={{ fontWeight: '700', fontSize: '18px' }}>
-                          {result.categoryIcon} {result.categoryName}
-                        </div>
-                        <div style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
-                          HK${result.amount.toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{
-                      padding: '16px',
-                      background: 'var(--background)',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                          建議使用
-                        </div>
-                        <div style={{ fontWeight: '700', fontSize: '18px', color: 'var(--primary)' }}>
-                          {result.bestCard.icon} {result.bestCard.bank_name} {result.bestCard.card_name}
-                        </div>
-                        <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                          回贈率: {(result.bestCard.base_rate * 100).toFixed(1)}%
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                          可獲回贈
-                        </div>
-                        <div style={{ fontWeight: '800', fontSize: '24px', color: '#00D4AA' }}>
-                          HK${result.rebate.toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* 按鈕 */}
-              <div style={{ marginTop: '24px', textAlign: 'center', display: 'flex', gap: '16px', justifyContent: 'center' }}>
-                <button
-                  onClick={() => { setResults([]); setExpenses([]); }}
-                  className="btn-secondary"
-                >
-                  🔄 重新計算
-                </button>
-                <a href="/cards" className="btn-primary">
-                  查看所有信用卡 →
-                </a>
-              </div>
-            </div>
           )}
 
-          {/* Footer */}
-          <footer style={{ 
-            marginTop: '60px', 
-            padding: '32px 20px', 
-            textAlign: 'center',
-            color: 'var(--text-secondary)',
-            borderTop: '1px solid var(--border-color)'
-          }}>
-            <p>💳 CardCal - 香港信用卡回贈計算器</p>
-            <p style={{ fontSize: '14px', marginTop: '8px' }}>
-              數據僅供參考，請以銀行官方資料為準
-            </p>
-          </footer>
+          <ResultCard 
+            results={results}
+            totalAmount={totalAmount}
+            totalRebate={totalRebate}
+            onReset={() => { setResults([]); setExpenses([]); }}
+          />
+
+          <Footer />
         </div>
       </div>
 
