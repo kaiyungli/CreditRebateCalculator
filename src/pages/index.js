@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import CardSelector from '../components/CardSelector';
+import { mockCards, getUserCards } from '../lib/userCards';
 
 export default function Home() {
   const [amount, setAmount] = useState('');
@@ -7,30 +9,13 @@ export default function Home() {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [showCardSelector, setShowCardSelector] = useState(false);
+  const [userCards, setUserCards] = useState([]);
 
-  // 常見商戶映射
-  const merchantMappings = {
-    '壽司郎': { category: '餐飲美食', icon: '🍣' },
-    '魚屋': { category: '餐飲美食', icon: '🍣' },
-    '牛角': { category: '餐飲美食', icon: '🍖' },
-    '牛扒': { category: '餐飲美食', icon: '🥩' },
-    '餐廳': { category: '餐飲美食', icon: '🍽️' },
-    '百佳': { category: '超市便利店', icon: '🛒' },
-    '惠康': { category: '超市便利店', icon: '🛒' },
-    '759': { category: '超市便利店', icon: '🛒' },
-    '華潤': { category: '超市便利店', icon: '🛒' },
-    '淘寶': { category: '網上購物', icon: '🛍️' },
-    'Amazon': { category: '網上購物', icon: '📦' },
-    'JD': { category: '網上購物', icon: '📦' },
-    'Uber': { category: '交通出行', icon: '🚗' },
-    'UberEats': { category: '餐飲美食', icon: '🍔' },
-    'Deliveroo': { category: '餐飲美食', icon: '🍔' },
-    'Foodpanda': { category: '餐飲美食', icon: '🍔' },
-    '戲院': { category: '娛樂休閒', icon: '🎬' },
-    'Cinema': { category: '娛樂休閒', icon: '🎬' },
-    'Netflix': { category: '娛樂休閒', icon: '📺' },
-    'Disney': { category: '娛樂休閒', icon: '🎬' },
-  };
+  // 初始化時載入用戶已選卡片
+  useEffect(() => {
+    setUserCards(getUserCards());
+  }, []);
 
   // 商戶類別選項
   const categories = [
@@ -75,23 +60,26 @@ export default function Home() {
     // 模擬計算
     setTimeout(() => {
       const results = expenses.map(expense => {
-        // Mock 計算邏輯
-        const mockCards = [
-          { id: 1, bank_name: '滙豐', card_name: 'Visa Signature', rebate_rate: 0.04 },
-          { id: 2, bank_name: 'DBS', card_name: 'Compass', rebate_rate: 0.02 },
-          { id: 3, bank_name: '中銀', card_name: 'Visa 白金', rebate_rate: 0.03 },
-        ];
+        // 根據用戶已選卡片計算
+        let availableCards = mockCards;
+        if (userCards.length > 0) {
+          availableCards = mockCards.filter(card => userCards.includes(card.id));
+        }
         
-        const bestCard = mockCards.reduce((best, card) => {
-          const currentRebate = expense.amount * card.rebate_rate;
-          const bestRebate = expense.amount * best.rebate_rate;
+        if (availableCards.length === 0) {
+          availableCards = mockCards;
+        }
+        
+        const bestCard = availableCards.reduce((best, card) => {
+          const currentRebate = expense.amount * card.base_rate;
+          const bestRebate = expense.amount * best.base_rate;
           return currentRebate > bestRebate ? card : best;
         });
         
         return {
           ...expense,
           bestCard,
-          rebate: expense.amount * bestCard.rebate_rate,
+          rebate: expense.amount * bestCard.base_rate,
         };
       });
       
@@ -101,7 +89,6 @@ export default function Home() {
   }
 
   const [results, setResults] = useState([]);
-
   const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
   const totalRebate = results.reduce((sum, r) => sum + r.rebate, 0);
 
@@ -113,6 +100,8 @@ export default function Home() {
         <meta name="theme-color" content={darkMode ? '#1a1a2e' : '#0066FF'} />
       </Head>
 
+      <CardSelector onComplete={(cards) => setUserCards(cards)} />
+
       <div className={darkMode ? 'dark' : ''}>
         {/* 導航欄 */}
         <nav className="navbar container">
@@ -120,18 +109,37 @@ export default function Home() {
             <span style={{ fontSize: '28px' }}>💳</span>
             <span style={{ fontSize: '24px', fontWeight: '800' }}>CardCal</span>
           </div>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            style={{ fontSize: '24px', background: 'transparent', border: 'none', cursor: 'pointer' }}
-          >
-            {darkMode ? '☀️' : '🌙'}
-          </button>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <button
+              onClick={() => setShowCardSelector(true)}
+              style={{ 
+                background: 'transparent', 
+                border: 'none', 
+                cursor: 'pointer',
+                fontSize: '14px',
+                color: 'var(--text-secondary)'
+              }}
+            >
+              🎴 我的卡片 ({userCards.length})
+            </button>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              style={{ fontSize: '24px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+            >
+              {darkMode ? '☀️' : '🌙'}
+            </button>
+          </div>
         </nav>
 
         {/* Hero 區域 */}
         <div className="hero container">
           <h1>找出最適合你的信用卡</h1>
           <p>輸入你想食嘢同買嘢的地方，幫你計算最佳回贈組合</p>
+          {userCards.length > 0 && (
+            <div style={{ marginTop: '16px', padding: '8px 16px', background: 'rgba(255,255,255,0.2)', borderRadius: '20px', fontSize: '14px' }}>
+              🎴 已選擇 {userCards.length} 張信用卡 | 會優先推薦你有的卡
+            </div>
+          )}
         </div>
 
         {/* 消費輸入區域 */}
@@ -353,10 +361,10 @@ export default function Home() {
                           建議使用
                         </div>
                         <div style={{ fontWeight: '700', fontSize: '18px', color: 'var(--primary)' }}>
-                          {result.bestCard.bank_name} {result.bestCard.card_name}
+                          {result.bestCard.icon} {result.bestCard.bank_name} {result.bestCard.card_name}
                         </div>
                         <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                          回贈率: {(result.bestCard.rebate_rate * 100).toFixed(1)}%
+                          回贈率: {(result.bestCard.base_rate * 100).toFixed(1)}%
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -403,6 +411,16 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Card Selector Modal */}
+      {showCardSelector && (
+        <CardSelector 
+          onComplete={(cards) => {
+            setUserCards(cards);
+            setShowCardSelector(false);
+          }} 
+        />
+      )}
+
       <style jsx global>{`
         :root {
           --primary: #0066FF;
@@ -431,7 +449,7 @@ export default function Home() {
         }
 
         .container {
-          maxWidth: 800px;
+          max-width: 800px;
           margin: 0 auto;
           padding: 20px;
         }
@@ -462,7 +480,7 @@ export default function Home() {
           border: none;
           cursor: pointer;
           transition: all 0.2s;
-          fontSize: 16px;
+          font-size: 16px;
         }
 
         .btn-primary:hover:not(:disabled) {
@@ -483,7 +501,7 @@ export default function Home() {
           background: var(--card-bg);
           color: var(--primary);
           padding: 12px 24px;
-          borderRadius: 12px;
+          border-radius: 12px;
           font-weight: 600;
           border: 2px solid var(--primary);
           cursor: pointer;
