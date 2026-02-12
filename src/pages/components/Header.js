@@ -1,4 +1,4 @@
-export default function Header({ darkMode, setDarkMode, userCards, onOpenCardSelector }) {
+export default function Header({ darkMode = false, setDarkMode = () => {}, userCards = [], onOpenCardSelector = () => {} }) {
   return (
     <nav className="navbar container">
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

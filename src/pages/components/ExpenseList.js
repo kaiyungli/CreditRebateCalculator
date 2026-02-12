@@ -1,4 +1,4 @@
-export default function ExpenseList({ expenses, onRemove, totalAmount }) {
+export default function ExpenseList({ expenses = [], onRemove, totalAmount = 0 }) {
   if (expenses.length === 0) return null;
 
   return (

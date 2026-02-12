@@ -1,4 +1,4 @@
-export default function ResultCard({ results, totalAmount, totalRebate, onReset }) {
+export default function ResultCard({ results = [], totalAmount = 0, totalRebate = 0, onReset = () => {} }) {
   if (results.length === 0) return null;
 
   return (

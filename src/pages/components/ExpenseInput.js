@@ -3,9 +3,9 @@ export default function ExpenseInput({
   setAmount, 
   selectedCategory, 
   setSelectedCategory, 
-  categories,
+  categories = [],
   onAdd,
-  disabled 
+  disabled = false 
 }) {
   return (
     <div className="card calculator-card">
