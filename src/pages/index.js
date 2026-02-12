@@ -1,82 +1,109 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Head from 'next/head';
 
 export default function Home() {
   const [amount, setAmount] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [categories, setCategories] = useState([]);
-  const [results, setResults] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
 
-  // 載入分類
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        const res = await fetch('/api/categories');
-        const data = await res.json();
-        if (data.categories) {
-          setCategories(data.categories);
-        }
-      } catch (err) {
-        console.error('載入分類失敗:', err);
-        // 使用預設分類
-        setCategories([
-          { id: 1, name: '餐飲美食', icon: '🍜' },
-          { id: 2, name: '網上購物', icon: '🛒' },
-          { id: 3, name: '超市便利店', icon: '🏪' },
-          { id: 4, name: '交通出行', icon: '🚗' },
-          { id: 5, name: '娛樂休閒', icon: '🎬' },
-          { id: 6, name: '旅遊外遊', icon: '✈️' },
-          { id: 7, name: '服飾美容', icon: '👗' },
-          { id: 8, name: '公用事業', icon: '💡' },
-        ]);
-      }
-    }
-    loadCategories();
-  }, []);
+  // 常見商戶映射
+  const merchantMappings = {
+    '壽司郎': { category: '餐飲美食', icon: '🍣' },
+    '魚屋': { category: '餐飲美食', icon: '🍣' },
+    '牛角': { category: '餐飲美食', icon: '🍖' },
+    '牛扒': { category: '餐飲美食', icon: '🥩' },
+    '餐廳': { category: '餐飲美食', icon: '🍽️' },
+    '百佳': { category: '超市便利店', icon: '🛒' },
+    '惠康': { category: '超市便利店', icon: '🛒' },
+    '759': { category: '超市便利店', icon: '🛒' },
+    '華潤': { category: '超市便利店', icon: '🛒' },
+    '淘寶': { category: '網上購物', icon: '🛍️' },
+    'Amazon': { category: '網上購物', icon: '📦' },
+    'JD': { category: '網上購物', icon: '📦' },
+    'Uber': { category: '交通出行', icon: '🚗' },
+    'UberEats': { category: '餐飲美食', icon: '🍔' },
+    'Deliveroo': { category: '餐飲美食', icon: '🍔' },
+    'Foodpanda': { category: '餐飲美食', icon: '🍔' },
+    '戲院': { category: '娛樂休閒', icon: '🎬' },
+    'Cinema': { category: '娛樂休閒', icon: '🎬' },
+    'Netflix': { category: '娛樂休閒', icon: '📺' },
+    'Disney': { category: '娛樂休閒', icon: '🎬' },
+  };
 
-  // 計算回贈
-  async function calculateRebate() {
-    if (!amount || !selectedCategory) {
-      setError('請輸入消費金額並選擇商戶類別');
-      return;
-    }
+  // 商戶類別選項
+  const categories = [
+    { id: 1, name: '餐飲美食', icon: '🍜' },
+    { id: 2, name: '網上購物', icon: '🛒' },
+    { id: 3, name: '超市便利店', icon: '🏪' },
+    { id: 4, name: '交通出行', icon: '🚗' },
+    { id: 5, name: '娛樂休閒', icon: '🎬' },
+    { id: 6, name: '旅遊外遊', icon: '✈️' },
+    { id: 7, name: '服飾美容', icon: '👗' },
+    { id: 8, name: '公用事業', icon: '💡' },
+  ];
 
-    setLoading(true);
-    setError('');
-    setResults([]);
-
-    try {
-      const res = await fetch(
-        `/api/calculate?category_id=${selectedCategory}&amount=${amount}`
-      );
-      const data = await res.json();
-
-      if (data.error) {
-        setError(data.error);
-      } else if (data.best_cards) {
-        setResults(data.best_cards);
-      } else {
-        // 使用 mock data 展示
-        setResults([
-          { id: 1, bank_name: '滙豐', card_name: 'Visa Signature', base_rate: 0.04, rebate_amount: amount * 0.04, rebate_type: 'CASHBACK' },
-          { id: 2, bank_name: 'DBS', card_name: 'Compass', base_rate: 0.02, rebate_amount: amount * 0.02, rebate_type: 'POINTS' },
-          { id: 3, bank_name: '中銀', card_name: 'Visa 白金', base_rate: 0.03, rebate_amount: amount * 0.03, rebate_type: 'CASHBACK' },
-        ].sort((a, b) => b.rebate_amount - a.rebate_amount));
-      }
-    } catch (err) {
-      // 使用 mock data
-      setResults([
-        { id: 1, bank_name: '滙豐', card_name: 'Visa Signature', base_rate: 0.04, rebate_amount: amount * 0.04, rebate_type: 'CASHBACK' },
-        { id: 2, bank_name: 'DBS', card_name: 'Compass', base_rate: 0.02, rebate_amount: amount * 0.02, rebate_type: 'POINTS' },
-        { id: 3, bank_name: '中銀', card_name: 'Visa 白金', base_rate: 0.03, rebate_amount: amount * 0.03, rebate_type: 'CASHBACK' },
-      ].sort((a, b) => b.rebate_amount - a.rebate_amount));
-    } finally {
-      setLoading(false);
-    }
+  // 新增多筆消費
+  function addExpense() {
+    if (!amount || !selectedCategory) return;
+    
+    const expense = {
+      id: Date.now(),
+      categoryId: selectedCategory,
+      categoryName: categories.find(c => c.id.toString() === selectedCategory.toString())?.name || '其他',
+      categoryIcon: categories.find(c => c.id.toString() === selectedCategory.toString())?.icon || '💳',
+      amount: parseFloat(amount),
+    };
+    
+    setExpenses([...expenses, expense]);
+    setAmount('');
+    setSelectedCategory('');
   }
+
+  // 移除消費
+  function removeExpense(id) {
+    setExpenses(expenses.filter(e => e.id !== id));
+  }
+
+  // 計算最佳組合
+  function calculateBestCombination() {
+    if (expenses.length === 0) return;
+    
+    setLoading(true);
+    
+    // 模擬計算
+    setTimeout(() => {
+      const results = expenses.map(expense => {
+        // Mock 計算邏輯
+        const mockCards = [
+          { id: 1, bank_name: '滙豐', card_name: 'Visa Signature', rebate_rate: 0.04 },
+          { id: 2, bank_name: 'DBS', card_name: 'Compass', rebate_rate: 0.02 },
+          { id: 3, bank_name: '中銀', card_name: 'Visa 白金', rebate_rate: 0.03 },
+        ];
+        
+        const bestCard = mockCards.reduce((best, card) => {
+          const currentRebate = expense.amount * card.rebate_rate;
+          const bestRebate = expense.amount * best.rebate_rate;
+          return currentRebate > bestRebate ? card : best;
+        });
+        
+        return {
+          ...expense,
+          bestCard,
+          rebate: expense.amount * bestCard.rebate_rate,
+        };
+      });
+      
+      setLoading(false);
+      setResults(results);
+    }, 1000);
+  }
+
+  const [results, setResults] = useState([]);
+
+  const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalRebate = results.reduce((sum, r) => sum + r.rebate, 0);
 
   return (
     <>
@@ -95,7 +122,6 @@ export default function Home() {
           </div>
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="icon-btn"
             style={{ fontSize: '24px', background: 'transparent', border: 'none', cursor: 'pointer' }}
           >
             {darkMode ? '☀️' : '🌙'}
@@ -105,31 +131,18 @@ export default function Home() {
         {/* Hero 區域 */}
         <div className="hero container">
           <h1>找出最適合你的信用卡</h1>
-          <p>香港首個智能信用卡回贈比較工具</p>
+          <p>輸入你想食嘢同買嘢的地方，幫你計算最佳回贈組合</p>
         </div>
 
-        {/* 計算器區域 */}
+        {/* 消費輸入區域 */}
         <div className="container">
           <div className="card calculator-card">
             <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '24px', textAlign: 'center' }}>
-              🔢 計算你的回贈
+              🛒 添加消費
             </h2>
 
-            {/* 錯誤提示 */}
-            {error && (
-              <div style={{ 
-                background: '#FEE2E2', 
-                color: '#DC2626', 
-                padding: '12px 16px', 
-                borderRadius: '8px',
-                marginBottom: '16px'
-              }}>
-                {error}
-              </div>
-            )}
-
             {/* 消費金額 */}
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '16px' }}>
               <label style={{ 
                 display: 'block', 
                 marginBottom: '8px', 
@@ -142,13 +155,13 @@ export default function Home() {
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="輸入消費金額"
+                placeholder="輸入金額，例如：500"
                 className="input-field"
               />
             </div>
 
             {/* 商戶類別 */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '16px' }}>
               <label style={{ 
                 display: 'block', 
                 marginBottom: '8px', 
@@ -163,7 +176,7 @@ export default function Home() {
                 className="input-field"
                 style={{ cursor: 'pointer' }}
               >
-                <option value="">選擇商戶類別</option>
+                <option value="">選擇類別</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.icon} {cat.name}
@@ -172,169 +185,222 @@ export default function Home() {
               </select>
             </div>
 
+            {/* 新增按鈕 */}
+            <button
+              onClick={addExpense}
+              disabled={!amount || !selectedCategory}
+              className="btn-primary calculate-btn"
+              style={{ marginBottom: '24px' }}
+            >
+              ➕ 新增消費
+            </button>
+
+            {/* 已添加的消費列表 */}
+            {expenses.length > 0 && (
+              <div style={{ marginBottom: '24px' }}>
+                <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-secondary)' }}>
+                  已添加 ({expenses.length})
+                </h4>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {expenses.map((expense, index) => (
+                    <div 
+                      key={expense.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 16px',
+                        background: 'var(--background)',
+                        borderRadius: '10px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ 
+                          width: '32px', 
+                          height: '32px', 
+                          background: 'var(--primary)', 
+                          color: 'white',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '14px',
+                        }}>
+                          {index + 1}
+                        </span>
+                        <div>
+                          <div style={{ fontWeight: '600' }}>
+                            {expense.categoryIcon} {expense.categoryName}
+                          </div>
+                          <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+                            HK${expense.amount.toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeExpense(expense.id)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#FF6B6B',
+                          cursor: 'pointer',
+                          fontSize: '20px',
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 總金額 */}
+                <div style={{ 
+                  marginTop: '16px', 
+                  padding: '16px', 
+                  background: 'linear-gradient(135deg, #0066FF 0%, #00D4AA 100%)',
+                  borderRadius: '12px',
+                  color: 'white',
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: '14px', opacity: 0.9 }}>總消費金額</div>
+                  <div style={{ fontSize: '28px', fontWeight: '800' }}>
+                    HK${totalAmount.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 計算按鈕 */}
             <button
-              onClick={calculateRebate}
-              disabled={loading}
+              onClick={calculateBestCombination}
+              disabled={expenses.length === 0 || loading}
               className="btn-primary calculate-btn"
             >
-              {loading ? '計算中...' : '🔥 找出最佳回贈'}
+              {loading ? '計算緊...' : '🔥 計算最佳組合'}
             </button>
           </div>
 
           {/* 計算結果 */}
           {results.length > 0 && (
             <div style={{ marginTop: '40px' }}>
-              <h3 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '24px', textAlign: 'center' }}>
-                📊 最佳回贈推薦
+              <h3 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '24px', textAlign: 'center' }}>
+                🎯 最佳信用卡組合
               </h3>
-              
-              <div style={{ display: 'grid', gap: '16px' }}>
-                {results.map((card, index) => (
+
+              {/* 總回贈 */}
+              <div style={{ 
+                marginBottom: '32px',
+                padding: '32px', 
+                background: 'linear-gradient(135deg, #00D4AA 0%, #0066FF 100%)',
+                borderRadius: '20px',
+                color: 'white',
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '18px', opacity: 0.9, marginBottom: '8px' }}>
+                  💰 總回贈
+                </div>
+                <div style={{ fontSize: '48px', fontWeight: '800' }}>
+                  HK${totalRebate.toFixed(2)}
+                </div>
+                <div style={{ fontSize: '16px', opacity: 0.9, marginTop: '8px' }}>
+                  實際回贈率: {((totalRebate / totalAmount) * 100).toFixed(2)}%
+                </div>
+              </div>
+
+              {/* 每筆消費的最佳卡 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {results.map((result, index) => (
                   <div 
-                    key={card.id} 
+                    key={result.id}
                     className="card result-card"
-                    style={{ 
-                      display: 'flex', 
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                      <span style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        background: 'var(--primary)', 
+                        color: 'white',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        fontWeight: '700',
+                      }}>
+                        {index + 1}
+                      </span>
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '18px' }}>
+                          {result.categoryIcon} {result.categoryName}
+                        </div>
+                        <div style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
+                          HK${result.amount.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      padding: '16px',
+                      background: 'var(--background)',
+                      borderRadius: '12px',
+                      display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      border: index === 0 ? '2px solid #0066FF' : '2px solid transparent'
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        {index === 0 && (
-                          <span style={{ 
-                            background: '#0066FF', 
-                            color: 'white', 
-                            padding: '4px 8px', 
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            fontWeight: '600'
-                          }}>
-                            最佳選擇
-                          </span>
-                        )}
-                        <span style={{ fontWeight: '700', fontSize: '18px' }}>
-                          {card.bank_name} {card.card_name}
-                        </span>
-                        <span className={`tag tag-${card.rebate_type?.toLowerCase()}`}>
-                          {card.rebate_type === 'CASHBACK' ? '💵 現金回贈' : 
-                           card.rebate_type === 'MILEAGE' ? '✈️ 飛行里數' : '🎁 積分'}
-                        </span>
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                          建議使用
+                        </div>
+                        <div style={{ fontWeight: '700', fontSize: '18px', color: 'var(--primary)' }}>
+                          {result.bestCard.bank_name} {result.bestCard.card_name}
+                        </div>
+                        <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+                          回贈率: {(result.bestCard.rebate_rate * 100).toFixed(1)}%
+                        </div>
                       </div>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                        基本回贈率: {(card.base_rate * 100).toFixed(1)}%
-                      </p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div className="rebate-display">
-                        {card.rebate_type === 'MILEAGE' ? (
-                          <>~{Math.round(card.rebate_amount)} 里</>
-                        ) : card.rebate_type === 'POINTS' ? (
-                          <>~{Math.round(card.rebate_amount)} 積分</>
-                        ) : (
-                          <>HK${card.rebate_amount}</>
-                        )}
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                          可獲回贈
+                        </div>
+                        <div style={{ fontWeight: '800', fontSize: '24px', color: '#00D4AA' }}>
+                          HK${result.rebate.toFixed(2)}
+                        </div>
                       </div>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                        實際回贈率: {(card.base_rate * 100).toFixed(2)}%
-                      </p>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                <a href="/cards" className="btn-secondary">
+              {/* 按鈕 */}
+              <div style={{ marginTop: '24px', textAlign: 'center', display: 'flex', gap: '16px', justifyContent: 'center' }}>
+                <button
+                  onClick={() => { setResults([]); setExpenses([]); }}
+                  className="btn-secondary"
+                >
+                  🔄 重新計算
+                </button>
+                <a href="/cards" className="btn-primary">
                   查看所有信用卡 →
                 </a>
               </div>
             </div>
           )}
 
-          {/* 功能特點 */}
-          <div style={{ marginTop: '60px' }}>
-            <h3 style={{ fontSize: '28px', fontWeight: '700', textAlign: 'center', marginBottom: '40px' }}>
-              ✨ 為什麼使用 CardCal？
-            </h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-              <div className="card feature-card">
-                <div className="feature-icon">⚡</div>
-                <h4 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '12px' }}>
-                  智能計算
-                </h4>
-                <p style={{ color: 'var(--text-secondary)' }}>
-                  自動比較所有信用卡，找出最適合你的消費組合
-                </p>
-              </div>
-              
-              <div className="card feature-card">
-                <div className="feature-icon">📱</div>
-                <h4 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '12px' }}>
-                  覆蓋全面
-                </h4>
-                <p style={{ color: 'var(--text-secondary)' }}>
-                  涵蓋香港主要銀行，超過100張信用卡資料
-                </p>
-              </div>
-              
-              <div className="card feature-card">
-                <div className="feature-icon">🔒</div>
-                <h4 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '12px' }}>
-                  免費使用
-                </h4>
-                <p style={{ color: 'var(--text-secondary)' }}>
-                  所有核心功能完全免費，助你慳得更多
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* 統計數字 */}
-          <div style={{ 
+          {/* Footer */}
+          <footer style={{ 
             marginTop: '60px', 
-            padding: '40px', 
-            background: 'var(--card-bg)', 
-            borderRadius: '24px',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: '32px',
-            textAlign: 'center'
+            padding: '32px 20px', 
+            textAlign: 'center',
+            color: 'var(--text-secondary)',
+            borderTop: '1px solid var(--border-color)'
           }}>
-            <div>
-              <div className="stat-number">100+</div>
-              <div className="stat-label">信用卡資料</div>
-            </div>
-            <div>
-              <div className="stat-number">8</div>
-              <div className="stat-label">消費類別</div>
-            </div>
-            <div>
-              <div className="stat-number">10</div>
-              <div className="stat-label">合作銀行</div>
-            </div>
-            <div>
-              <div className="stat-number">Free</div>
-              <div className="stat-label">終身免費</div>
-            </div>
-          </div>
+            <p>💳 CardCal - 香港信用卡回贈計算器</p>
+            <p style={{ fontSize: '14px', marginTop: '8px' }}>
+              數據僅供參考，請以銀行官方資料為準
+            </p>
+          </footer>
         </div>
-
-        {/* Footer */}
-        <footer style={{ 
-          marginTop: '60px', 
-          padding: '32px 20px', 
-          textAlign: 'center',
-          color: 'var(--text-secondary)',
-          borderTop: '1px solid var(--border-color)'
-        }}>
-          <p>💳 CardCal - 香港信用卡回贈計算器</p>
-          <p style={{ fontSize: '14px', marginTop: '8px' }}>
-            數據僅供參考，請以銀行官方資料為準
-          </p>
-        </footer>
       </div>
 
       <style jsx global>{`
@@ -365,12 +431,11 @@ export default function Home() {
         }
 
         .container {
-          max-width: 1200px;
+          maxWidth: 800px;
           margin: 0 auto;
           padding: 20px;
         }
 
-        /* 卡片樣式 */
         .card {
           background: var(--card-bg);
           border-radius: 16px;
@@ -388,7 +453,6 @@ export default function Home() {
           background: var(--card-bg);
         }
 
-        /* 按鈕樣式 */
         .btn-primary {
           background: linear-gradient(135deg, var(--primary) 0%, #0052CC 100%);
           color: white;
@@ -398,7 +462,7 @@ export default function Home() {
           border: none;
           cursor: pointer;
           transition: all 0.2s;
-          font-size: 16px;
+          fontSize: 16px;
         }
 
         .btn-primary:hover:not(:disabled) {
@@ -407,7 +471,7 @@ export default function Home() {
         }
 
         .btn-primary:disabled {
-          opacity: 0.6;
+          opacity: 0.5;
           cursor: not-allowed;
         }
 
@@ -419,7 +483,7 @@ export default function Home() {
           background: var(--card-bg);
           color: var(--primary);
           padding: 12px 24px;
-          border-radius: 12px;
+          borderRadius: 12px;
           font-weight: 600;
           border: 2px solid var(--primary);
           cursor: pointer;
@@ -433,7 +497,6 @@ export default function Home() {
           color: white;
         }
 
-        /* 輸入框樣式 */
         .input-field {
           width: 100%;
           padding: 16px 20px;
@@ -443,6 +506,7 @@ export default function Home() {
           transition: border-color 0.2s;
           background: var(--card-bg);
           color: var(--text-primary);
+          box-sizing: border-box;
         }
 
         .input-field:focus {
@@ -454,34 +518,9 @@ export default function Home() {
           background: var(--card-bg);
         }
 
-        /* 標籤樣式 */
-        .tag {
-          display: inline-block;
-          padding: 4px 12px;
-          border-radius: 20px;
-          font-size: 12px;
-          font-weight: 600;
-        }
-
-        .tag-cashback {
-          background: #DCFCE7;
-          color: #166534;
-        }
-
-        .tag-mileage {
-          background: #DBEAFE;
-          color: #1E40AF;
-        }
-
-        .tag-points {
-          background: #FEF3C7;
-          color: #92400E;
-        }
-
-        /* Hero 區域 */
         .hero {
           text-align: center;
-          padding: 60px 20px;
+          padding: 48px 24px;
           background: linear-gradient(135deg, #0066FF 0%, #00D4AA 100%);
           color: white;
           border-radius: 24px;
@@ -489,35 +528,16 @@ export default function Home() {
         }
 
         .hero h1 {
-          fontSize: 48px;
+          font-size: 32px;
           font-weight: 800;
-          margin-bottom: 16px;
+          margin-bottom: 12px;
         }
 
         .hero p {
-          fontSize: 20px;
+          font-size: 18px;
           opacity: 0.9;
         }
 
-        /* 功能卡片 */
-        .feature-card {
-          text-align: center;
-          padding: 32px;
-        }
-
-        .feature-icon {
-          font-size: 48px;
-          margin-bottom: 16px;
-        }
-
-        /* 回贈顯示 */
-        .rebate-display {
-          font-size: 28px;
-          font-weight: 800;
-          color: var(--primary);
-        }
-
-        /* 導航欄 */
         .navbar {
           display: flex;
           justify-content: space-between;
@@ -526,57 +546,26 @@ export default function Home() {
           margin-bottom: 32px;
         }
 
-        .nav-links {
-          display: flex;
-          gap: 24px;
-        }
-
-        .nav-link {
-          color: var(--text-secondary);
-          text-decoration: none;
-          font-weight: 500;
-          transition: color 0.2s;
-        }
-
-        .nav-link:hover {
-          color: var(--primary);
-        }
-
-        /* 統計數字 */
-        .stat-number {
-          font-size: 32px;
-          font-weight: 800;
-          color: var(--primary);
-        }
-
-        .stat-label {
-          color: var(--text-secondary);
-          fontSize: 14px;
-        }
-
-        /* 響應式 */
         @media (max-width: 768px) {
-          .hero h1 {
-            font-size: 32px;
-          }
-          
           .container {
             padding: 16px;
           }
           
           .card {
-            padding: 16px;
+            padding: 20px;
           }
           
-          .rebate-display {
-            font-size: 24px;
+          .hero {
+            padding: 32px 16px;
+          }
+          
+          .hero h1 {
+            font-size: 28px;
           }
         }
 
-        /* 計算器卡片 */
         .calculator-card {
-          max-width: 500px;
-          margin: 0 auto;
+          max-width: 100%;
         }
       `}</style>
     </>
