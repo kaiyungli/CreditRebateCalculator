@@ -207,6 +207,36 @@ export async function getBanks() {
 }
 
 // ====================
+// MERCHANT RATES FUNCTIONS
+// ====================
+
+// Get merchant rates for specific cards and category
+export async function getMerchantRates(cardIds, categoryId) {
+  const result = await pool.query(
+    `SELECT 
+        mr.merchant_name,
+        mr.category_id,
+        c.id as card_id,
+        c.name as card_name,
+        b.name as bank_name,
+        mr.rebate_rate,
+        mr.rebate_type,
+        mr.conditions,
+        c.card_type
+      FROM merchant_rates mr
+      JOIN cards c ON mr.card_id = c.id
+      JOIN banks b ON c.bank_id = b.id
+      WHERE mr.card_id = ANY($1)
+        AND mr.category_id = $2
+        AND mr.status = 'ACTIVE'
+        AND c.status = 'ACTIVE'
+      ORDER BY mr.merchant_name, c.name`,
+    [cardIds, categoryId]
+  );
+  return result.rows;
+}
+
+// ====================
 // UTILITY
 // ====================
 
