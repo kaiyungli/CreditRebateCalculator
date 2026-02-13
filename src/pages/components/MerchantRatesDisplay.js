@@ -8,6 +8,7 @@ export default function MerchantRatesDisplay({
 }) {
   const [merchantRates, setMerchantRates] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [selectedMerchant, setSelectedMerchant] = useState(null);
 
   // Fetch merchant rates when userCards or category changes
@@ -19,10 +20,22 @@ export default function MerchantRatesDisplay({
 
     async function fetchMerchantRates() {
       setLoading(true);
+      setError(null);
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
         const response = await fetch(
-          `/api/merchant-rates?card_ids=${userCards.join(',')}&category_id=${selectedCategory}`
+          `/api/merchant-rates?card_ids=${userCards.join(',')}&category_id=${selectedCategory}`,
+          { signal: controller.signal }
         );
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         if (data.success && data.merchants) {
@@ -30,6 +43,7 @@ export default function MerchantRatesDisplay({
         }
       } catch (error) {
         console.error('Failed to fetch merchant rates:', error);
+        setError(error.message || '載入失敗');
       } finally {
         setLoading(false);
       }
@@ -102,6 +116,24 @@ export default function MerchantRatesDisplay({
           }
           @keyframes spin {
             to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="merchant-rates-error">
+        <p>⚠️ 載入失敗</p>
+        <p style={{ fontSize: '12px', marginTop: '8px' }}>{error}</p>
+        <style jsx>{`
+          .merchant-rates-error {
+            text-align: center;
+            padding: 40px 20px;
+            background: #FEF2F2;
+            border-radius: 12px;
+            color: #DC2626;
           }
         `}</style>
       </div>
