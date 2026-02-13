@@ -1,5 +1,5 @@
 // API: Get merchant rates for selected cards and category
-import { getMerchantRates } from '../../lib/db';
+import { getMerchantRates } from '../../../lib/db';
 
 export default async function handler(request) {
   if (request.method !== 'GET') {
