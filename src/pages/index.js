@@ -20,13 +20,28 @@ export default function Home() {
   const [results, setResults] = useState([]);
   const [selectedMerchant, setSelectedMerchant] = useState(null);
 
-  // 初始化時載入用戶已選卡片
+  // 初始化時載入用戶已選卡片和 categories
   useEffect(() => {
     setUserCards(getUserCards());
+    
+    // 從 API 載入 categories
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        if (data.categories) {
+          setDbCategories(data.categories);
+        }
+      } catch (err) {
+        console.error('載入 categories 失敗:', err);
+      }
+    }
+    loadCategories();
   }, []);
 
-  // 商戶類別選項
-  const categories = [
+  // 從 database 拎 categories，冇就用 default
+  const [dbCategories, setDbCategories] = useState([]);
+  const categories = dbCategories.length > 0 ? dbCategories : [
     { id: 1, name: '餐飲美食', icon: '🍜' },
     { id: 2, name: '網上購物', icon: '🛒' },
     { id: 3, name: '超市便利店', icon: '🏪' },
@@ -62,40 +77,64 @@ export default function Home() {
   }
 
   // 計算最佳組合
-  function calculateBestCombination() {
+  async function calculateBestCombination() {
     if (expenses.length === 0) return;
     
     setLoading(true);
     
-    // 模擬計算
-    setTimeout(() => {
-      const results = expenses.map(expense => {
-        // 根據用戶已選卡片計算
-        let availableCards = mockCards;
-        if (userCards.length > 0) {
-          availableCards = mockCards.filter(card => userCards.includes(card.id));
-        }
-        
-        if (availableCards.length === 0) {
-          availableCards = mockCards;
-        }
-        
-        const bestCard = availableCards.reduce((best, card) => {
-          const currentRebate = expense.amount * card.base_rate;
-          const bestRebate = expense.amount * best.base_rate;
-          return currentRebate > bestRebate ? card : best;
-        });
-        
-        return {
-          ...expense,
-          bestCard,
-          rebate: expense.amount * bestCard.base_rate,
-        };
+    try {
+      // 從 API 獲取最佳卡片
+      const response = await fetch('/api/calculate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          expenses: expenses,
+          userCards: userCards
+        })
       });
       
+      const data = await response.json();
+      
+      if (data.results) {
+        setResults(data.results);
+      }
+    } catch (error) {
+      console.error('計算失敗:', error);
+      // 如果 API 失敗，fallback 到 mock 計算
+      fallbackCalculate();
+    } finally {
       setLoading(false);
-      setResults(results);
-    }, 1000);
+    }
+  }
+
+  // Fallback 計算（mock data）
+  function fallbackCalculate() {
+    const results = expenses.map(expense => {
+      let availableCards = mockCards;
+      if (userCards.length > 0) {
+        availableCards = mockCards.filter(card => userCards.includes(card.id));
+      }
+      
+      if (availableCards.length === 0) {
+        availableCards = mockCards;
+      }
+      
+      const bestCard = availableCards.reduce((best, card) => {
+        const currentRebate = expense.amount * card.base_rate;
+        const bestRebate = expense.amount * best.base_rate;
+        return currentRebate > bestRebate ? card : best;
+      });
+      
+      return {
+        ...expense,
+        bestCard,
+        rebate: expense.amount * bestCard.base_rate,
+      };
+    });
+    
+    setResults(results);
   }
 
   const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);

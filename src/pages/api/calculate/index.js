@@ -1,56 +1,78 @@
-// API: Calculate best rebate
-import { findBestCard, calculateRebate, getCardById, getCategoryById } from '../../../lib/db';
+// API: Calculate best rebate for multiple expenses
+import { findBestCard, calculateRebate, getCardById, getCategoryById, getCategories } from '../../../lib/db';
 
 export default async function handler(request) {
-  const { category_id, amount, card_type, card_id } = request.query;
-
-  if (!category_id || !amount) {
-    return new Response(JSON.stringify({ 
-      error: 'category_id and amount are required' 
-    }), {
-      status: 400,
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
   try {
-    const amountNum = parseFloat(amount);
-    const categoryIdNum = parseInt(category_id);
-
-    // If specific card_id provided, calculate for that card
-    if (card_id) {
-      const card = await getCardById(parseInt(card_id));
-      const category = await getCategoryById(categoryIdNum);
-      
-      if (!card) {
-        return new Response(JSON.stringify({ error: 'Card not found' }), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      const rebateAmount = await calculateRebate(parseInt(card_id), categoryIdNum, amountNum);
-      const effectiveRate = amountNum > 0 ? rebateAmount / amountNum : 0;
-
-      return new Response(JSON.stringify({
-        card,
-        category,
-        amount: amountNum,
-        rebate_amount: rebateAmount,
-        effective_rate: effectiveRate,
-      }), {
-        status: 200,
+    const { expenses = [], userCards = [] } = await request.json();
+    
+    if (expenses.length === 0) {
+      return new Response(JSON.stringify({ error: 'No expenses provided' }), {
+        status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // Find best cards
-    const bestCards = await findBestCard(categoryIdNum, amountNum, card_type);
+    // 計算每筆消費的最佳卡片
+    const results = await Promise.all(
+      expenses.map(async (expense) => {
+        const categoryIdNum = parseInt(expense.categoryId);
+        const amountNum = parseFloat(expense.amount);
+        
+        // 獲取最佳卡片
+        const bestCards = await findBestCard(categoryIdNum, amountNum);
+        
+        // 根據用戶已選卡片過濾
+        let availableCards = bestCards;
+        if (userCards.length > 0) {
+          availableCards = bestCards.filter(card => userCards.includes(card.id));
+        }
+        
+        // 如果用戶有選卡片，搵最佳嗰張
+        let bestCard;
+        if (availableCards.length > 0) {
+          bestCard = availableCards[0]; // 已經按回贈金額排序
+        } else {
+          // 如果冇選卡片，用最佳嗰張
+          bestCard = bestCards[0] || null;
+        }
+        
+        // 如果冇找到卡片，回傳 null
+        if (!bestCard) {
+          return {
+            ...expense,
+            bestCard: null,
+            rebate: 0,
+          };
+        }
+        
+        // 計算回贈金額
+        const rebateAmount = await calculateRebate(bestCard.id, categoryIdNum, amountNum);
+        
+        return {
+          ...expense,
+          bestCard: {
+            id: bestCard.id,
+            bank_name: bestCard.bank_name,
+            card_name: bestCard.card_name,
+            icon: '💳', // 可從 database 拎
+            base_rate: bestCard.base_rate,
+            rebate_type: bestCard.rebate_type,
+          },
+          rebate: rebateAmount,
+        };
+      })
+    );
 
     return new Response(JSON.stringify({
-      category_id: categoryIdNum,
-      amount: amountNum,
-      best_cards: bestCards,
+      success: true,
+      results: results,
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
