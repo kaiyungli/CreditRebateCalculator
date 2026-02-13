@@ -37,6 +37,11 @@ export default function ExpenseList({ expenses = [], onRemove, totalAmount = 0 }
               <div>
                 <div style={{ fontWeight: '600' }}>
                   {expense.categoryIcon} {expense.categoryName}
+                  {expense.merchantName && (
+                    <span style={{ fontWeight: '400', color: 'var(--text-secondary)', marginLeft: '8px' }}>
+                      - {expense.merchantName}
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
                   HK${expense.amount.toLocaleString()}

@@ -52,6 +52,11 @@ export default function ResultCard({ results = [], totalAmount = 0, totalRebate 
               <div>
                 <div style={{ fontWeight: '700', fontSize: '18px' }}>
                   {result.categoryIcon} {result.categoryName}
+                  {result.merchantName && (
+                    <span style={{ fontWeight: '400', color: 'var(--text-secondary)', marginLeft: '8px' }}>
+                      - {result.merchantName}
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
                   HK${result.amount.toLocaleString()}

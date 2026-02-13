@@ -18,6 +18,7 @@ export default function Home() {
   const [showCardSelector, setShowCardSelector] = useState(false);
   const [userCards, setUserCards] = useState([]);
   const [results, setResults] = useState([]);
+  const [selectedMerchant, setSelectedMerchant] = useState(null);
 
   // 初始化時載入用戶已選卡片
   useEffect(() => {
@@ -45,12 +46,14 @@ export default function Home() {
       categoryId: selectedCategory,
       categoryName: categories.find(c => c.id.toString() === selectedCategory.toString())?.name || '其他',
       categoryIcon: categories.find(c => c.id.toString() === selectedCategory.toString())?.icon || '💳',
+      merchantName: selectedMerchant?.name || null,
       amount: parseFloat(amount),
     };
     
     setExpenses([...expenses, expense]);
     setAmount('');
     setSelectedCategory('');
+    setSelectedMerchant(null);
   }
 
   // 移除消費
@@ -127,6 +130,8 @@ export default function Home() {
             categories={categories}
             onAdd={addExpense}
             disabled={!amount || !selectedCategory}
+            selectedMerchant={selectedMerchant}
+            setSelectedMerchant={setSelectedMerchant}
           />
 
           <ExpenseList 
