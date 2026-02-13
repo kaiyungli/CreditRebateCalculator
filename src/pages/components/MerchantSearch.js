@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { searchMerchant, getAllMerchants } from '../lib/merchantMappings';
+import { searchMerchant, getAllMerchants } from '../../lib/merchantMappings';
 
 export default function MerchantSearch({ 
   categories = [],
