@@ -106,20 +106,6 @@ CREATE TABLE calculations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Data Update Log (數據更新日誌)
-CREATE TABLE data_update_log (
-    id SERIAL PRIMARY KEY,
-    entity_type VARCHAR(50), -- 'card', 'rate', 'bank'
-    entity_id INTEGER,
-    change_type VARCHAR(20), -- 'CREATE', 'UPDATE', 'DELETE'
-    old_value JSONB,
-    new_value JSONB,
-    source VARCHAR(100), -- 'official', 'user_report', 'scraper'
-    status VARCHAR(20) DEFAULT 'PENDING', -- 'PENDING', 'VERIFIED', 'REJECTED'
-    verified_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- ============================================
 -- INDEXES
 -- ============================================
@@ -147,16 +133,16 @@ INSERT INTO banks (name, name_en, logo_url, website_url) VALUES
 ('星展銀行', 'DBS', 'https://example.com/dbs.png', 'https://www.dbs.com.hk'),
 ('American Express', 'American Express', 'https://example.com/amex.png', 'https://www.americanexpress.com/hk');
 
--- Insert Categories
-INSERT INTO categories (name, name_en, level, keywords, icon) VALUES
-('餐飲美食', 'Dining', 1, '['餐廳', '食飯', '外卖', 'food', 'restaurant', 'cafe']', '🍜'),
-('超市購物', 'Supermarket', 1, '['超市', '便利店', 'supermarket', 'convenience']', '🏪'),
-('網上購物', 'Online Shopping', 1, '['淘寶', '京東', 'Amazon', 'HKTVmall', '網購']', '🛒'),
-('旅遊', 'Travel', 1, '['機票', '酒店', ' flight', 'hotel', 'travel']', '✈️'),
-('外幣簽帳', 'Foreign Currency', 1, '['外幣', '海外', 'foreign', 'overseas']', '💱'),
-('電訊服務', 'Telecom', 1, ['電話費', '網費', '電訊', 'mobile', 'internet']', '📱'),
-('生活繳費', 'Utilities', 1, ['水電煤', '煤氣', '電費', 'utilities']', '💡'),
-('娛樂', 'Entertainment', 1, ['戲院', 'Netflix', 'Disney', ' entertainment']', '🎬');
+-- Insert Categories (8 categories matching frontend)
+INSERT INTO categories (name, name_en, level, keywords, icon, sort_order) VALUES
+('餐飲美食', 'Dining', 1, ARRAY['餐廳', '食飯', '外賣', 'food', 'restaurant', 'cafe', '壽司郎', '麥當勞'], '🍜', 1),
+('網上購物', 'Online Shopping', 1, ARRAY['淘寶', '京東', 'Amazon', 'HKTVmall', '網購', '網上購物', 'shopee', 'lazada'], '🛒', 2),
+('超市便利店', 'Supermarket', 1, ARRAY['超市', '便利店', '百佳', '惠康', '759', '7-11', 'OK便利店'], '🏪', 3),
+('交通出行', 'Transport', 1, ARRAY['Uber', '的士', '港鐵', 'MTR', '交通', '出行', '車費'], '🚗', 4),
+('娛樂休閒', 'Entertainment', 1, ARRAY['戲院', 'Netflix', 'Disney', '娛樂', ' cinema', ' entertainment'], '🎬', 5),
+('旅遊外遊', 'Travel', 1, ARRAY['機票', '酒店', '旅遊', 'flight', 'hotel', 'travel', '國泰'], '✈️', 6),
+('服飾美容', 'Fashion', 1, ARRAY['Uniqlo', 'Zara', 'H&M', '服飾', '美容', '化妝', '衣服'], '👗', 7),
+('公用事業', 'Utilities', 1, ARRAY['水電煤', '電費', '煤氣', '電話費', '寬頻', '公用事業'], '💡', 8);
 
 -- Insert Credit Cards (MVP - 10 張熱門卡)
 INSERT INTO cards (bank_id, name, card_type, annual_fee, annual_fee_waiver, image_url, apply_url, features, status) VALUES
@@ -174,16 +160,19 @@ INSERT INTO cards (bank_id, name, card_type, annual_fee, annual_fee_waiver, imag
 -- Insert Rebate Rates (示例數據)
 INSERT INTO rebate_rates (card_id, category_id, rebate_type, base_rate, cap_amount, cap_type, valid_from) VALUES
 (1, 1, 'PERCENTAGE', 0.04, NULL, NULL, '2026-01-01'), -- 滙豐Visa Signature: 餐飲4%
-(1, 2, 'PERCENTAGE', 0.02, NULL, NULL, '2026-01-01'), -- 滙豐Visa Signature: 超市2%
-(1, 4, 'PERCENTAGE', 0.05, NULL, NULL, '2026-01-01'), -- 滙豐Visa Signature: 旅遊5%
-(1, 5, 'PERCENTAGE', 0.05, NULL, NULL, '2026-01-01'), -- 滙豐Visa Signature: 外幣5%
+(1, 2, 'PERCENTAGE', 0.02, NULL, NULL, '2026-01-01'), -- 滙豐Visa Signature: 網上購物2%
+(1, 3, 'PERCENTAGE', 0.02, NULL, NULL, '2026-01-01'), -- 滙豐Visa Signature: 超市便利店2%
+(1, 6, 'PERCENTAGE', 0.05, NULL, NULL, '2026-01-01'), -- 滙豐Visa Signature: 旅遊外遊5%
+(1, 7, 'PERCENTAGE', 0.05, NULL, NULL, '2026-01-01'), -- 滙豐Visa Signature: 外幣5%
 (2, 1, 'PERCENTAGE', 0.02, NULL, NULL, '2026-01-01'), -- 滙豐白金: 餐飲2%
-(2, 3, 'PERCENTAGE', 0.02, NULL, NULL, '2026-01-01'), -- 滙豐白金: 網購2%
+(2, 2, 'PERCENTAGE', 0.02, NULL, NULL, '2026-01-01'), -- 滙豐白金: 網上購物2%
 (3, 1, 'MILEAGE', 0.1428, NULL, NULL, '2026-01-01'), -- 渣打Asia Miles: 餐飲 HK$7/里
-(3, 5, 'MILEAGE', 0.1667, NULL, NULL, '2026-01-01'), -- 渣打Asia Miles: 外幣 HK$6/里
+(3, 6, 'MILEAGE', 0.1667, NULL, NULL, '2026-01-01'), -- 渣打Asia Miles: 旅遊 HK$6/里
 (4, 1, 'PERCENTAGE', 0.05, 200, 'MONTHLY', '2026-01-01'), -- 渣打Smart: 餐飲5% (月cap $200)
 (5, 1, 'PERCENTAGE', 0.02, NULL, NULL, '2026-01-01'), -- 中銀白金: 餐飲2%
-(5, 2, 'PERCENTAGE', 0.02, NULL, NULL, '2026-01-01'); -- 中銀白金: 超市2%
+(5, 3, 'PERCENTAGE', 0.02, NULL, NULL, '2026-01-01'), -- 中銀白金: 超市便利店2%
+(9, 1, 'POINTS', 0.02, NULL, NULL, '2026-01-01'), -- DBS Compass: 餐飲2%
+(9, 3, 'POINTS', 0.01, NULL, NULL, '2026-01-01'); -- DBS Compass: 超市便利店1%
 
 -- ============================================
 -- VIEWS
@@ -244,9 +233,12 @@ BEGIN
         IF v_cap_type = 'TRANSACTION' THEN
             v_result := LEAST(v_result, v_cap_amount);
         END IF;
-        -- MONTHLY/QUARTERLY 需要用戶會話 context，MVP 簡化處理
     END IF;
     
     RETURN ROUND(v_result, 2);
 END;
 $$ LANGUAGE plpgsql;
+
+-- ============================================
+-- END OF SCHEMA
+-- ============================================
