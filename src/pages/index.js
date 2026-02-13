@@ -7,6 +7,7 @@ import ExpenseInput from './components/ExpenseInput';
 import ExpenseList from './components/ExpenseList';
 import ResultCard from './components/ResultCard';
 import Footer from './components/Footer';
+import MerchantRatesDisplay from './components/MerchantRatesDisplay';
 import { mockCards, getUserCards } from '../lib/userCards';
 
 export default function Home() {
@@ -172,6 +173,17 @@ export default function Home() {
             selectedMerchant={selectedMerchant}
             setSelectedMerchant={setSelectedMerchant}
           />
+
+          {/* 商戶回贈比較 - 選擇信用卡同類別後顯示 */}
+          {userCards.length > 0 && selectedCategory && (
+            <div style={{ marginTop: '24px' }}>
+              <MerchantRatesDisplay 
+                userCards={userCards}
+                selectedCategory={parseInt(selectedCategory)}
+                categories={categories}
+              />
+            </div>
+          )}
 
           <ExpenseList 
             expenses={expenses}
