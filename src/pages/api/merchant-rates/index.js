@@ -68,7 +68,13 @@ export default async function handler(request) {
     });
   } catch (error) {
     console.error('Error fetching merchant rates:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error.message || 'Unknown error';
+    const errorStack = error.stack ? error.stack.toString().substring(0, 500) : '';
+    
+    return new Response(JSON.stringify({ 
+      error: errorMessage,
+      details: errorStack
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

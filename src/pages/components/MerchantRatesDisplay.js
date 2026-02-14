@@ -33,17 +33,42 @@ export default function MerchantRatesDisplay({
         clearTimeout(timeoutId);
         
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          throw new Error(`API error: ${response.status} - ${response.statusText}`);
         }
         
         const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
         
         if (data.success && data.merchants) {
           setMerchantRates(data.merchants);
         }
       } catch (error) {
         console.error('Failed to fetch merchant rates:', error);
-        setError(error.message || '載入失敗');
+        let errorMsg = '載入失敗';
+        if (error.name === 'AbortError') {
+          errorMsg = '請求超時，請稍後再試';
+        } else if (error.message) {
+          // Try to parse error details from API response
+          try {
+            if (error.message.includes('{')) {
+              const parsed = JSON.parse(error.message.substring(error.message.indexOf('{')));
+              if (parsed.error) {
+                errorMsg = parsed.error;
+                if (parsed.details) {
+                  errorMsg += ` (${parsed.details.substring(0, 100)})`;
+                }
+              }
+            } else {
+              errorMsg = `錯誤: ${error.message.substring(0, 100)}`;
+            }
+          } catch (e) {
+            errorMsg = `錯誤: ${error.message.substring(0, 100)}`;
+          }
+        }
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
