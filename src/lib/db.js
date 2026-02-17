@@ -298,7 +298,7 @@ export async function getMerchantRates(cardIds, categoryId) {
         mr.rebate_rate,
         mr.rebate_type,
         mr.conditions,
-        c.card_type
+        c.reward_program as reward_program
       FROM merchant_rates mr
       JOIN cards c ON mr.card_id = c.id
       JOIN banks b ON c.bank_id = b.id

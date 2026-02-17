@@ -47,7 +47,8 @@ export default async function handler(req, res) {
         rebate_rate: row.rebate_rate,
         rebate_type: row.rebate_type,
         rate_display: rateDisplay,
-        conditions: row.conditions
+        conditions: row.conditions,
+        reward_program: row.reward_program
       });
     });
 
