@@ -23,15 +23,19 @@ export default async function handler(req, res) {
       }
       
       // Format the rate display based on rate_unit
-      let rateDisplay;
-      const rateVal = parseFloat(row.rate_value);
-      if (row.rate_unit === 'PER_AMOUNT') {
+      let rateDisplay = '';
+      const rateVal = parseFloat(row.rate_value) || 0;
+      const perAmount = parseFloat(row.per_amount) || 0;
+      
+      if (row.rate_unit === 'PER_AMOUNT' && perAmount > 0) {
         // PER_AMOUNT: e.g., HK$6/里 → rate_value = 1/6 = 0.1667
-        const perAmount = row.per_amount ? parseFloat(row.per_amount) : (1 / rateVal);
-        rateDisplay = `HK$${perAmount.toFixed(0)}/里`;
-      } else {
+        const hkdPerUnit = perAmount > 0 ? perAmount : (rateVal > 0 ? (1 / rateVal) : 0);
+        rateDisplay = `HK$${hkdPerUnit.toFixed(0)}/里`;
+      } else if (rateVal > 0) {
         // PERCENT: e.g., 4% → rate_value = 0.04
         rateDisplay = `${(rateVal * 100).toFixed(1)}%`;
+      } else {
+        rateDisplay = '-';
       }
 
       merchantRates[row.merchant_name].cards.push({
