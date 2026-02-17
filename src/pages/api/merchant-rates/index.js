@@ -23,7 +23,7 @@ export default async function handler(req, res) {
         merchantRates[row.merchant_name] = {
           merchant_name: row.merchant_name,
           merchant_key: row.merchant_key,
-          category_id: row.category_id,
+          default_category_id: row.category_id,
           cards: []
         };
       }
