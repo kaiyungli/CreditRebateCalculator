@@ -9,14 +9,32 @@ const pool = new Pool({
 });
 
 // ====================
+// BASE QUERY FUNCTION
+// ====================
+
+export async function query(text, params) {
+  const result = await pool.query(text, params);
+  return result;
+}
+
+// ====================
 // CARD FUNCTIONS
 // ====================
 
-// Get all cards
+export async function getActiveCards() {
+  const { rows } = await query(
+    `SELECT id, bank_id, name, name_en, reward_program 
+     FROM cards 
+     WHERE status = 'ACTIVE' 
+     ORDER BY id`
+  );
+  return rows;
+}
+
 export async function getCards(filters = {}) {
   const { bank_id, card_type, status = 'ACTIVE', limit = 50 } = filters;
   
-  let query = `
+  let queryStr = `
     SELECT c.*, b.name as bank_name, b.logo_url as bank_logo
     FROM cards c
     JOIN banks b ON c.bank_id = b.id
@@ -27,29 +45,28 @@ export async function getCards(filters = {}) {
   let paramIndex = 1;
   
   if (bank_id) {
-    query += ` AND c.bank_id = $${paramIndex}`;
+    queryStr += ` AND c.bank_id = $${paramIndex}`;
     params.push(bank_id);
     paramIndex++;
   }
   
   if (card_type) {
-    query += ` AND c.card_type = $${paramIndex}`;
+    queryStr += ` AND c.card_type = $${paramIndex}`;
     params.push(card_type);
     paramIndex++;
   }
   
-  query += ` AND c.status = $${paramIndex}`;
+  queryStr += ` AND c.status = $${paramIndex}`;
   params.push(status);
   paramIndex++;
   
-  query += ` ORDER BY c.created_at DESC LIMIT $${paramIndex}`;
+  queryStr += ` ORDER BY c.created_at DESC LIMIT $${paramIndex}`;
   params.push(limit);
   
-  const result = await pool.query(query, params);
+  const result = await pool.query(queryStr, params);
   return result.rows;
 }
 
-// Get single card with rates
 export async function getCardById(id) {
   const cardResult = await pool.query(
     `SELECT c.*, b.name as bank_name, b.logo_url as bank_logo
@@ -80,7 +97,6 @@ export async function getCardById(id) {
 // CATEGORY FUNCTIONS
 // ====================
 
-// Get all categories
 export async function getCategories() {
   const result = await pool.query(
     `SELECT * FROM categories ORDER BY sort_order, name`
@@ -88,26 +104,46 @@ export async function getCategories() {
   return result.rows;
 }
 
-// Get category by ID
 export async function getCategoryById(id) {
   const result = await pool.query(`SELECT * FROM categories WHERE id = $1`, [id]);
   return result.rows[0] || null;
 }
 
 // ====================
-// CALCULATION FUNCTIONS
+// RULES & MERCHANTS FUNCTIONS
 // ====================
 
-// Calculate rebate for a transaction
-export async function calculateRebate(cardId, categoryId, amount) {
-  const result = await pool.query(
-    `SELECT calculate_rebate($1, $2, $3) as rebate_amount`,
-    [cardId, categoryId, amount]
+export async function getActiveRulesAndMerchants() {
+  // merchants: merchant_key -> id
+  const merchantsRes = await query(
+    `SELECT id, merchant_key, name FROM merchants WHERE status = 'ACTIVE'`
   );
-  return result.rows[0]?.rebate_amount || 0;
+  
+  const rulesRes = await query(
+    `SELECT id, card_id, merchant_id, category_id, reward_kind, rate_unit, 
+            rate_value, per_amount, cap_value, cap_period, min_spend, 
+            valid_from, valid_to, priority, status
+     FROM reward_rules 
+     WHERE status = 'ACTIVE' 
+     ORDER BY priority ASC, id ASC`
+  );
+  
+  const merchantKeyToId = {};
+  for (const m of merchantsRes.rows) {
+    merchantKeyToId[m.merchant_key] = m.id;
+  }
+  
+  return {
+    merchantKeyToId,
+    rules: rulesRes.rows,
+  };
 }
 
-// OPTIMIZED: Get all cards with rebate rates in ONE query
+// ====================
+// OPTIMIZED CALCULATION FUNCTIONS
+// ====================
+
+// Get all cards with rebate rates in ONE query
 export async function getAllCardsWithRates() {
   const result = await pool.query(`
     SELECT 
@@ -135,9 +171,8 @@ export async function getAllCardsWithRates() {
   return result.rows;
 }
 
-// Find best card for a category and amount
 export async function findBestCard(categoryId, amount, cardType = null) {
-  let query = `
+  let queryStr = `
     SELECT 
       c.id,
       c.name as card_name,
@@ -160,13 +195,13 @@ export async function findBestCard(categoryId, amount, cardType = null) {
   let paramIndex = 3;
   
   if (cardType) {
-    query += ` AND c.card_type = $${paramIndex}`;
+    queryStr += ` AND c.card_type = $${paramIndex}`;
     params.push(cardType);
   }
   
-  query += ` ORDER BY rebate_amount DESC LIMIT 5`;
+  queryStr += ` ORDER BY rebate_amount DESC LIMIT 5`;
   
-  const result = await pool.query(query, params);
+  const result = await pool.query(queryStr, params);
   return result.rows;
 }
 
@@ -174,7 +209,6 @@ export async function findBestCard(categoryId, amount, cardType = null) {
 // USER FUNCTIONS
 // ====================
 
-// Get user by telegram_id
 export async function getUserByTelegramId(telegramId) {
   const result = await pool.query(
     `SELECT * FROM users WHERE telegram_id = $1`,
@@ -183,7 +217,6 @@ export async function getUserByTelegramId(telegramId) {
   return result.rows[0] || null;
 }
 
-// Create or update user
 export async function upsertUser(telegramId, data = {}) {
   const result = await pool.query(
     `INSERT INTO users (telegram_id, my_cards, preferences)
@@ -196,7 +229,6 @@ export async function upsertUser(telegramId, data = {}) {
   return result.rows[0];
 }
 
-// Save calculation to history
 export async function saveCalculation(userId, data) {
   const result = await pool.query(
     `INSERT INTO calculations (user_id, amount, category_id, card_id, rebate_type, rebate_amount, effective_rate)
@@ -207,7 +239,6 @@ export async function saveCalculation(userId, data) {
   return result.rows[0];
 }
 
-// Get user's calculation history
 export async function getUserCalculations(userId, limit = 20) {
   const result = await pool.query(
     `SELECT calc.*, c.name as card_name, cat.name as category_name
@@ -226,7 +257,6 @@ export async function getUserCalculations(userId, limit = 20) {
 // BANK FUNCTIONS
 // ====================
 
-// Get all banks
 export async function getBanks() {
   const result = await pool.query(
     `SELECT * FROM banks WHERE status = 'ACTIVE' ORDER BY name`
@@ -238,10 +268,9 @@ export async function getBanks() {
 // MERCHANT RATES FUNCTIONS
 // ====================
 
-// Get merchant rates for specific cards and category
 export async function getMerchantRates(cardIds, categoryId) {
-  const result = await pool.query(
-    `SELECT 
+  const result = await pool.query(`
+    SELECT 
         mr.merchant_name,
         mr.category_id,
         c.id as card_id,
@@ -264,11 +293,6 @@ export async function getMerchantRates(cardIds, categoryId) {
   return result.rows;
 }
 
-// ====================
-// MERCHANT FUNCTIONS
-// ====================
-
-// Get all merchants (requires merchants table)
 export async function getAllMerchants() {
   const result = await pool.query(`
     SELECT id, name, aliases_json, default_category_id, is_active
@@ -279,7 +303,6 @@ export async function getAllMerchants() {
   return result.rows;
 }
 
-// Get merchant rates for multiple cards (NEW - for combo calculation)
 export async function getMerchantRatesForCards(cardIds) {
   const result = await pool.query(`
     SELECT 
@@ -313,7 +336,6 @@ export async function getMerchantRatesForCards(cardIds) {
 // UTILITY
 // ====================
 
-// Test connection
 export async function testConnection() {
   try {
     const result = await pool.query('SELECT NOW()');
