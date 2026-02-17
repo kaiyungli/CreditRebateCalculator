@@ -18,7 +18,17 @@ export function getUserCards() {
   if (typeof window === 'undefined') return [];
   
   const saved = localStorage.getItem('userCards');
-  return saved ? JSON.parse(saved) : [];
+  if (!saved) return [];
+  
+  try {
+    const parsed = JSON.parse(saved);
+    // 確保只返回 IDs（兼容舊數據）
+    return (Array.isArray(parsed) ? parsed : [])
+      .map(c => (typeof c === 'object' && c !== null ? c.id : c))
+      .filter(id => typeof id === 'number');
+  } catch {
+    return [];
+  }
 }
 
 // 保存用戶已選的卡片到 localStorage
