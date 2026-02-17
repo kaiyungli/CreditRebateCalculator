@@ -1,275 +1,249 @@
 // API: Calculate best rebate combo for multiple items
-// Supports: merchant override, percent/per_amount, caps, beam search
-import { query, getActiveCards, getActiveRulesAndMerchants } from '../../../lib/db';
+// Features: beam search, merchant override, caps, miles/points valuation
+import { getActiveCards, getActiveRulesAndMerchants } from '../../../lib/db'
 
-// ====================
-// REBATE CALCULATOR
-// ====================
+const BEAM_WIDTH = 80
 
-function calculateRebateAmount(rule, amount) {
-  const { rate_unit, rate_value, per_amount, cap_value, min_spend } = rule;
-  
-  // Check minimum spend
-  if (min_spend && amount < min_spend) {
-    return 0;
-  }
-  
-  let rebate = 0;
-  
-  if (rate_unit === 'percent') {
-    // 4% cashback = rate_value = 0.04
-    rebate = amount * rate_value;
-  } else if (rate_unit === 'per_amount') {
-    // HK$6/里 = 每 HK$6 賺 1 里
-    // rate_value = 6, per_amount = 1 (1里 per $6)
-    const units = Math.floor(amount / rate_value);
-    rebate = units * per_amount;
-  }
-  
-  // Apply cap (will be applied at combo level for shared caps)
-  if (cap_value) {
-    return Math.min(rebate, cap_value);
-  }
-  
-  return rebate;
-}
-
-function buildRulesMap(rules) {
-  // Build efficient lookup structures
-  const cardCategoryRules = {};  // card_id -> category_id -> [rules]
-  const cardMerchantRules = {};  // card_id -> merchant_id -> [rules]
-  const categoryFallback = {};   // category_id -> [cards with rules]
-  const merchantKeyToId = {};    // merchant_key -> merchant_id (passed from DB)
-  
-  for (const rule of rules) {
-    // Card x Category rules
-    if (!cardCategoryRules[rule.card_id]) {
-      cardCategoryRules[rule.card_id] = {};
-    }
-    if (!cardCategoryRules[rule.card_id][rule.category_id]) {
-      cardCategoryRules[rule.card_id][rule.category_id] = [];
-    }
-    cardCategoryRules[rule.card_id][rule.category_id].push(rule);
-    
-    // Card x Merchant rules (if merchant_id exists)
-    if (rule.merchant_id) {
-      if (!cardMerchantRules[rule.card_id]) {
-        cardMerchantRules[rule.card_id] = {};
-      }
-      if (!cardMerchantRules[rule.card_id][rule.merchant_id]) {
-        cardMerchantRules[rule.card_id][rule.merchant_id] = [];
-      }
-      cardMerchantRules[rule.card_id][rule.merchant_id].push(rule);
-    }
-  }
-  
-  return { cardCategoryRules, cardMerchantRules, categoryFallback, merchantKeyToId };
-}
-
-function findBestCardForItem(item, rulesMap, userCardIds) {
-  const { category_id, merchant_id, amount } = item;
-  
-  // 1. Try merchant-specific rule (highest priority)
-  if (merchant_id) {
-    for (const cardId of userCardIds) {
-      const merchantRules = rulesMap.cardMerchantRules[cardId]?.[merchant_id] || [];
-      for (const rule of merchantRules) {
-        const rebate = calculateRebateAmount(rule, amount);
-        if (rebate > 0) {
-          return { cardId, rebate, rule, source: 'merchant' };
-        }
-      }
-    }
-  }
-  
-  // 2. Fallback to category rule
-  for (const cardId of userCardIds) {
-    const categoryRules = rulesMap.cardCategoryRules[cardId]?.[category_id] || [];
-    for (const rule of categoryRules) {
-      const rebate = calculateRebateAmount(rule, amount);
-      if (rebate > 0) {
-        return { cardId, rebate, rule, source: 'category' };
-      }
-    }
-  }
-  
-  // 3. No rule found
-  return null;
-}
-
-// ====================
-// BEAM SEARCH FOR COMBO
-// ====================
-
-function beamSearch(items, rulesMap, userCardIds, beamWidth = 10) {
-  // Beam search: keep top-K states at each step
-  // State: { index, selections, totalRebate, capUsed }
-  
-  const initialState = {
-    index: 0,
-    selections: [],  // [{itemIndex, cardId, rebate, rule}]
-    totalRebate: 0,
-    capUsed: {}     // { cardId: { cap_type: amount } }
-  };
-  
-  let beam = [initialState];
-  
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    const nextBeam = [];
-    
-    for (const state of beam) {
-      // Try each possible card for this item
-      const result = findBestCardForItem(item, rulesMap, userCardIds);
-      
-      if (result) {
-        const { cardId, rebate, rule, source } = result;
-        
-        // Apply cap logic
-        const newCapUsed = { ...state.capUsed };
-        const capKey = `${cardId}_${rule.cap_period || 'none'}`;
-        if (!newCapUsed[capKey]) newCapUsed[capKey] = 0;
-        
-        let effectiveRebate = rebate;
-        if (rule.cap_value) {
-          const currentUsed = newCapUsed[capKey];
-          const remaining = rule.cap_value - currentUsed;
-          effectiveRebate = Math.min(rebate, remaining);
-          if (effectiveRebate > 0) {
-            newCapUsed[capKey] = currentUsed + effectiveRebate;
-          } else {
-            effectiveRebate = 0;
-          }
-        }
-        
-        if (effectiveRebate > 0 || source === 'merchant') {
-          const newState = {
-            index: i + 1,
-            selections: [...state.selections, { itemIndex: i, cardId, rebate: effectiveRebate, source, rule }],
-            totalRebate: state.totalRebate + effectiveRebate,
-            capUsed: newCapUsed
-          };
-          nextBeam.push(newState);
-        }
-      }
-      
-      // Also allow "no card" option
-      nextBeam.push({
-        ...state,
-        index: i + 1,
-        selections: [...state.selections, { itemIndex: i, cardId: null, rebate: 0, source: 'none' }],
-        totalRebate: state.totalRebate
-      });
-    }
-    
-    // Keep top-K states
-    nextBeam.sort((a, b) => b.totalRebate - a.totalRebate);
-    beam = nextBeam.slice(0, beamWidth);
-  }
-  
-  // Return best complete state
-  const completeStates = beam.filter(s => s.index === items.length);
-  return completeStates[0] || beam[0];
-}
-
-// ====================
-// MAIN HANDLER
-// ====================
-
-export default async function handler(request) {
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ ok: false, error: 'POST only' })
   }
 
   try {
-    const { items = [], userCardIds = [], userId = null } = await request.json();
-    
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+    const items = Array.isArray(body.items) ? body.items : []
+
     if (items.length === 0) {
-      return new Response(JSON.stringify({ error: 'No items provided' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return res.status(400).json({ ok: false, error: 'items is required' })
     }
 
-    // Fetch all active cards and rules
-    const activeCards = await getActiveCards();
-    const { merchantKeyToId, rules } = await getActiveRulesAndMerchants();
-    
-    // If userCardIds not provided, use all active cards
-    const targetCardIds = userCardIds.length > 0 
-      ? userCardIds 
-      : activeCards.map(c => c.id);
-    
-    // Build rules lookup map
-    const rulesMap = buildRulesMap(rules);
-    
-    // Map merchant names to IDs
-    const mappedItems = items.map(item => ({
-      ...item,
-      merchant_id: item.merchant_name 
-        ? merchantKeyToId[item.merchant_name] || null 
-        : null
-    }));
-    
-    // Run beam search to find optimal combo
-    const bestState = beamSearch(mappedItems, rulesMap, targetCardIds);
-    
-    // Build response
-    const results = bestState.selections.map((sel, idx) => {
-      const item = items[sel.itemIndex];
-      const card = activeCards.find(c => c.id === sel.cardId);
-      return {
-        itemIndex: sel.itemIndex,
-        categoryId: item.category_id,
-        merchantName: item.merchant_name || null,
-        amount: item.amount,
-        selectedCard: card ? {
-          id: card.id,
-          name: card.name,
-          bankId: card.bank_id,
-          rewardProgram: card.reward_program
-        } : null,
-        rebate: Math.round(sel.rebate * 100) / 100,
-        source: sel.source,  // 'merchant', 'category', or 'none'
-        rule: sel.rule ? {
-          rateUnit: sel.rule.rate_unit,
-          rateValue: sel.rule.rate_value,
-          perAmount: sel.rule.per_amount,
-          capValue: sel.rule.cap_value
-        } : null
-      };
-    });
-    
-    const totalRebate = Math.round(bestState.totalRebate * 100) / 100;
-    const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
-    const effectiveRate = totalAmount > 0 ? (totalRebate / totalAmount) : 0;
-    
-    // Save to history if userId provided
-    // TODO: Implement saveCalculation
-    
-    return new Response(JSON.stringify({
-      success: true,
-      results,
-      summary: {
-        totalAmount,
-        totalRebate,
-        effectiveRate: Math.round(effectiveRate * 10000) / 10000,
-        itemsCount: items.length,
-        cardsUsed: [...new Set(bestState.selections.filter(s => s.cardId).map(s => s.cardId))]
+    // miles/points 轉 HKD 比較（可由前端覆寫）
+    const valuation = {
+      MILES: Number(body.valuation?.MILES ?? 0.05),
+      POINTS: Number(body.valuation?.POINTS ?? 0.01),
+    }
+
+    const [cards, { merchantKeyToId, rules }] = await Promise.all([
+      getActiveCards(),
+      getActiveRulesAndMerchants(),
+    ])
+
+    // rules by card for faster lookup
+    const rulesByCard = new Map()
+    for (const r of rules) {
+      if (!rulesByCard.has(r.card_id)) rulesByCard.set(r.card_id, [])
+      rulesByCard.get(r.card_id).push(r)
+    }
+
+    // normalize items: merchant_key -> merchant_id
+    const normalizedItems = items.map((it, idx) => {
+      const amount = Number(it.amount ?? 0)
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error(`item[${idx}].amount invalid`)
       }
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-    
-  } catch (error) {
-    console.error('Error calculating rebate:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+      const merchant_id = it.merchant_id ?? (it.merchant_key ? merchantKeyToId[it.merchant_key] : null)
+      const category_id = it.category_id ?? null
+      return {
+        idx,
+        amount,
+        merchant_id: merchant_id ?? null,
+        category_id,
+        merchant_key: it.merchant_key ?? null,
+        note: it.note ?? null,
+      }
+    })
+
+    // Beam search state
+    let states = [{
+      totalHKD: 0,
+      totalBreakdown: { cashback: 0, miles: 0, points: 0 },
+      capUsed: {},
+      plan: [],
+    }]
+
+    for (const item of normalizedItems) {
+      const next = []
+      for (const st of states) {
+        for (const card of cards) {
+          const rule = pickBestRule(rulesByCard.get(card.id), item)
+          if (!rule) continue
+
+          // min spend (per txn) - Phase 1
+          if (rule.min_spend != null && item.amount < Number(rule.min_spend)) {
+            continue
+          }
+
+          const rawReward = calcReward(item.amount, rule)
+          const { appliedReward, capNote, capUsedNext } = applyCap(rawReward, rule, st.capUsed)
+          const hkd = rewardToHKD(appliedReward, rule, valuation)
+          const breakdown = { ...st.totalBreakdown }
+
+          if (rule.reward_kind === 'CASHBACK') breakdown.cashback += appliedReward
+          if (rule.reward_kind === 'MILES') breakdown.miles += appliedReward
+          if (rule.reward_kind === 'POINTS') breakdown.points += appliedReward
+
+          next.push({
+            totalHKD: st.totalHKD + hkd,
+            totalBreakdown: breakdown,
+            capUsed: capUsedNext,
+            plan: st.plan.concat([{
+              item,
+              card: {
+                id: card.id,
+                name: card.name,
+                reward_program: card.reward_program,
+              },
+              rule: {
+                id: rule.id,
+                reward_kind: rule.reward_kind,
+                rate_unit: rule.rate_unit,
+                rate_value: Number(rule.rate_value),
+                per_amount: rule.per_amount == null ? null : Number(rule.per_amount),
+                cap_value: rule.cap_value == null ? null : Number(rule.cap_value),
+                cap_period: rule.cap_period ?? 'MONTHLY',
+                priority: rule.priority ?? 100,
+              },
+              reward: appliedReward,
+              rewardHKD: hkd,
+              note: capNote,
+            }]),
+          })
+        }
+      }
+
+      // keep best N
+      next.sort((a, b) => b.totalHKD - a.totalHKD)
+      states = dedupeAndTrim(next, BEAM_WIDTH)
+
+      if (states.length === 0) break
+    }
+
+    const best = states[0]
+
+    return res.status(200).json({
+      ok: true,
+      totalHKD: round2(best.totalHKD),
+      breakdown: {
+        cashback: round2(best.totalBreakdown.cashback),
+        miles: Math.floor(best.totalBreakdown.miles),
+        points: Math.floor(best.totalBreakdown.points),
+      },
+      plan: best.plan,
+      assumptions: {
+        capTracking: 'not-tracked', // 無登入：唔知道本月已用 cap
+        valuation,
+      },
+    })
+
+  } catch (e) {
+    console.error('calculate error:', e)
+    return res.status(500).json({ ok: false, error: e.message })
   }
+}
+
+/**
+ * Rule priority:
+ * 1) merchant match
+ * 2) category match
+ * pick lowest priority number
+ */
+function pickBestRule(rules, item) {
+  if (!rules || rules.length === 0) return null
+
+  const merchantMatches = item.merchant_id
+    ? rules.filter(r => r.merchant_id === item.merchant_id)
+    : []
+
+  if (merchantMatches.length > 0) {
+    merchantMatches.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100))
+    return merchantMatches[0]
+  }
+
+  const categoryMatches = item.category_id
+    ? rules.filter(r => r.category_id === item.category_id && r.merchant_id == null)
+    : []
+
+  if (categoryMatches.length > 0) {
+    categoryMatches.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100))
+    return categoryMatches[0]
+  }
+
+  return null
+}
+
+function calcReward(amount, rule) {
+  const unit = String(rule.rate_unit || '').toUpperCase()
+
+  if (unit === 'PERCENT') {
+    return amount * Number(rule.rate_value)
+  }
+
+  if (unit === 'PER_AMOUNT') {
+    const per = Number(rule.per_amount)
+    if (!Number.isFinite(per) || per <= 0) return 0
+    const units = Math.floor(amount / per)
+    return units * Number(rule.rate_value) // 通常 rate_value=1
+  }
+
+  return 0
+}
+
+/**
+ * Phase 1 cap: cap_value is cap on reward value (cash/miles/points)
+ * We share cap within the SAME rule id (good enough for MVP).
+ */
+function applyCap(rawReward, rule, capUsed) {
+  const cap = rule.cap_value == null ? null : Number(rule.cap_value)
+
+  if (!cap || cap <= 0) {
+    return { appliedReward: rawReward, capNote: null, capUsedNext: capUsed }
+  }
+
+  const key = `rule:${rule.id}` // MVP: rule-level cap sharing
+  const used = Number(capUsed[key] ?? 0)
+  const remaining = Math.max(0, cap - used)
+  const applied = Math.max(0, Math.min(rawReward, remaining))
+  const next = { ...capUsed, [key]: used + applied }
+
+  const note = rawReward > applied
+    ? `cap applied: ${round2(applied)} (remaining ${round2(remaining)})`
+    : `cap remaining ${round2(remaining - applied)}`
+
+  return { appliedReward: applied, capNote: note, capUsedNext: next }
+}
+
+function rewardToHKD(reward, rule, valuation) {
+  const kind = String(rule.reward_kind || '').toUpperCase()
+
+  if (kind === 'CASHBACK') return reward
+  if (kind === 'MILES') return reward * valuation.MILES
+  if (kind === 'POINTS') return reward * valuation.POINTS
+
+  return 0
+}
+
+function dedupeAndTrim(states, maxN) {
+  // 去重：同一個分配 pattern + capUsed key (粗略) -> 取最高
+  const map = new Map()
+
+  for (const st of states) {
+    const sig = signature(st)
+    const prev = map.get(sig)
+    if (!prev || st.totalHKD > prev.totalHKD) map.set(sig, st)
+    if (map.size > maxN * 5) break
+  }
+
+  return Array.from(map.values())
+    .sort((a, b) => b.totalHKD - a.totalHKD)
+    .slice(0, maxN)
+}
+
+function signature(st) {
+  const cards = st.plan.map(p => p.card.id).join(',')
+  const capKeys = Object.keys(st.capUsed).sort().map(k => `${k}:${Math.floor(st.capUsed[k] * 1000)}`).join('|')
+  return `${cards}__${capKeys}`
+}
+
+function round2(n) {
+  return Math.round(Number(n) * 100) / 100
 }
