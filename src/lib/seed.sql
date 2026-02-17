@@ -144,10 +144,10 @@ INSERT INTO calculations (user_id, amount, category_id, card_id, rebate_type, re
 (1, 300, 3, 4, 'CASHBACK', 6, 0.02);
 
 -- ============================================
--- MERCHANT RATES (商戶回贈率)
+-- MERCHANT RATES (商戶回贈率) - Using existing card IDs
 -- ============================================
 INSERT INTO merchant_rates (card_id, merchant_name, category_id, rebate_rate, rebate_type, conditions, status) VALUES
--- 滙豐 Visa Signature
+-- Card ID 1: 滙豐 Visa Signature
 (1, '壽司郎', 1, 0.04, 'CASHBACK', '餐飲4%', 'ACTIVE'),
 (1, '麥當勞', 1, 0.04, 'CASHBACK', '快餐4%', 'ACTIVE'),
 (1, '海底撈', 1, 0.04, 'CASHBACK', '火鍋4%', 'ACTIVE'),
@@ -155,24 +155,38 @@ INSERT INTO merchant_rates (card_id, merchant_name, category_id, rebate_rate, re
 (1, 'Amazon', 2, 0.02, 'CASHBACK', '海外網購2%', 'ACTIVE'),
 (1, '百佳', 3, 0.02, 'CASHBACK', '超市2%', 'ACTIVE'),
 
--- 渣打 Asia Miles
+-- Card ID 2: 滙豐白金 Visa 卡
+(2, '壽司郎', 1, 0.015, 'CASHBACK', '餐飲1.5%', 'ACTIVE'),
+(2, '麥當勞', 1, 0.015, 'CASHBACK', '快餐1.5%', 'ACTIVE'),
+
+-- Card ID 3: 渣打 Asia Miles 信用卡
 (3, '國泰航空', 7, 0.01, 'MILEAGE', 'HK$4/里(旅遊)', 'ACTIVE'),
 (3, '壽司郎', 1, 0.006, 'MILEAGE', 'HK$6/里', 'ACTIVE'),
 (3, '麥當勞', 1, 0.006, 'MILEAGE', 'HK$6/里', 'ACTIVE'),
 
--- 中銀 Visa 白金
+-- Card ID 4: 渣打 Smart 信用卡
+(4, '壽司郎', 1, 0.02, 'CASHBACK', '餐飲2%', 'ACTIVE'),
+(4, '淘寶', 2, 0.02, 'CASHBACK', '網上2%', 'ACTIVE'),
+
+-- Card ID 5: 中銀 Visa 白金卡
 (5, '淘寶', 2, 0.04, 'CASHBACK', '網上4%', 'ACTIVE'),
 (5, '天貓', 2, 0.04, 'CASHBACK', '網上4%', 'ACTIVE'),
-(5, '淘寶HK', 2, 0.04, 'CASHBACK', '網上4%', 'ACTIVE'),
 (5, '壽司郎', 1, 0.03, 'CASHBACK', '餐飲3%', 'ACTIVE'),
 (5, '麥當勞', 1, 0.03, 'CASHBACK', '快餐3%', 'ACTIVE'),
 
--- DBS Compass
+-- Card ID 7: 恒生 Visa 白金卡
+(7, '壽司郎', 1, 0.03, 'CASHBACK', '餐飲3%', 'ACTIVE'),
+(7, '百佳', 3, 0.02, 'CASHBACK', '超市2%', 'ACTIVE'),
+
+-- Card ID 9: 花旗 PremierMiles
+(9, '國泰航空', 7, 0.01, 'MILEAGE', 'HK$4/里(旅遊)', 'ACTIVE'),
+(9, '壽司郎', 1, 0.006, 'MILEAGE', 'HK$6/里', 'ACTIVE'),
+
+-- Card ID 11: DBS Compass Visa
 (11, '壽司郎', 1, 0.06, 'POINTS', 'HK$5/分(餐飲6%)', 'ACTIVE'),
 (11, '海底撈', 1, 0.06, 'POINTS', 'HK$5/分(餐飲6%)', 'ACTIVE'),
 (11, '淘寶', 2, 0.015, 'POINTS', 'HK$6.7/分', 'ACTIVE'),
-(11, '百佳', 3, 0.01, 'POINTS', 'HK$10/分', 'ACTIVE'),
-(11, '惠康', 3, 0.01, 'POINTS', 'HK$10/分', 'ACTIVE');
+(11, '百佳', 3, 0.01, 'POINTS', 'HK$10/分', 'ACTIVE');
 
 PRINT '✅ Seed data inserted successfully!';
 PRINT 'Total Banks: 6';
