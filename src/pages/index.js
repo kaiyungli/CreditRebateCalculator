@@ -101,7 +101,7 @@ export default function Home() {
       const items = expenses.map(exp => ({
         amount: exp.amount,
         merchant_key: exp.merchantKey || null,
-        category_id: exp.categoryId ? parseInt(exp.categoryId) : null
+        category_id: exp.categoryId ? parseInt(exp.categoryId) : null,
       }));
 
       // Transform userCards to userCardIds (array of IDs)
