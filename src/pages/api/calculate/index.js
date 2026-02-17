@@ -1,35 +1,180 @@
-// API: Calculate best rebate for multiple expenses (OPTIMIZED - N+1 eliminated)
-import { getAllCardsWithRates } from '../../../lib/db';
+// API: Calculate best rebate combo for multiple items
+// Supports: merchant override, percent/per_amount, caps, beam search
+import { query, getActiveCards, getActiveRulesAndMerchants } from '../../../lib/db';
 
-function calculateRebateInMemory(card, categoryId, amount) {
-  // Find matching rebate rate for this category
-  const rate = card.rebate_rates?.find(r => r.category_id === categoryId);
-  
-  if (!rate) return 0;
+// ====================
+// REBATE CALCULATOR
+// ====================
+
+function calculateRebateAmount(rule, amount) {
+  const { rate_unit, rate_value, per_amount, cap_value, min_spend } = rule;
   
   // Check minimum spend
-  if (rate.min_spend && amount < rate.min_spend) return 0;
+  if (min_spend && amount < min_spend) {
+    return 0;
+  }
   
-  // Calculate based on rebate type
   let rebate = 0;
   
-  if (rate.rebate_type === 'PERCENTAGE') {
-    rebate = amount * rate.base_rate;
-  } else if (rate.rebate_type === 'MILEAGE') {
-    // HK$ per mile (e.g., HK$6/里 = base_rate of 1/6)
-    rebate = amount / rate.base_rate;
-  } else if (rate.rebate_type === 'POINTS') {
-    // HK$ per point (e.g., HK$5/分 = base_rate of 1/5)
-    rebate = amount / rate.base_rate;
+  if (rate_unit === 'percent') {
+    // 4% cashback = rate_value = 0.04
+    rebate = amount * rate_value;
+  } else if (rate_unit === 'per_amount') {
+    // HK$6/里 = 每 HK$6 賺 1 里
+    // rate_value = 6, per_amount = 1 (1里 per $6)
+    const units = Math.floor(amount / rate_value);
+    rebate = units * per_amount;
   }
   
-  // Apply cap
-  if (rate.cap_amount && rate.cap_type === 'MONTHLY') {
-    rebate = Math.min(rebate, rate.cap_amount);
+  // Apply cap (will be applied at combo level for shared caps)
+  if (cap_value) {
+    return Math.min(rebate, cap_value);
   }
   
-  return Math.round(rebate * 100) / 100;
+  return rebate;
 }
+
+function buildRulesMap(rules) {
+  // Build efficient lookup structures
+  const cardCategoryRules = {};  // card_id -> category_id -> [rules]
+  const cardMerchantRules = {};  // card_id -> merchant_id -> [rules]
+  const categoryFallback = {};   // category_id -> [cards with rules]
+  const merchantKeyToId = {};    // merchant_key -> merchant_id (passed from DB)
+  
+  for (const rule of rules) {
+    // Card x Category rules
+    if (!cardCategoryRules[rule.card_id]) {
+      cardCategoryRules[rule.card_id] = {};
+    }
+    if (!cardCategoryRules[rule.card_id][rule.category_id]) {
+      cardCategoryRules[rule.card_id][rule.category_id] = [];
+    }
+    cardCategoryRules[rule.card_id][rule.category_id].push(rule);
+    
+    // Card x Merchant rules (if merchant_id exists)
+    if (rule.merchant_id) {
+      if (!cardMerchantRules[rule.card_id]) {
+        cardMerchantRules[rule.card_id] = {};
+      }
+      if (!cardMerchantRules[rule.card_id][rule.merchant_id]) {
+        cardMerchantRules[rule.card_id][rule.merchant_id] = [];
+      }
+      cardMerchantRules[rule.card_id][rule.merchant_id].push(rule);
+    }
+  }
+  
+  return { cardCategoryRules, cardMerchantRules, categoryFallback, merchantKeyToId };
+}
+
+function findBestCardForItem(item, rulesMap, userCardIds) {
+  const { category_id, merchant_id, amount } = item;
+  
+  // 1. Try merchant-specific rule (highest priority)
+  if (merchant_id) {
+    for (const cardId of userCardIds) {
+      const merchantRules = rulesMap.cardMerchantRules[cardId]?.[merchant_id] || [];
+      for (const rule of merchantRules) {
+        const rebate = calculateRebateAmount(rule, amount);
+        if (rebate > 0) {
+          return { cardId, rebate, rule, source: 'merchant' };
+        }
+      }
+    }
+  }
+  
+  // 2. Fallback to category rule
+  for (const cardId of userCardIds) {
+    const categoryRules = rulesMap.cardCategoryRules[cardId]?.[category_id] || [];
+    for (const rule of categoryRules) {
+      const rebate = calculateRebateAmount(rule, amount);
+      if (rebate > 0) {
+        return { cardId, rebate, rule, source: 'category' };
+      }
+    }
+  }
+  
+  // 3. No rule found
+  return null;
+}
+
+// ====================
+// BEAM SEARCH FOR COMBO
+// ====================
+
+function beamSearch(items, rulesMap, userCardIds, beamWidth = 10) {
+  // Beam search: keep top-K states at each step
+  // State: { index, selections, totalRebate, capUsed }
+  
+  const initialState = {
+    index: 0,
+    selections: [],  // [{itemIndex, cardId, rebate, rule}]
+    totalRebate: 0,
+    capUsed: {}     // { cardId: { cap_type: amount } }
+  };
+  
+  let beam = [initialState];
+  
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const nextBeam = [];
+    
+    for (const state of beam) {
+      // Try each possible card for this item
+      const result = findBestCardForItem(item, rulesMap, userCardIds);
+      
+      if (result) {
+        const { cardId, rebate, rule, source } = result;
+        
+        // Apply cap logic
+        const newCapUsed = { ...state.capUsed };
+        const capKey = `${cardId}_${rule.cap_period || 'none'}`;
+        if (!newCapUsed[capKey]) newCapUsed[capKey] = 0;
+        
+        let effectiveRebate = rebate;
+        if (rule.cap_value) {
+          const currentUsed = newCapUsed[capKey];
+          const remaining = rule.cap_value - currentUsed;
+          effectiveRebate = Math.min(rebate, remaining);
+          if (effectiveRebate > 0) {
+            newCapUsed[capKey] = currentUsed + effectiveRebate;
+          } else {
+            effectiveRebate = 0;
+          }
+        }
+        
+        if (effectiveRebate > 0 || source === 'merchant') {
+          const newState = {
+            index: i + 1,
+            selections: [...state.selections, { itemIndex: i, cardId, rebate: effectiveRebate, source, rule }],
+            totalRebate: state.totalRebate + effectiveRebate,
+            capUsed: newCapUsed
+          };
+          nextBeam.push(newState);
+        }
+      }
+      
+      // Also allow "no card" option
+      nextBeam.push({
+        ...state,
+        index: i + 1,
+        selections: [...state.selections, { itemIndex: i, cardId: null, rebate: 0, source: 'none' }],
+        totalRebate: state.totalRebate
+      });
+    }
+    
+    // Keep top-K states
+    nextBeam.sort((a, b) => b.totalRebate - a.totalRebate);
+    beam = nextBeam.slice(0, beamWidth);
+  }
+  
+  // Return best complete state
+  const completeStates = beam.filter(s => s.index === items.length);
+  return completeStates[0] || beam[0];
+}
+
+// ====================
+// MAIN HANDLER
+// ====================
 
 export default async function handler(request) {
   if (request.method !== 'POST') {
@@ -40,93 +185,86 @@ export default async function handler(request) {
   }
 
   try {
-    const { expenses = [], userCards = [] } = await request.json();
+    const { items = [], userCardIds = [], userId = null } = await request.json();
     
-    if (expenses.length === 0) {
-      return new Response(JSON.stringify({ error: 'No expenses provided' }), {
+    if (items.length === 0) {
+      return new Response(JSON.stringify({ error: 'No items provided' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // OPTIMIZATION: Fetch ALL cards with rates in ONE query
-    const cardsData = await getAllCardsWithRates();
+    // Fetch all active cards and rules
+    const activeCards = await getActiveCards();
+    const { merchantKeyToId, rules } = await getActiveRulesAndMerchants();
     
-    // Transform flat data into nested structure: cardId -> card with rates array
-    const cardsMap = {};
-    cardsData.forEach(row => {
-      if (!cardsMap[row.id]) {
-        cardsMap[row.id] = {
-          id: row.id,
-          card_name: row.card_name,
-          card_type: row.card_type,
-          bank_name: row.bank_name,
-          bank_logo: row.bank_logo,
-          rebate_rates: []
-        };
-      }
-      cardsMap[row.id].rebate_rates.push({
-        category_id: row.category_id,
-        base_rate: row.base_rate,
-        rebate_type: row.rebate_type,
-        cap_amount: row.cap_amount,
-        cap_type: row.cap_type,
-        min_spend: row.min_spend
-      });
-    });
+    // If userCardIds not provided, use all active cards
+    const targetCardIds = userCardIds.length > 0 
+      ? userCardIds 
+      : activeCards.map(c => c.id);
     
-    const allCards = Object.values(cardsMap);
-
-    // OPTIMIZATION: Calculate everything in memory (no more DB queries!)
-    const results = expenses.map(expense => {
-      const categoryIdNum = parseInt(expense.categoryId);
-      const amountNum = parseFloat(expense.amount);
-      
-      // Get all cards that have rates for this category
-      const availableCards = allCards.filter(card => 
-        card.rebate_rates.some(rate => rate.category_id === categoryIdNum)
-      );
-      
-      // Calculate rebate for each card
-      const cardsWithRebate = availableCards.map(card => ({
-        id: card.id,
-        bank_name: card.bank_name,
-        card_name: card.card_name,
-        rebate: calculateRebateInMemory(card, categoryIdNum, amountNum)
-      }));
-      
-      // Sort by rebate amount (descending)
-      cardsWithRebate.sort((a, b) => b.rebate - a.rebate);
-      
-      // Apply user card filter if provided
-      let finalCards = cardsWithRebate;
-      if (userCards.length > 0) {
-        finalCards = cardsWithRebate.filter(card => userCards.includes(card.id));
-      }
-      
-      // Pick best card
-      const bestCard = finalCards.length > 0 ? finalCards[0] : (cardsWithRebate[0] || null);
-      
+    // Build rules lookup map
+    const rulesMap = buildRulesMap(rules);
+    
+    // Map merchant names to IDs
+    const mappedItems = items.map(item => ({
+      ...item,
+      merchant_id: item.merchant_name 
+        ? merchantKeyToId[item.merchant_name] || null 
+        : null
+    }));
+    
+    // Run beam search to find optimal combo
+    const bestState = beamSearch(mappedItems, rulesMap, targetCardIds);
+    
+    // Build response
+    const results = bestState.selections.map((sel, idx) => {
+      const item = items[sel.itemIndex];
+      const card = activeCards.find(c => c.id === sel.cardId);
       return {
-        ...expense,
-        bestCard: bestCard ? {
-          id: bestCard.id,
-          bank_name: bestCard.bank_name,
-          card_name: bestCard.card_name,
-          icon: '💳'
+        itemIndex: sel.itemIndex,
+        categoryId: item.category_id,
+        merchantName: item.merchant_name || null,
+        amount: item.amount,
+        selectedCard: card ? {
+          id: card.id,
+          name: card.name,
+          bankId: card.bank_id,
+          rewardProgram: card.reward_program
         } : null,
-        rebate: bestCard ? bestCard.rebate : 0,
-        allOptions: finalCards.slice(0, 5) // Top 5 options
+        rebate: Math.round(sel.rebate * 100) / 100,
+        source: sel.source,  // 'merchant', 'category', or 'none'
+        rule: sel.rule ? {
+          rateUnit: sel.rule.rate_unit,
+          rateValue: sel.rule.rate_value,
+          perAmount: sel.rule.per_amount,
+          capValue: sel.rule.cap_value
+        } : null
       };
     });
-
+    
+    const totalRebate = Math.round(bestState.totalRebate * 100) / 100;
+    const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+    const effectiveRate = totalAmount > 0 ? (totalRebate / totalAmount) : 0;
+    
+    // Save to history if userId provided
+    // TODO: Implement saveCalculation
+    
     return new Response(JSON.stringify({
       success: true,
-      results: results,
+      results,
+      summary: {
+        totalAmount,
+        totalRebate,
+        effectiveRate: Math.round(effectiveRate * 10000) / 10000,
+        itemsCount: items.length,
+        cardsUsed: [...new Set(bestState.selections.filter(s => s.cardId).map(s => s.cardId))]
+      }
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
+    
   } catch (error) {
     console.error('Error calculating rebate:', error);
     return new Response(JSON.stringify({ error: error.message }), {
