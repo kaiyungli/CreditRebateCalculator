@@ -265,6 +265,51 @@ export async function getMerchantRates(cardIds, categoryId) {
 }
 
 // ====================
+// MERCHANT FUNCTIONS
+// ====================
+
+// Get all merchants (requires merchants table)
+export async function getAllMerchants() {
+  const result = await pool.query(`
+    SELECT id, name, aliases_json, default_category_id, is_active
+    FROM merchants
+    WHERE is_active = true
+    ORDER BY name
+  `);
+  return result.rows;
+}
+
+// Get merchant rates for multiple cards (NEW - for combo calculation)
+export async function getMerchantRatesForCards(cardIds) {
+  const result = await pool.query(`
+    SELECT 
+      mr.id,
+      mr.card_id,
+      mr.merchant_id,
+      m.name as merchant_name,
+      mr.category_id,
+      mr.rate_value,
+      mr.rate_unit,
+      mr.cap_amount_monthly,
+      mr.min_spend,
+      mr.priority,
+      c.name as card_name,
+      b.name as bank_name
+    FROM merchant_rates mr
+    LEFT JOIN merchants m ON mr.merchant_id = m.id
+    JOIN cards c ON mr.card_id = c.id
+    JOIN banks b ON c.bank_id = b.id
+    WHERE mr.card_id = ANY($1)
+      AND mr.status = 'ACTIVE'
+      AND c.status = 'ACTIVE'
+      AND (mr.valid_from IS NULL OR mr.valid_from <= CURRENT_DATE)
+      AND (mr.valid_to IS NULL OR mr.valid_to >= CURRENT_DATE)
+    ORDER BY mr.priority DESC, mr.rate_value DESC
+  `, [cardIds]);
+  return result.rows;
+}
+
+// ====================
 // UTILITY
 // ====================
 
