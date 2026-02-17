@@ -105,9 +105,12 @@ export default async function handler(req, res) {
               },
               reward: appliedReward,
               rewardHKD: hkd,
-              note: capNote,
+              capNote,
+              capInfo,
+              capSpendHint,
             }]),
           })
+        }
         }
       }
 
@@ -195,21 +198,49 @@ function calcReward(amount, rule) {
 function applyCap(rawReward, rule, capUsed) {
   const cap = rule.cap_value == null ? null : Number(rule.cap_value)
 
+  // No cap
   if (!cap || cap <= 0) {
-    return { appliedReward: rawReward, capNote: null, capUsedNext: capUsed }
+    return {
+      appliedReward: rawReward,
+      capNote: null,
+      capUsedNext: capUsed,
+      capInfo: null,
+      capSpendHint: null,
+    }
   }
 
-  const key = `rule:${rule.id}` // MVP: rule-level cap sharing
-  const used = Number(capUsed[key] ?? 0)
-  const remaining = Math.max(0, cap - used)
-  const applied = Math.max(0, Math.min(rawReward, remaining))
-  const next = { ...capUsed, [key]: used + applied }
+  const key = `rule:${rule.id}`
+  const usedBefore = Number(capUsed[key] ?? 0)
+  const remainingBefore = Math.max(0, cap - usedBefore)
+  const appliedReward = Math.max(0, Math.min(rawReward, remainingBefore))
+  const usedAfter = usedBefore + appliedReward
+  const remainingAfter = Math.max(0, cap - usedAfter)
+  const capUsedNext = { ...capUsed, [key]: usedAfter }
 
-  const note = rawReward > applied
-    ? `cap applied: ${round2(applied)} (remaining ${round2(remaining)})`
-    : `cap remaining ${round2(remaining - applied)}`
+  const capInfo = {
+    cap,
+    usedBefore,
+    usedAfter,
+    remainingAfter,
+  }
 
-  return { appliedReward: applied, capNote: note, capUsedNext: next }
+  // Spend hint: only meaningful for percent rules
+  let capSpendHint = null
+  if (String(rule.rate_unit).toUpperCase() === 'PERCENT' && Number(rule.rate_value) > 0) {
+    capSpendHint = cap / Number(rule.rate_value) // e.g. 30 / 0.06 = 500
+  }
+
+  const capNote = rawReward > appliedReward
+    ? `cap reached (${round2(cap)})`
+    : `cap remaining ${round2(remainingAfter)}`
+
+  return {
+    appliedReward,
+    capNote,
+    capUsedNext,
+    capInfo,
+    capSpendHint,
+  }
 }
 
 function rewardToHKD(reward, rule, valuation) {
