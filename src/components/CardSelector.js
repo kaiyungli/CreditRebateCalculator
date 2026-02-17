@@ -1,270 +1,109 @@
-import { useState, useEffect } from 'react';
-import { getUserCards, saveUserCards } from '../lib/userCards';
+import { useEffect, useState } from 'react'
+import { getUserCards, saveUserCards, isFirstTimeUser, markAsSeenCardSelector } from '../lib/userCards'
+
+function formatCardName(card) {
+  // cards API currently returns { id, bank_id, name, bank_name? ... }
+  // your deployed /api/cards already returns bank_name + name
+  const bank = card.bank_name || card.bankName || ''
+  return `${bank ? bank + ' ' : ''}${card.name || card.card_name || ''}`.trim()
+}
 
 export default function CardSelector({ onComplete }) {
-  const [cards, setCards] = useState([]);
-  const [selectedCards, setSelectedCards] = useState([]);
-  const [showSelector, setShowSelector] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [selectedCards, setSelectedCards] = useState([])
+  const [showSelector, setShowSelector] = useState(false)
+  const [cards, setCards] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    // Fetch cards from API
-    async function loadCards() {
-      try {
-        const res = await fetch('/api/cards');
-        const data = await res.json();
-        if (data.cards) {
-          setCards(data.cards);
-        }
-      } catch (err) {
-        console.error('載入卡片失敗:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadCards();
+    if (typeof window === 'undefined') return
 
-    // Check if first time user
-    if (typeof window !== 'undefined') {
-      const hasSeen = localStorage.getItem('hasSeenCardSelector');
-      if (!hasSeen) {
-        setShowSelector(true);
-      } else {
-        // Restore selected cards
-        const saved = getUserCards();
-        if (saved.length > 0) {
-          setSelectedCards(saved);
-        }
+    const savedIds = getUserCards()
+    setSelectedCards(savedIds)
+
+    // show selector for first-time users, otherwise keep hidden
+    if (isFirstTimeUser()) setShowSelector(true)
+
+    async function loadCards() {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch('/api/cards?limit=200')
+        const data = await res.json()
+        if (!res.ok) throw new Error(data?.error || `API error ${res.status}`)
+        setCards(data.cards || [])
+      } catch (e) {
+        setError(e?.message || 'Failed to load cards')
+      } finally {
+        setLoading(false)
       }
     }
-  }, []);
+
+    loadCards()
+  }, [])
 
   const toggleCard = (cardId) => {
-    if (selectedCards.includes(cardId)) {
-      setSelectedCards(selectedCards.filter(id => id !== cardId));
-    } else {
-      setSelectedCards([...selectedCards, cardId]);
-    }
-  };
+    setSelectedCards(prev => (
+      prev.includes(cardId)
+        ? prev.filter(id => id !== cardId)
+        : [...prev, cardId]
+    ))
+  }
 
   const handleSave = () => {
-    saveUserCards(selectedCards);
-    localStorage.setItem('hasSeenCardSelector', 'true');
-    setShowSelector(false);
-    if (onComplete) onComplete(selectedCards);
-  };
+    saveUserCards(selectedCards)
+    markAsSeenCardSelector()
+    setShowSelector(false)
+    if (onComplete) onComplete(selectedCards)
+  }
 
   const handleSkip = () => {
-    setShowSelector(false);
-    if (onComplete) onComplete([]);
-  };
+    // allow no selection but still mark seen (optional)
+    markAsSeenCardSelector()
+    setShowSelector(false)
+    if (onComplete) onComplete([])
+  }
 
-  if (!showSelector) return null;
+  if (!showSelector) return null
 
   return (
-    <div className="card-selector-overlay">
-      <div className="card-selector-modal">
-        <div className="selector-header">
-          <h2>💳 選擇你有的信用卡</h2>
-          <p>幫你推薦最適合的回贈組合</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-lg rounded-xl bg-white p-4">
+        <h2 className="text-lg font-semibold">選擇你有的信用卡</h2>
+        <p className="text-sm text-gray-600">幫你推薦最適合的回贈組合</p>
+
+        <div className="mt-3">
+          {loading && <div className="text-sm text-gray-600">載入信用卡中...</div>}
+          {error && <div className="text-sm text-red-600">載入失敗: {error}</div>}
         </div>
 
-        <div className="card-list">
-          {loading ? (
-            <div className="loading">載入中...</div>
-          ) : (
-            cards.map(card => (
-              <div
-                key={card.id}
-                className={`card-option ${selectedCards.includes(card.id) ? 'selected' : ''}`}
-                onClick={() => toggleCard(card.id)}
-              >
-                <div className="card-info">
-                  <div>
-                    <div className="card-name">{card.bank_name} {card.name}</div>
-                    <div className="card-type">
-                      {card.reward_program === 'CASHBACK' ? '💵 現金回贈' : 
-                       card.reward_program === 'MILEAGE' ? '✈️ 飛行里數' : '🎁 積分'}
-                    </div>
-                  </div>
-                </div>
-                <div className="card-check">
-                  {selectedCards.includes(card.id) ? '✅' : '⬜'}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="selector-footer">
-          <div className="selected-count">
-            已選擇 {selectedCards.length} 張卡
-          </div>
-          <div className="selector-buttons">
-            <button onClick={handleSkip} className="skip-btn">
-              暫時不揀
-            </button>
-            <button 
-              onClick={handleSave} 
-              className="save-btn"
-              disabled={selectedCards.length === 0}
+        <div className="mt-3 max-h-[50vh] overflow-auto space-y-2">
+          {cards.map(card => (
+            <button
+              key={card.id}
+              className="w-full rounded-lg border px-3 py-2 text-left hover:bg-gray-50 flex items-center justify-between"
+              onClick={() => toggleCard(card.id)}
+              type="button"
             >
-              確認選擇 ({selectedCards.length})
+              <span className="text-sm">{formatCardName(card)}</span>
+              <span className="text-sm">{selectedCards.includes(card.id) ? '已選' : '未選'}</span>
             </button>
-          </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex items-center justify-between">
+          <button className="text-sm text-gray-600" onClick={handleSkip} type="button">
+            暫時不揀
+          </button>
+          <button
+            className="rounded-lg bg-black px-3 py-2 text-sm text-white"
+            onClick={handleSave}
+            type="button"
+          >
+            確認選擇 ({selectedCards.length})
+          </button>
         </div>
       </div>
-
-      <style jsx>{`
-        .card-selector-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.7);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-          padding: 20px;
-        }
-
-        .card-selector-modal {
-          background: var(--card-bg, #FFFFFF);
-          border-radius: 20px;
-          max-width: 500px;
-          width: 100%;
-          max-height: 80vh;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .selector-header {
-          padding: 24px;
-          background: linear-gradient(135deg, #0066FF 0%, #00D4AA 100%);
-          color: white;
-          text-align: center;
-        }
-
-        .selector-header h2 {
-          margin: 0 0 8px 0;
-          font-size: 24px;
-        }
-
-        .selector-header p {
-          margin: 0;
-          opacity: 0.9;
-        }
-
-        .card-list {
-          flex: 1;
-          overflow-y: auto;
-          padding: 16px;
-        }
-
-        .loading {
-          text-align: center;
-          padding: 40px;
-          color: var(--text-secondary, #64748B);
-        }
-
-        .card-option {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px;
-          margin-bottom: 8px;
-          background: var(--background, #F8FAFC);
-          border-radius: 12px;
-          cursor: pointer;
-          border: 2px solid transparent;
-          transition: all 0.2s;
-        }
-
-        .card-option:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-option.selected {
-          border-color: #0066FF;
-          background: rgba(0, 102, 255, 0.05);
-        }
-
-        .card-info {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .card-name {
-          font-weight: 600;
-          font-size: 16px;
-        }
-
-        .card-type {
-          font-size: 12px;
-          color: var(--text-secondary, #64748B);
-          margin-top: 4px;
-        }
-
-        .card-check {
-          font-size: 24px;
-        }
-
-        .selector-footer {
-          padding: 20px;
-          border-top: 1px solid var(--border-color, #E2E8F0);
-        }
-
-        .selected-count {
-          text-align: center;
-          margin-bottom: 16px;
-          color: var(--text-secondary, #64748B);
-        }
-
-        .selector-buttons {
-          display: flex;
-          gap: 12px;
-        }
-
-        .skip-btn {
-          flex: 1;
-          padding: 16px;
-          border: 2px solid var(--border-color, #E2E8F0);
-          background: transparent;
-          border-radius: 12px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          color: var(--text-secondary, #64748B);
-        }
-
-        .save-btn {
-          flex: 2;
-          padding: 16px;
-          border: none;
-          background: linear-gradient(135deg, #0066FF 0%, #0052CC 100%);
-          color: white;
-          border-radius: 12px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .save-btn:hover:not(:disabled) {
-          transform: scale(1.02);
-          box-shadow: 0 4px 12px rgba(0, 102, 255, 0.4);
-        }
-
-        .save-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-      `}</style>
     </div>
-  );
+  )
 }
