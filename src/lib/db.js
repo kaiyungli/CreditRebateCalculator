@@ -3,17 +3,35 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+// Global singleton pool - avoid multiple connections in serverless
+let pool = null;
+
+function createPool() {
+  if (!pool) {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      // Timeout settings to avoid hanging
+      connectionTimeoutMillis: 5000,  // 5s connection timeout
+      idleTimeoutMillis: 10000,      // 10s idle timeout
+      max: 10,                       // max 10 clients
+    });
+  }
+  return pool;
+}
+
+// Lazy initialization - create pool on first query
+function getPool() {
+  return createPool();
+}
 
 // ====================
 // BASE QUERY FUNCTION
 // ====================
 
 export async function query(text, params) {
-  const result = await pool.query(text, params);
+  const p = getPool();
+  const result = await p.query(text, params);
   return result;
 }
 
