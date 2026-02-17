@@ -43,9 +43,10 @@ CREATE UNIQUE INDEX uq_reward_rule_category ON reward_rules (
   category_id, 
   rate_unit, 
   rate_value,
+  COALESCE(per_amount, 0),
   COALESCE(valid_from, DATE '1970-01-01')
 )
-WHERE category_id IS NOT NULL;
+WHERE merchant_id IS NULL;
 
 -- =====================================
 -- STEP 3: Verify
