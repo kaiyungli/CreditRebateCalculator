@@ -120,6 +120,21 @@ export default async function handler(req, res) {
       if (states.length === 0) break
     }
 
+    // Handle case where no rules match any item
+    if (states.length === 0) {
+      return res.status(200).json({
+        ok: true,
+        totalHKD: 0,
+        breakdown: { cashback: 0, miles: 0, points: 0 },
+        plan: [],
+        assumptions: {
+          capTracking: 'not-tracked',
+          valuation,
+          note: 'No matching rules for provided items',
+        },
+      })
+    }
+
     const best = states[0]
 
     return res.status(200).json({
