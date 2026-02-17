@@ -105,9 +105,9 @@ export default async function handler(req, res) {
               },
               reward: appliedReward,
               rewardHKD: hkd,
-              capNote,
               capInfo,
               capSpendHint,
+              note: capNote,
             }]),
           })
         }
