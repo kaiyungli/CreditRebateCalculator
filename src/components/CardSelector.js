@@ -1,21 +1,39 @@
 import { useState, useEffect } from 'react';
-import { mockCards, formatCardName } from '../lib/userCards';
+import { getUserCards, saveUserCards } from '../lib/userCards';
 
 export default function CardSelector({ onComplete }) {
+  const [cards, setCards] = useState([]);
   const [selectedCards, setSelectedCards] = useState([]);
   const [showSelector, setShowSelector] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 檢查是否首次使用
+    // Fetch cards from API
+    async function loadCards() {
+      try {
+        const res = await fetch('/api/cards');
+        const data = await res.json();
+        if (data.cards) {
+          setCards(data.cards);
+        }
+      } catch (err) {
+        console.error('載入卡片失敗:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCards();
+
+    // Check if first time user
     if (typeof window !== 'undefined') {
       const hasSeen = localStorage.getItem('hasSeenCardSelector');
       if (!hasSeen) {
         setShowSelector(true);
       } else {
-        // 恢復已選的卡片
-        const saved = localStorage.getItem('userCards');
-        if (saved) {
-          setSelectedCards(JSON.parse(saved));
+        // Restore selected cards
+        const saved = getUserCards();
+        if (saved.length > 0) {
+          setSelectedCards(saved);
         }
       }
     }
@@ -30,7 +48,7 @@ export default function CardSelector({ onComplete }) {
   };
 
   const handleSave = () => {
-    localStorage.setItem('userCards', JSON.stringify(selectedCards));
+    saveUserCards(selectedCards);
     localStorage.setItem('hasSeenCardSelector', 'true');
     setShowSelector(false);
     if (onComplete) onComplete(selectedCards);
@@ -48,31 +66,34 @@ export default function CardSelector({ onComplete }) {
       <div className="card-selector-modal">
         <div className="selector-header">
           <h2>💳 選擇你有的信用卡</h2>
-          <p>幫你推薦最適合嘅回贈組合</p>
+          <p>幫你推薦最適合的回贈組合</p>
         </div>
 
         <div className="card-list">
-          {mockCards.map(card => (
-            <div
-              key={card.id}
-              className={`card-option ${selectedCards.includes(card.id) ? 'selected' : ''}`}
-              onClick={() => toggleCard(card.id)}
-            >
-              <div className="card-info">
-                <span className="card-icon">{card.icon}</span>
-                <div>
-                  <div className="card-name">{formatCardName(card)}</div>
-                  <div className="card-type">
-                    {card.rebate_type === 'CASHBACK' ? '💵 現金回贈' : 
-                     card.rebate_type === 'MILEAGE' ? '✈️ 飛行里數' : '🎁 積分'}
+          {loading ? (
+            <div className="loading">載入中...</div>
+          ) : (
+            cards.map(card => (
+              <div
+                key={card.id}
+                className={`card-option ${selectedCards.includes(card.id) ? 'selected' : ''}`}
+                onClick={() => toggleCard(card.id)}
+              >
+                <div className="card-info">
+                  <div>
+                    <div className="card-name">{card.bank_name} {card.name}</div>
+                    <div className="card-type">
+                      {card.reward_program === 'CASHBACK' ? '💵 現金回贈' : 
+                       card.reward_program === 'MILEAGE' ? '✈️ 飛行里數' : '🎁 積分'}
+                    </div>
                   </div>
                 </div>
+                <div className="card-check">
+                  {selectedCards.includes(card.id) ? '✅' : '⬜'}
+                </div>
               </div>
-              <div className="card-check">
-                {selectedCards.includes(card.id) ? '✅' : '⬜'}
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         <div className="selector-footer">
@@ -81,7 +102,7 @@ export default function CardSelector({ onComplete }) {
           </div>
           <div className="selector-buttons">
             <button onClick={handleSkip} className="skip-btn">
-              暫時唔揀
+              暫時不揀
             </button>
             <button 
               onClick={handleSave} 
@@ -143,6 +164,12 @@ export default function CardSelector({ onComplete }) {
           padding: 16px;
         }
 
+        .loading {
+          text-align: center;
+          padding: 40px;
+          color: var(--text-secondary, #64748B);
+        }
+
         .card-option {
           display: flex;
           justify-content: space-between;
@@ -170,10 +197,6 @@ export default function CardSelector({ onComplete }) {
           display: flex;
           align-items: center;
           gap: 12px;
-        }
-
-        .card-icon {
-          font-size: 32px;
         }
 
         .card-name {
