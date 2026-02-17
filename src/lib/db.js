@@ -1,20 +1,18 @@
 import pg from 'pg'
 const { Pool } = pg
 
-function makePool() {
-  return new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 3,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
-  })
-}
-
-// Reuse pool across lambda invocations (important on Vercel)
+// Create pool immediately on module load
 const globalForPg = globalThis
-export const pool = globalForPg.__pgPool ?? makePool()
-if (!globalForPg.__pgPool) globalForPg.__pgPool = pool
+const __pgPool = globalForPg.__pgPool ?? new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 3,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+})
+globalForPg.__pgPool = __pgPool
+
+export const pool = __pgPool
 export default pool
 
 // ====================
