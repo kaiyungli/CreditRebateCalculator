@@ -68,6 +68,7 @@ export default function Home() {
       categoryId: selectedCategory,
       categoryName: categories.find(c => c.id.toString() === selectedCategory.toString())?.name || '其他',
       categoryIcon: categories.find(c => c.id.toString() === selectedCategory.toString())?.icon || '💳',
+      merchantKey: selectedMerchant?.merchant_key || null,
       merchantName: selectedMerchant?.name || null,
       amount: parseFloat(amount),
     };
@@ -100,7 +101,7 @@ export default function Home() {
       // Transform expenses to items format
       const items = expenses.map(exp => ({
         amount: exp.amount,
-        merchant_key: exp.merchantName || null,
+        merchant_key: exp.merchantKey || null,
         category_id: exp.categoryId ? parseInt(exp.categoryId) : null
       }));
 
