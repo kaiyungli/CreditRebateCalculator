@@ -77,6 +77,13 @@ export default function Home() {
     setExpenses(expenses.filter(e => e.id !== id));
   }
 
+  // 選擇商戶時自動設定分類
+  function handleSelectMerchant(merchant) {
+    if (merchant && merchant.default_category_id) {
+      setSelectedCategory(merchant.default_category_id.toString());
+    }
+  }
+
   // 計算最佳組合
   async function calculateBestCombination() {
     if (expenses.length === 0) return;
@@ -215,6 +222,7 @@ export default function Home() {
                 userCards={userCards}
                 selectedCategory={parseInt(selectedCategory)}
                 categories={categories}
+                onSelectMerchant={handleSelectMerchant}
               />
             </div>
           )}

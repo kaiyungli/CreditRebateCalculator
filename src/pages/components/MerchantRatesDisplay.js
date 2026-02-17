@@ -80,7 +80,10 @@ export default function MerchantRatesDisplay({
   const handleMerchantClick = (merchant) => {
     setSelectedMerchant(merchant.merchant_name);
     if (onSelectMerchant) {
-      onSelectMerchant(merchant);
+      onSelectMerchant({
+        name: merchant.merchant_name,
+        default_category_id: merchant.default_category_id
+      });
     }
   };
 
