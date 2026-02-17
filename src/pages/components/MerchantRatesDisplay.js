@@ -30,8 +30,15 @@ export default function MerchantRatesDisplay({
         if (selectedCategory) {
           params.append('category_id', selectedCategory);
         }
-        if (userCards.length > 0) {
-          params.append('card_ids', userCards.join(','));
+        
+        // Parse userCards safely (handle both object {id} and plain ID)
+        const cardIds = (userCards || [])
+          .map(c => (typeof c === 'object' && c !== null ? c.id : c))
+          .map(n => Number(n))
+          .filter(n => Number.isFinite(n));
+        
+        if (cardIds.length > 0) {
+          params.append('card_ids', cardIds.join(','));
         }
         
         const response = await fetch(
