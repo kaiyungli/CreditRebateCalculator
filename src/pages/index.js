@@ -8,7 +8,7 @@ import ExpenseList from './components/ExpenseList';
 import ResultCard from './components/ResultCard';
 import Footer from './components/Footer';
 import MerchantRatesDisplay from './components/MerchantRatesDisplay';
-import { mockCards, getUserCards } from '../lib/userCards';
+import { getUserCards } from '../lib/userCards';
 
 export default function Home() {
   const [amount, setAmount] = useState('');
@@ -146,43 +146,12 @@ export default function Home() {
         setResults(displayResults);
       } else {
         console.error('API error:', data.error);
-        fallbackCalculate();
       }
     } catch (error) {
       console.error('計算失敗:', error);
-      // 如果 API 失敗，fallback 到 mock 計算
-      fallbackCalculate();
     } finally {
       setLoading(false);
     }
-  }
-
-  // Fallback 計算（mock data）
-  function fallbackCalculate() {
-    const results = expenses.map(expense => {
-      let availableCards = mockCards;
-      if (userCards.length > 0) {
-        availableCards = mockCards.filter(card => userCards.includes(card.id));
-      }
-      
-      if (availableCards.length === 0) {
-        availableCards = mockCards;
-      }
-      
-      const bestCard = availableCards.reduce((best, card) => {
-        const currentRebate = expense.amount * card.base_rate;
-        const bestRebate = expense.amount * best.base_rate;
-        return currentRebate > bestRebate ? card : best;
-      });
-      
-      return {
-        ...expense,
-        bestCard,
-        rebate: expense.amount * bestCard.base_rate,
-      };
-    });
-    
-    setResults(results);
   }
 
   const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
