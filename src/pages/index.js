@@ -151,6 +151,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error('計算失敗:', error);
+      setResults([]);
     } finally {
       setLoading(false);
     }
