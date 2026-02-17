@@ -1,4 +1,4 @@
-// API: Get merchant rates for selected cards and category
+// API: Get merchant rates (merchant-specific rules, shown regardless of category)
 import { getMerchantRates } from '../../../lib/db';
 
 export default async function handler(req, res) {
@@ -7,14 +7,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { category_id } = req.query;
-
-    if (!category_id) {
-      return res.status(400).json({ error: 'category_id is required' });
-    }
-
-    // Get merchant rates from database (filtered by category, returns all matching rules)
-    const rows = await getMerchantRates({ category_id: Number(category_id) });
+    // Get all merchant-specific rules (regardless of category)
+    const rows = await getMerchantRates();
 
     // Group by merchant
     const merchantRates = {};
