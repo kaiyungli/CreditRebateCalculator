@@ -2,15 +2,12 @@
 import { getUserByTelegramId, upsertUser, saveCalculation, getUserCalculations } from '../../../lib/db';
 import { getCards } from '../../../lib/db';
 
-export default async function handler(request) {
-  const { telegram_id } = request.query;
-  const method = request.method;
+export default async function handler(req, res) {
+  const { telegram_id } = req.query;
+  const method = req.method;
 
   if (!telegram_id) {
-    return new Response(JSON.stringify({ error: 'telegram_id is required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(400).json({ error: 'telegram_id is required' });
   }
 
   try {
@@ -19,13 +16,10 @@ export default async function handler(request) {
       const user = await getUserByTelegramId(telegram_id);
       
       if (!user) {
-        return new Response(JSON.stringify({ 
+        return res.status(404).json({ 
           error: 'User not found',
           my_cards: [],
           calculations: []
-        }), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
         });
       }
 
@@ -41,38 +35,26 @@ export default async function handler(request) {
 
       const calculations = await getUserCalculations(user.id);
 
-      return new Response(JSON.stringify({
+      return res.status(200).json({
         user,
         my_cards: myCards,
         calculations,
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
       });
     }
 
     // PUT/POST: Update user
     if (method === 'PUT' || method === 'POST') {
-      const body = await request.json();
+      const body = req.body;
       const { my_cards, preferences } = body;
 
       const user = await upsertUser(telegram_id, { my_cards, preferences });
 
-      return new Response(JSON.stringify({ success: true, user }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return res.status(200).json({ success: true, user });
     }
 
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
     console.error('Error with user API:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(500).json({ error: error.message });
   }
 }

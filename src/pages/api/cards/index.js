@@ -1,8 +1,8 @@
 // API: Get all cards
 import { getCards } from '../../../lib/db';
 
-export default async function handler(request) {
-  const { bank_id, card_type, limit } = request.query;
+export default async function handler(req, res) {
+  const { bank_id, card_type, limit } = req.query;
 
   try {
     const cards = await getCards({
@@ -11,15 +11,9 @@ export default async function handler(request) {
       limit: limit ? parseInt(limit) : 50,
     });
 
-    return new Response(JSON.stringify({ cards, count: cards.length }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(200).json({ cards, count: cards.length });
   } catch (error) {
     console.error('Error fetching cards:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(500).json({ error: error.message });
   }
 }

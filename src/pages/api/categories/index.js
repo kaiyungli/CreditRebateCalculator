@@ -1,19 +1,12 @@
 // API: Get all categories
 import { getCategories } from '../../../lib/db';
 
-export default async function handler(request) {
+export default async function handler(req, res) {
   try {
     const categories = await getCategories();
-
-    return new Response(JSON.stringify({ categories, count: categories.length }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(200).json({ categories, count: categories.length });
   } catch (error) {
     console.error('Error fetching categories:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(500).json({ error: error.message });
   }
 }
