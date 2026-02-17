@@ -165,7 +165,10 @@ export default function Home() {
         <meta name="theme-color" content={darkMode ? '#1a1a2e' : '#0066FF'} />
       </Head>
 
-      <CardSelector onComplete={(cards) => setUserCards(cards)} />
+      <CardSelector onComplete={(cards) => {
+        saveUserCards(cards);
+        setUserCards(cards);
+      }} />
 
       <div className={darkMode ? 'dark' : ''}>
         <Header 
@@ -235,6 +238,7 @@ export default function Home() {
       {showCardSelector && (
         <CardSelector 
           onComplete={(cards) => {
+            saveUserCards(cards);
             setUserCards(cards);
             setShowCardSelector(false);
           }} 
