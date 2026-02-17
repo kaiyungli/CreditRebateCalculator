@@ -13,7 +13,7 @@ export default function MerchantRatesDisplay({
 
   // Fetch merchant rates when userCards or category changes
   useEffect(() => {
-    if (userCards.length === 0 || !selectedCategory) {
+    if (userCards.length === 0) {
       setMerchantRates([]);
       return;
     }
@@ -25,15 +25,24 @@ export default function MerchantRatesDisplay({
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
         
+        // Build query params
+        const params = new URLSearchParams();
+        if (selectedCategory) {
+          params.append('category_id', selectedCategory);
+        }
+        if (userCards.length > 0) {
+          params.append('card_ids', userCards.join(','));
+        }
+        
         const response = await fetch(
-          `/api/merchant-rates?card_ids=${userCards.join(',')}&category_id=${selectedCategory}`,
+          `/api/merchant-rates?${params.toString()}`,
           { signal: controller.signal }
         );
         
         clearTimeout(timeoutId);
         
         if (!response.ok) {
-          throw new Error(`API error: ${response.status} - ${response.statusText}`);
+          throw new Error(`API error: ${response.status}`);
         }
         
         const data = await response.json();
@@ -42,8 +51,48 @@ export default function MerchantRatesDisplay({
           throw new Error(data.error);
         }
         
-        if (data.success && data.merchants) {
-          setMerchantRates(data.merchants);
+        // New format: flat array of rules, each with merchant info
+        if (data.merchantRates) {
+          // Group by merchant_name
+          const grouped = {};
+          for (const row of data.merchantRates) {
+            const name = row.merchant_name;
+            if (!grouped[name]) {
+              grouped[name] = {
+                merchant_name: name,
+                merchant_key: row.merchant_key,
+                default_category_id: row.default_category_id,
+                cards: []
+              };
+            }
+            
+            // Format rate display
+            let rateDisplay = '-';
+            const rateVal = parseFloat(row.rate_value) || 0;
+            const perAmount = parseFloat(row.per_amount) || 0;
+            
+            if (row.rate_unit === 'PER_AMOUNT' && perAmount > 0) {
+              rateDisplay = `HK$${perAmount.toFixed(0)}/里`;
+            } else if (rateVal > 0) {
+              rateDisplay = `${(rateVal * 100).toFixed(1)}%`;
+            }
+            
+            grouped[name].cards.push({
+              rule_id: row.rule_id,
+              card_id: row.card_id,
+              card_name: row.card_name,
+              reward_program: row.reward_program,
+              reward_kind: row.reward_kind,
+              rate_value: row.rate_value,
+              rate_unit: row.rate_unit,
+              per_amount: row.per_amount,
+              cap_value: row.cap_value,
+              cap_period: row.cap_period,
+              min_spend: row.min_spend,
+              rate_display: rateDisplay
+            });
+          }
+          setMerchantRates(Object.values(grouped));
         }
       } catch (error) {
         console.error('Failed to fetch merchant rates:', error);
@@ -51,22 +100,7 @@ export default function MerchantRatesDisplay({
         if (error.name === 'AbortError') {
           errorMsg = '請求超時，請稍後再試';
         } else if (error.message) {
-          // Try to parse error details from API response
-          try {
-            if (error.message.includes('{')) {
-              const parsed = JSON.parse(error.message.substring(error.message.indexOf('{')));
-              if (parsed.error) {
-                errorMsg = parsed.error;
-                if (parsed.details) {
-                  errorMsg += ` (${parsed.details.substring(0, 100)})`;
-                }
-              }
-            } else {
-              errorMsg = `錯誤: ${error.message.substring(0, 100)}`;
-            }
-          } catch (e) {
-            errorMsg = `錯誤: ${error.message.substring(0, 100)}`;
-          }
+          errorMsg = `錯誤: ${error.message.substring(0, 100)}`;
         }
         setError(errorMsg);
       } finally {
@@ -82,6 +116,7 @@ export default function MerchantRatesDisplay({
     if (onSelectMerchant) {
       onSelectMerchant({
         name: merchant.merchant_name,
+        merchant_key: merchant.merchant_key,
         default_category_id: merchant.default_category_id
       });
     }
@@ -91,23 +126,6 @@ export default function MerchantRatesDisplay({
     return (
       <div className="merchant-rates-empty">
         <p>🎴 請先選擇您的信用卡</p>
-        <style jsx>{`
-          .merchant-rates-empty {
-            text-align: center;
-            padding: 40px 20px;
-            background: var(--background, #F8FAFC);
-            border-radius: 12px;
-            color: var(--text-secondary, #64748B);
-          }
-        `}</style>
-      </div>
-    );
-  }
-
-  if (!selectedCategory) {
-    return (
-      <div className="merchant-rates-empty">
-        <p>📂 請先選擇消費類別</p>
         <style jsx>{`
           .merchant-rates-empty {
             text-align: center;
@@ -217,9 +235,9 @@ export default function MerchantRatesDisplay({
             
             <div className="card-rates">
               {merchant.cards.map((card, idx) => (
-                <div key={card.card_id} className="card-rate">
+                <div key={card.rule_id} className="card-rate">
                   <div className="card-info">
-                    <span className="card-name">{card.bank_name} {card.card_name}</span>
+                    <span className="card-name">{card.card_name}</span>
                   </div>
                   <div className="rate-info">
                     <span className="rate-value">{card.rate_display}</span>
