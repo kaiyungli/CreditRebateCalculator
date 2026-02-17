@@ -74,7 +74,7 @@ export default async function handler(req, res) {
           }
 
           const rawReward = calcReward(item.amount, rule)
-          const { appliedReward, capNote, capUsedNext } = applyCap(rawReward, rule, st.capUsed)
+          const { appliedReward, capNote, capUsedNext, capInfo, capSpendHint } = applyCap(rawReward, rule, st.capUsed)
           const hkd = rewardToHKD(appliedReward, rule, valuation)
           const breakdown = { ...st.totalBreakdown }
 
