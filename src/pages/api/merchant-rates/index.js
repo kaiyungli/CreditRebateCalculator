@@ -4,18 +4,13 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'GET only' })
 
   try {
-    const { category_id, card_ids } = req.query
-    
-    // Parse card_ids if provided
-    const cardIds = card_ids 
-      ? card_ids.split(',').map(id => parseInt(id.trim())) 
-      : []
-    
-    const merchantRates = await getMerchantRates(cardIds, category_id ? Number(category_id) : null)
-    return res.status(200).json({ 
-      merchantRates, 
-      count: merchantRates.length,
-      source: 'reward_rules',
+    const categoryId = req.query.category_id ? Number(req.query.category_id) : null
+    const cardIds = req.query.card_ids ? String(req.query.card_ids).split(',').map(n => Number(n)) : []
+    const rows = await getMerchantRates(cardIds, categoryId)
+    res.status(200).json({ 
+      merchantRates: rows, 
+      count: rows.length, 
+      source: 'reward_rules' 
     })
   } catch (error) {
     console.error('Error fetching merchant rates:', error)
