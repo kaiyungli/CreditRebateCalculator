@@ -287,23 +287,39 @@ export async function getBanks() {
 // MERCHANT RATES FUNCTIONS
 // ====================
 
-export async function getMerchantRates({ category_id } = {}) {
+// Replace your existing getMerchantRates(cardIds, categoryId)
+// New source: reward_rules + merchants + cards
+export async function getMerchantRates(cardIds = [], categoryId = null) {
   const params = []
-  let where = `WHERE rr.status = 'ACTIVE' AND rr.merchant_id IS NOT NULL`
-  
-  // Merchant rules are shown regardless of category (they override category)
-  // So we don't filter by category_id - just return all merchant-specific rules
-  
+  const where = [
+    `rr.status = 'ACTIVE'`,
+    `rr.merchant_id IS NOT NULL`,
+  ]
+
+  // filter: category
+  if (categoryId != null) {
+    params.push(Number(categoryId))
+    where.push(`rr.category_id = $${params.length}`)
+  }
+
+  // filter: cardIds (optional)
+  if (Array.isArray(cardIds) && cardIds.length > 0) {
+    params.push(cardIds.map(Number))
+    where.push(`rr.card_id = ANY($${params.length}::int[])`)
+  }
+
   const sql = `
     SELECT 
       rr.id AS rule_id,
-      rr.category_id,
-      rr.card_id,
-      c.name AS card_name,
-      c.reward_program,
-      rr.merchant_id,
-      m.name AS merchant_name,
+      m.id AS merchant_id,
       m.merchant_key,
+      m.name AS merchant_name,
+      m.default_category_id,
+      rr.category_id,
+      c.id AS card_id,
+      c.name AS card_name,
+      c.bank_id,
+      c.reward_program,
       rr.reward_kind,
       rr.rate_unit,
       rr.rate_value,
@@ -311,16 +327,17 @@ export async function getMerchantRates({ category_id } = {}) {
       rr.cap_value,
       rr.cap_period,
       rr.min_spend,
-      rr.priority
+      rr.priority,
+      rr.valid_from,
+      rr.valid_to
     FROM reward_rules rr
     JOIN merchants m ON m.id = rr.merchant_id
     JOIN cards c ON c.id = rr.card_id
-    ${where}
+    WHERE ${where.join(' AND ')}
     ORDER BY rr.priority ASC, m.name ASC, c.name ASC
   `
-  
-  const { rows } = await query(sql, params)
-  return rows
+  const result = await pool.query(sql, params)
+  return result.rows
 }
 
 export async function getAllMerchants() {
