@@ -6,6 +6,7 @@ export default function ExpenseInput({
   selectedCategory, 
   setSelectedCategory, 
   categories = [],
+  categoriesLoading = false,
   onAdd,
   disabled = false,
   selectedMerchant,
@@ -44,8 +45,11 @@ export default function ExpenseInput({
           onChange={(e) => setSelectedCategory(e.target.value)}
           className="input-field"
           style={{ cursor: 'pointer' }}
+          disabled={categoriesLoading}
         >
-          <option value="">選擇類別</option>
+          <option value="">
+            {categoriesLoading ? '載入中...' : '選擇類別'}
+          </option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.icon} {cat.name}

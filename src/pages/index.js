@@ -46,18 +46,29 @@ export default function Home() {
     loadCategories();
   }, []);
 
-  // 從 database 拎 categories，冇就用 default
+  // 從 database拎 categories
   const [dbCategories, setDbCategories] = useState([]);
-  const categories = dbCategories.length > 0 ? dbCategories : [
-    { id: 1, name: '餐飲美食', icon: '🍜' },
-    { id: 2, name: '網上購物', icon: '🛒' },
-    { id: 3, name: '超市便利店', icon: '🏪' },
-    { id: 4, name: '交通出行', icon: '🚗' },
-    { id: 5, name: '娛樂休閒', icon: '🎬' },
-    { id: 6, name: '旅遊外遊', icon: '✈️' },
-    { id: 7, name: '服飾美容', icon: '👗' },
-    { id: 8, name: '公用事業', icon: '💡' },
-  ];
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadCategories() {
+      setCategoriesLoading(true);
+      try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        if (data.categories) {
+          setDbCategories(data.categories);
+        }
+      } catch (err) {
+        console.error('載入 categories 失敗:', err);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    }
+    loadCategories();
+  }, []);
+
+  const categories = dbCategories;
 
   // 新增多筆消費
   function addExpense() {
@@ -190,8 +201,9 @@ export default function Home() {
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
             categories={categories}
+            categoriesLoading={categoriesLoading}
             onAdd={addExpense}
-            disabled={!amount || !selectedCategory}
+            disabled={!amount || !selectedCategory || categoriesLoading}
             selectedMerchant={selectedMerchant}
             setSelectedMerchant={setSelectedMerchant}
           />
