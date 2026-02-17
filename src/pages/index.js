@@ -69,6 +69,7 @@ export default function Home() {
       categoryName: categories.find(c => c.id.toString() === selectedCategory.toString())?.name || '其他',
       categoryIcon: categories.find(c => c.id.toString() === selectedCategory.toString())?.icon || '💳',
       merchantKey: selectedMerchant?.merchant_key || null,
+      merchantName: selectedMerchant?.name || null,  // 可留做 UI display
       amount: parseFloat(amount),
     };
     
