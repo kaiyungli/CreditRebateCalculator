@@ -1,37 +1,28 @@
-// Credit Card Rebate Calculator - Database Utility
-import pg from 'pg';
+import pg from 'pg'
+const { Pool } = pg
 
-const { Pool } = pg;
-
-// Global singleton pool - avoid multiple connections in serverless
-let pool = null;
-
-function createPool() {
-  if (!pool) {
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-      // Timeout settings to avoid hanging
-      connectionTimeoutMillis: 5000,  // 5s connection timeout
-      idleTimeoutMillis: 10000,      // 10s idle timeout
-      max: 10,                       // max 10 clients
-    });
-  }
-  return pool;
+function makePool() {
+  return new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    max: 3,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+  })
 }
 
-// Lazy initialization - create pool on first query
-function getPool() {
-  return createPool();
-}
+// Reuse pool across lambda invocations (important on Vercel)
+const globalForPg = globalThis
+export const pool = globalForPg.__pgPool ?? makePool()
+if (!globalForPg.__pgPool) globalForPg.__pgPool = pool
+export default pool
 
 // ====================
 // BASE QUERY FUNCTION
 // ====================
 
 export async function query(text, params) {
-  const p = getPool();
-  const result = await p.query(text, params);
+  const result = await pool.query(text, params);
   return result;
 }
 
