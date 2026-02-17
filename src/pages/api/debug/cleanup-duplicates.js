@@ -1,5 +1,5 @@
 // Debug: Clean up duplicate merchant rules
-import { pool } from '../../../lib/db'
+import { query, pool } from '../../../lib/db'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
