@@ -147,6 +147,7 @@ export default function Home() {
         setResults(displayResults);
       } else {
         console.error('API error:', data.error);
+        setResults([]);
       }
     } catch (error) {
       console.error('計算失敗:', error);
