@@ -7,17 +7,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { card_ids, category_id } = req.query;
+    const { category_id } = req.query;
 
-    if (!card_ids || !category_id) {
-      return res.status(400).json({ error: 'card_ids and category_id are required' });
+    if (!category_id) {
+      return res.status(400).json({ error: 'category_id is required' });
     }
 
-    // Parse card_ids (comma-separated string to array)
-    const cardIdArray = card_ids.split(',').map(id => parseInt(id.trim()));
-
-    // Get merchant rates from database
-    const rows = await getMerchantRates(cardIdArray, parseInt(category_id));
+    // Get merchant rates from database (filtered by category, returns all matching rules)
+    const rows = await getMerchantRates({ category_id: Number(category_id) });
 
     // Group by merchant
     const merchantRates = {};
@@ -25,30 +22,36 @@ export default async function handler(req, res) {
       if (!merchantRates[row.merchant_name]) {
         merchantRates[row.merchant_name] = {
           merchant_name: row.merchant_name,
+          merchant_key: row.merchant_key,
           category_id: row.category_id,
           cards: []
         };
       }
       
-      // Format the rate display
+      // Format the rate display based on rate_unit
       let rateDisplay;
-      if (row.rebate_type === 'MILEAGE') {
-        rateDisplay = `HK$${(1 / row.rebate_rate).toFixed(0)}/里`;
-      } else if (row.rebate_type === 'POINTS') {
-        rateDisplay = `HK$${(1 / row.rebate_rate).toFixed(0)}/積分`;
+      if (row.rate_unit === 'PER_AMOUNT') {
+        // PER_AMOUNT: e.g., HK$6/里 → rate_value = 1/6 = 0.1667
+        const hkdPerUnit = row.per_amount ? row.per_amount : (1 / row.rate_value);
+        rateDisplay = `HK$${hkdPerUnit.toFixed(0)}/里`;
       } else {
-        rateDisplay = `${(row.rebate_rate * 100).toFixed(1)}%`;
+        // PERCENT: e.g., 4% → rate_value = 0.04
+        rateDisplay = `${(row.rate_value * 100).toFixed(1)}%`;
       }
 
       merchantRates[row.merchant_name].cards.push({
+        rule_id: row.rule_id,
         card_id: row.card_id,
         card_name: row.card_name,
-        bank_name: row.bank_name,
-        rebate_rate: row.rebate_rate,
-        rebate_type: row.rebate_type,
-        rate_display: rateDisplay,
-        conditions: row.conditions,
-        reward_program: row.reward_program
+        reward_program: row.reward_program,
+        reward_kind: row.reward_kind,
+        rate_value: row.rate_value,
+        rate_unit: row.rate_unit,
+        per_amount: row.per_amount,
+        cap_value: row.cap_value,
+        cap_period: row.cap_period,
+        min_spend: row.min_spend,
+        rate_display: rateDisplay
       });
     });
 

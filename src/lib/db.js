@@ -287,29 +287,42 @@ export async function getBanks() {
 // MERCHANT RATES FUNCTIONS
 // ====================
 
-export async function getMerchantRates(cardIds, categoryId) {
-  const result = await pool.query(`
+export async function getMerchantRates({ category_id } = {}) {
+  const params = []
+  let where = `WHERE rr.status = 'ACTIVE' AND rr.merchant_id IS NOT NULL`
+  
+  if (category_id) {
+    params.push(Number(category_id))
+    where += ` AND rr.category_id = $${params.length}`
+  }
+  
+  const sql = `
     SELECT 
-        mr.merchant_name,
-        mr.category_id,
-        c.id as card_id,
-        c.name as card_name,
-        b.name as bank_name,
-        mr.rebate_rate,
-        mr.rebate_type,
-        mr.conditions,
-        c.reward_program as reward_program
-      FROM merchant_rates mr
-      JOIN cards c ON mr.card_id = c.id
-      JOIN banks b ON c.bank_id = b.id
-      WHERE mr.card_id = ANY($1)
-        AND mr.category_id = $2
-        AND mr.status = 'ACTIVE'
-        AND c.status = 'ACTIVE'
-      ORDER BY mr.merchant_name, c.name`,
-    [cardIds, categoryId]
-  );
-  return result.rows;
+      rr.id AS rule_id,
+      rr.category_id,
+      rr.card_id,
+      c.name AS card_name,
+      c.reward_program,
+      rr.merchant_id,
+      m.name AS merchant_name,
+      m.merchant_key,
+      rr.reward_kind,
+      rr.rate_unit,
+      rr.rate_value,
+      rr.per_amount,
+      rr.cap_value,
+      rr.cap_period,
+      rr.min_spend,
+      rr.priority
+    FROM reward_rules rr
+    JOIN merchants m ON m.id = rr.merchant_id
+    JOIN cards c ON c.id = rr.card_id
+    ${where}
+    ORDER BY rr.priority ASC, m.name ASC, c.name ASC
+  `
+  
+  const { rows } = await query(sql, params)
+  return rows
 }
 
 export async function getAllMerchants() {
