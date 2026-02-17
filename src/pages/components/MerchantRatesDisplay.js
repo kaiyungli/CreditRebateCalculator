@@ -35,10 +35,10 @@ export default function MerchantRatesDisplay({
         const cardIds = (userCards || [])
           .map(c => (typeof c === 'object' && c !== null ? c.id : c))
           .map(n => Number(n))
-          .filter(n => Number.isFinite(n));
+          .filter(n => Number.isFinite(n))
         
         if (cardIds.length > 0) {
-          params.append('card_ids', cardIds.join(','));
+          params.append('card_ids', cardIds.join(','))
         }
         
         const response = await fetch(
