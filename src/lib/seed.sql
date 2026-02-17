@@ -143,6 +143,37 @@ INSERT INTO calculations (user_id, amount, category_id, card_id, rebate_type, re
 (1, 1000, 2, 5, 'CASHBACK', 40, 0.04),
 (1, 300, 3, 4, 'CASHBACK', 6, 0.02);
 
+-- ============================================
+-- MERCHANT RATES (商戶回贈率)
+-- ============================================
+INSERT INTO merchant_rates (card_id, merchant_name, category_id, rebate_rate, rebate_type, conditions, status) VALUES
+-- 滙豐 Visa Signature
+(1, '壽司郎', 1, 0.04, 'CASHBACK', '餐飲4%', 'ACTIVE'),
+(1, '麥當勞', 1, 0.04, 'CASHBACK', '快餐4%', 'ACTIVE'),
+(1, '海底撈', 1, 0.04, 'CASHBACK', '火鍋4%', 'ACTIVE'),
+(1, '淘寶', 2, 0.02, 'CASHBACK', '網上2%', 'ACTIVE'),
+(1, 'Amazon', 2, 0.02, 'CASHBACK', '海外網購2%', 'ACTIVE'),
+(1, '百佳', 3, 0.02, 'CASHBACK', '超市2%', 'ACTIVE'),
+
+-- 渣打 Asia Miles
+(3, '國泰航空', 7, 0.01, 'MILEAGE', 'HK$4/里(旅遊)', 'ACTIVE'),
+(3, '壽司郎', 1, 0.006, 'MILEAGE', 'HK$6/里', 'ACTIVE'),
+(3, '麥當勞', 1, 0.006, 'MILEAGE', 'HK$6/里', 'ACTIVE'),
+
+-- 中銀 Visa 白金
+(5, '淘寶', 2, 0.04, 'CASHBACK', '網上4%', 'ACTIVE'),
+(5, '天貓', 2, 0.04, 'CASHBACK', '網上4%', 'ACTIVE'),
+(5, '淘寶HK', 2, 0.04, 'CASHBACK', '網上4%', 'ACTIVE'),
+(5, '壽司郎', 1, 0.03, 'CASHBACK', '餐飲3%', 'ACTIVE'),
+(5, '麥當勞', 1, 0.03, 'CASHBACK', '快餐3%', 'ACTIVE'),
+
+-- DBS Compass
+(11, '壽司郎', 1, 0.06, 'POINTS', 'HK$5/分(餐飲6%)', 'ACTIVE'),
+(11, '海底撈', 1, 0.06, 'POINTS', 'HK$5/分(餐飲6%)', 'ACTIVE'),
+(11, '淘寶', 2, 0.015, 'POINTS', 'HK$6.7/分', 'ACTIVE'),
+(11, '百佳', 3, 0.01, 'POINTS', 'HK$10/分', 'ACTIVE'),
+(11, '惠康', 3, 0.01, 'POINTS', 'HK$10/分', 'ACTIVE');
+
 PRINT '✅ Seed data inserted successfully!';
 PRINT 'Total Banks: 6';
 PRINT 'Total Categories: 9';
