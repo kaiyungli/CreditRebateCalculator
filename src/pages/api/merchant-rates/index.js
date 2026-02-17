@@ -24,10 +24,10 @@ export default async function handler(req, res) {
       
       // Format the rate display based on rate_unit
       let rateDisplay;
-      const rateVal = Number(row.rate_value);
+      const rateVal = parseFloat(row.rate_value);
       if (row.rate_unit === 'PER_AMOUNT') {
         // PER_AMOUNT: e.g., HK$6/里 → rate_value = 1/6 = 0.1667
-        const perAmount = row.per_amount ? Number(row.per_amount) : (1 / rateVal);
+        const perAmount = row.per_amount ? parseFloat(row.per_amount) : (1 / rateVal);
         rateDisplay = `HK$${perAmount.toFixed(0)}/里`;
       } else {
         // PERCENT: e.g., 4% → rate_value = 0.04
