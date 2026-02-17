@@ -84,6 +84,18 @@ export default function Home() {
     setLoading(true);
     
     try {
+      // Transform expenses to items format
+      const items = expenses.map(exp => ({
+        amount: exp.amount,
+        merchant_key: exp.merchantName || null,
+        category_id: exp.categoryId ? parseInt(exp.categoryId) : null
+      }));
+
+      // Transform userCards to userCardIds (array of IDs)
+      const userCardIds = userCards.map(card => 
+        typeof card === 'object' ? card.id : card
+      );
+
       // 從 API 獲取最佳卡片
       const response = await fetch('/api/calculate', {
         method: 'POST',
@@ -91,15 +103,37 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          expenses: expenses,
-          userCards: userCards
+          items: items,
+          userCardIds: userCardIds.length > 0 ? userCardIds : undefined,
+          valuation: {
+            MILES: 0.05,  // 每里 HKD 價值，可由用戶調整
+            POINTS: 0.01  // 每分 HKD 價值
+          }
         })
       });
       
       const data = await response.json();
       
-      if (data.results) {
-        setResults(data.results);
+      if (data.ok) {
+        // Transform API response to display format
+        const displayResults = data.plan.map((p, idx) => ({
+          id: expenses[p.item.idx]?.id || idx,
+          categoryId: p.item.category_id,
+          categoryName: categories.find(c => c.id === p.item.category_id)?.name || '其他',
+          categoryIcon: categories.find(c => c.id === p.item.category_id)?.icon || '💳',
+          merchantName: p.item.merchant_key || null,
+          amount: p.item.amount,
+          bestCard: p.card ? {
+            id: p.card.id,
+            name: p.card.name,
+            rewardProgram: p.card.reward_program
+          } : null,
+          rebate: p.rewardHKD
+        }));
+        setResults(displayResults);
+      } else {
+        console.error('API error:', data.error);
+        fallbackCalculate();
       }
     } catch (error) {
       console.error('計算失敗:', error);
