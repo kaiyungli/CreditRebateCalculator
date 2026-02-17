@@ -291,10 +291,8 @@ export async function getMerchantRates({ category_id } = {}) {
   const params = []
   let where = `WHERE rr.status = 'ACTIVE' AND rr.merchant_id IS NOT NULL`
   
-  if (category_id) {
-    params.push(Number(category_id))
-    where += ` AND rr.category_id = $${params.length}`
-  }
+  // Merchant rules are shown regardless of category (they override category)
+  // So we don't filter by category_id - just return all merchant-specific rules
   
   const sql = `
     SELECT 
