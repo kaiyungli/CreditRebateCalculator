@@ -1,17 +1,32 @@
 import pg from 'pg'
 const { Pool } = pg
 
-// Create pool immediately on module load
-const globalForPg = globalThis
-const __pgPool = globalForPg.__pgPool ?? new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 3,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-})
-globalForPg.__pgPool = __pgPool
+// Create pool immediately with env check
+const connectionString = process.env.DATABASE_URL
+const hasDbUrl = typeof connectionString === 'string' && connectionString.length > 0
 
+const globalForPg = globalThis
+
+// Only create pool if DATABASE_URL exists
+let __pgPool = null
+if (hasDbUrl) {
+  try {
+    __pgPool = new Pool({
+      connectionString,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      max: 3,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    })
+    console.log('✅ DB pool created')
+  } catch (e) {
+    console.error('❌ DB pool creation failed:', e.message)
+  }
+} else {
+  console.warn('⚠️ DATABASE_URL not found, pool not created')
+}
+
+globalForPg.__pgPool = __pgPool
 export const pool = __pgPool
 export default pool
 
@@ -121,7 +136,6 @@ export async function getCategoryById(id) {
 // ====================
 
 export async function getActiveRulesAndMerchants() {
-  // merchants: merchant_key -> id
   const merchantsRes = await query(
     `SELECT id, merchant_key, name FROM merchants WHERE status = 'ACTIVE'`
   );
@@ -150,7 +164,6 @@ export async function getActiveRulesAndMerchants() {
 // OPTIMIZED CALCULATION FUNCTIONS
 // ====================
 
-// Get all cards with rebate rates in ONE query
 export async function getAllCardsWithRates() {
   const result = await pool.query(`
     SELECT 
@@ -353,5 +366,3 @@ export async function testConnection() {
     return false;
   }
 }
-
-export default pool;
