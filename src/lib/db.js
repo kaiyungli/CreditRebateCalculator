@@ -107,6 +107,34 @@ export async function calculateRebate(cardId, categoryId, amount) {
   return result.rows[0]?.rebate_amount || 0;
 }
 
+// OPTIMIZED: Get all cards with rebate rates in ONE query
+export async function getAllCardsWithRates() {
+  const result = await pool.query(`
+    SELECT 
+      c.id,
+      c.name as card_name,
+      c.card_type,
+      b.name as bank_name,
+      b.logo_url as bank_logo,
+      rr.category_id,
+      rr.base_rate,
+      rr.rebate_type,
+      rr.cap_amount,
+      rr.cap_type,
+      rr.min_spend,
+      rr.valid_from,
+      rr.valid_to
+    FROM cards c
+    JOIN banks b ON c.bank_id = b.id
+    JOIN rebate_rates rr ON c.id = rr.card_id
+    WHERE c.status = 'ACTIVE'
+      AND rr.status = 'ACTIVE'
+      AND (rr.valid_to IS NULL OR rr.valid_to >= CURRENT_DATE)
+    ORDER BY c.id, rr.category_id
+  `);
+  return result.rows;
+}
+
 // Find best card for a category and amount
 export async function findBestCard(categoryId, amount, cardType = null) {
   let query = `
