@@ -23,7 +23,13 @@ export default function Home() {
 
   // 初始化時載入用戶已選卡片和 categories
   useEffect(() => {
-    setUserCards(getUserCards());
+    // 恢復已選的卡片（確保只存 ID 格式）
+    const saved = getUserCards();
+    const ids = (saved || [])
+      .map(c => (typeof c === 'object' && c !== null ? c.id : c))
+      .map(Number)
+      .filter(Number.isFinite);
+    setUserCards(ids);
     
     // 從 API 載入 categories
     async function loadCategories() {
