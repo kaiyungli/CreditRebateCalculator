@@ -57,7 +57,7 @@ export async function getCards(filters = {}) {
   const { bank_id, card_type, status = 'ACTIVE', limit = 50 } = filters;
   
   let queryStr = `
-    SELECT c.*, b.name as bank_name, b.logo_url as bank_logo
+    SELECT c.*, b.name as bank_name
     FROM cards c
     JOIN banks b ON c.bank_id = b.id
     WHERE 1=1
@@ -91,7 +91,7 @@ export async function getCards(filters = {}) {
 
 export async function getCardById(id) {
   const cardResult = await pool.query(
-    `SELECT c.*, b.name as bank_name, b.logo_url as bank_logo
+    `SELECT c.*, b.name as bank_name
      FROM cards c
      JOIN banks b ON c.bank_id = b.id
      WHERE c.id = $1`,
@@ -171,7 +171,6 @@ export async function getAllCardsWithRates() {
       c.name as card_name,
       c.card_type,
       b.name as bank_name,
-      b.logo_url as bank_logo,
       rr.category_id,
       rr.base_rate,
       rr.rebate_type,
