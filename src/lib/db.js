@@ -54,7 +54,7 @@ export async function getActiveCards() {
 }
 
 export async function getCards(filters = {}) {
-  const { bank_id, card_type, status = 'ACTIVE', limit = 50 } = filters;
+  const { bank_id, reward_program, status = 'ACTIVE', limit = 50 } = filters;
   
   let queryStr = `
     SELECT c.*, b.name as bank_name
@@ -72,9 +72,9 @@ export async function getCards(filters = {}) {
     paramIndex++;
   }
   
-  if (card_type) {
-    queryStr += ` AND c.card_type = $${paramIndex}`;
-    params.push(card_type);
+  if (reward_program) {
+    queryStr += ` AND c.reward_program = $${paramIndex}`;
+    params.push(reward_program);
     paramIndex++;
   }
   
@@ -163,66 +163,16 @@ export async function getActiveRulesAndMerchants() {
 // ====================
 // OPTIMIZED CALCULATION FUNCTIONS
 // ====================
+// LEGACY FUNCTIONS (unused - kept for reference)
+// ====================
 
-export async function getAllCardsWithRates() {
-  const result = await pool.query(`
-    SELECT 
-      c.id,
-      c.name as card_name,
-      c.card_type,
-      b.name as bank_name,
-      rr.category_id,
-      rr.base_rate,
-      rr.rebate_type,
-      rr.cap_amount,
-      rr.cap_type,
-      rr.min_spend,
-      rr.valid_from,
-      rr.valid_to
-    FROM cards c
-    JOIN banks b ON c.bank_id = b.id
-    JOIN rebate_rates rr ON c.id = rr.card_id
-    WHERE c.status = 'ACTIVE'
-      AND rr.status = 'ACTIVE'
-      AND (rr.valid_to IS NULL OR rr.valid_to >= CURRENT_DATE)
-    ORDER BY c.id, rr.category_id
-  `);
-  return result.rows;
-}
+// Old function using card_type - no longer used
+// export async function getAllCardsWithRates() { ... }
 
-export async function findBestCard(categoryId, amount, cardType = null) {
-  let queryStr = `
-    SELECT 
-      c.id,
-      c.name as card_name,
-      b.name as bank_name,
-      rr.base_rate,
-      rr.rebate_type,
-      rr.cap_amount,
-      rr.cap_type,
-      (calculate_rebate(c.id, $1, $2)) as rebate_amount
-    FROM cards c
-    JOIN rebate_rates rr ON c.id = rr.card_id
-    JOIN banks b ON c.bank_id = b.id
-    WHERE rr.category_id = $1 
-      AND c.status = 'ACTIVE'
-      AND rr.status = 'ACTIVE'
-      AND (rr.valid_to IS NULL OR rr.valid_to >= CURRENT_DATE)
-  `;
-  
-  const params = [categoryId, amount];
-  let paramIndex = 3;
-  
-  if (cardType) {
-    queryStr += ` AND c.card_type = $${paramIndex}`;
-    params.push(cardType);
-  }
-  
-  queryStr += ` ORDER BY rebate_amount DESC LIMIT 5`;
-  
-  const result = await pool.query(queryStr, params);
-  return result.rows;
-}
+// Old function using card_type - no longer used  
+// export async function findBestCard(categoryId, amount, cardType = null) { ... }
+
+// ====================
 
 // ====================
 // USER FUNCTIONS

@@ -32,7 +32,7 @@ export default function Cards() {
     let result = cards;
 
     if (filterType !== 'ALL') {
-      result = result.filter(card => card.card_type === filterType);
+      result = result.filter(card => card.reward_program === filterType);
     }
 
     if (searchTerm) {
@@ -148,9 +148,9 @@ export default function Cards() {
               <div key={card.id} className="card">
                 {/* 卡類型標籤 */}
                 <div style={{ marginBottom: '12px' }}>
-                  <span className={`tag tag-${card.card_type?.toLowerCase()}`}>
-                    {card.card_type === 'CASHBACK' ? '💵 現金回贈' : 
-                     card.card_type === 'MILEAGE' ? '✈️ 飛行里數' : '🎁 積分'}
+                  <span className={`tag tag-${card.reward_program?.toLowerCase()}`}>
+                    {card.reward_program === 'CASHBACK' ? '💵 現金回贈' : 
+                     card.reward_program === 'MILEAGE' ? '✈️ 飛行里數' : '🎁 積分'}
                   </span>
                 </div>
 
@@ -159,7 +159,7 @@ export default function Cards() {
                   {card.bank_name} {card.card_name}
                 </h3>
                 <p style={{ color: '#64748B', fontSize: '14px', marginBottom: '16px' }}>
-                  {card.card_type_name || '綜合回贈'}
+                  {card.reward_program || '綜合回贈'}
                 </p>
 
                 {/* 詳細資訊 */}
