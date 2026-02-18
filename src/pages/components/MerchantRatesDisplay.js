@@ -11,9 +11,12 @@ export default function MerchantRatesDisplay({
   const [error, setError] = useState(null);
   const [selectedMerchant, setSelectedMerchant] = useState(null);
 
-  // Fetch merchant rates when userCards or category changes
+  // Fetch merchant rates when userCards or selectedCategory changes
   useEffect(() => {
-    if (userCards.length === 0) {
+    console.log('MerchantRatesDisplay - selectedCategory:', selectedCategory);
+    console.log('MerchantRatesDisplay - userCards:', userCards);
+    
+    if (!selectedCategory || userCards.length === 0) {
       setMerchantRates([]);
       return;
     }
@@ -27,19 +30,21 @@ export default function MerchantRatesDisplay({
         
         // Build query params
         const params = new URLSearchParams();
-        if (selectedCategory) {
-          params.append('category_id', selectedCategory);
-        }
+        params.append('category_id', Number(selectedCategory));
         
         // Parse userCards safely (handle both object {id} and plain ID)
         const cardIds = (userCards || [])
           .map(c => (typeof c === 'object' && c !== null ? c.id : c))
           .map(n => Number(n))
-          .filter(n => Number.isFinite(n))
+          .filter(n => Number.isFinite(n));
+        
+        console.log('MerchantRatesDisplay - cardIds:', cardIds);
         
         if (cardIds.length > 0) {
-          params.append('card_ids', cardIds.join(','))
+          params.append('card_ids', cardIds.join(','));
         }
+        
+        console.log('MerchantRatesDisplay - fetching:', `/api/merchant-rates?${params.toString()}`);
         
         const response = await fetch(
           `/api/merchant-rates?${params.toString()}`,
@@ -54,53 +59,63 @@ export default function MerchantRatesDisplay({
         
         const data = await response.json();
         
+        console.log('MerchantRatesDisplay - API response:', data);
+        
         if (data.error) {
           throw new Error(data.error);
         }
         
-        // New format: flat array of rules, each with merchant info
-        if (data.merchantRates) {
-          // Group by merchant_name
-          const grouped = {};
-          for (const row of data.merchantRates) {
-            const name = row.merchant_name;
-            if (!grouped[name]) {
-              grouped[name] = {
-                merchant_name: name,
-                merchant_key: row.merchant_key,
-                default_category_id: row.default_category_id,
-                cards: []
-              };
-            }
-            
-            // Format rate display
-            let rateDisplay = '-';
-            const rateVal = parseFloat(row.rate_value) || 0;
-            const perAmount = parseFloat(row.per_amount) || 0;
-            
-            if (row.rate_unit === 'PER_AMOUNT' && perAmount > 0) {
-              rateDisplay = `HK$${perAmount.toFixed(0)}/里`;
-            } else if (rateVal > 0) {
-              rateDisplay = `${(rateVal * 100).toFixed(1)}%`;
-            }
-            
-            grouped[name].cards.push({
-              rule_id: row.rule_id,
-              card_id: row.card_id,
-              card_name: row.card_name,
-              reward_program: row.reward_program,
-              reward_kind: row.reward_kind,
-              rate_value: row.rate_value,
-              rate_unit: row.rate_unit,
-              per_amount: row.per_amount,
-              cap_value: row.cap_value,
-              cap_period: row.cap_period,
-              min_spend: row.min_spend,
-              rate_display: rateDisplay
-            });
-          }
-          setMerchantRates(Object.values(grouped));
+        // Use data.merchantRates (array), not data directly
+        const rates = data.merchantRates || [];
+        
+        if (rates.length === 0) {
+          setMerchantRates([]);
+          setLoading(false);
+          return;
         }
+        
+        // Group by merchant_name
+        const grouped = {};
+        for (const row of rates) {
+          const name = row.merchant_name;
+          if (!grouped[name]) {
+            grouped[name] = {
+              merchant_name: name,
+              merchant_key: row.merchant_key,
+              default_category_id: row.default_category_id,
+              cards: []
+            };
+          }
+          
+          // Format rate display
+          let rateDisplay = '-';
+          const rateVal = parseFloat(row.rate_value) || 0;
+          const perAmount = parseFloat(row.per_amount) || 0;
+          
+          if (row.rate_unit === 'PER_AMOUNT' && perAmount > 0) {
+            rateDisplay = `HK$${perAmount.toFixed(0)}/里`;
+          } else if (rateVal > 0) {
+            rateDisplay = `${(rateVal * 100).toFixed(1)}%`;
+          }
+          
+          grouped[name].cards.push({
+            rule_id: row.rule_id,
+            card_id: row.card_id,
+            card_name: row.card_name,
+            reward_program: row.reward_program,
+            reward_kind: row.reward_kind,
+            rate_value: row.rate_value,
+            rate_unit: row.rate_unit,
+            per_amount: row.per_amount,
+            cap_value: row.cap_value,
+            cap_period: row.cap_period,
+            min_spend: row.min_spend,
+            rate_display: rateDisplay
+          });
+        }
+        
+        console.log('MerchantRatesDisplay - grouped:', Object.keys(grouped));
+        setMerchantRates(Object.values(grouped));
       } catch (error) {
         console.error('Failed to fetch merchant rates:', error);
         let errorMsg = '載入失敗';
@@ -110,13 +125,14 @@ export default function MerchantRatesDisplay({
           errorMsg = `錯誤: ${error.message.substring(0, 100)}`;
         }
         setError(errorMsg);
+        setMerchantRates([]);
       } finally {
         setLoading(false);
       }
     }
 
     fetchMerchantRates();
-  }, [userCards, selectedCategory]);
+  }, [selectedCategory, userCards]);
 
   const handleMerchantClick = (merchant) => {
     setSelectedMerchant(merchant.merchant_name);
@@ -193,7 +209,7 @@ export default function MerchantRatesDisplay({
     );
   }
 
-  if (merchantRates.length === 0) {
+  if (!merchantRates || merchantRates.length === 0) {
     return (
       <div className="merchant-rates-empty">
         <p>😕 暫時未有該類別的商戶回贈資料</p>
