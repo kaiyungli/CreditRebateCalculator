@@ -10,16 +10,7 @@ export default supabase
 export async function getMerchantRates(cardIds = [], categoryId = null) {
   let query = supabase
     .from('merchant_rates')
-    .select(`
-      id,
-      merchant_name,
-      category_id,
-      rebate_rate,
-      rebate_type,
-      conditions,
-      card_id,
-      cards(id, name, bank_id, reward_program)
-    `)
+    .select('*')
     .eq('status', 'ACTIVE')
 
   if (categoryId != null) {
@@ -33,8 +24,28 @@ export async function getMerchantRates(cardIds = [], categoryId = null) {
   const { data, error } = await query
   
   if (error) throw error
+
+  // Get card details separately
+  const cardIdsNeeded = [...new Set(data.map(r => r.card_id))]
+  const { data: cards } = await supabase
+    .from('cards')
+    .select('id, name, bank_id, reward_program')
+    .in('id', cardIdsNeeded)
+
+  // Join card data to merchant rates
+  const cardMap = {}
+  for (const c of (cards || [])) {
+    cardMap[c.id] = c
+  }
+
+  const result = data.map(r => ({
+    ...r,
+    card_name: cardMap[r.card_id]?.name,
+    bank_id: cardMap[r.card_id]?.bank_id,
+    reward_program: cardMap[r.card_id]?.reward_program
+  }))
   
-  return data || []
+  return result
 }
 
 export async function getCategories() {
@@ -53,7 +64,7 @@ export async function getCards(filters = {}) {
   
   let query = supabase
     .from('cards')
-    .select('*, banks(name)')
+    .select('*')
     .eq('status', status)
   
   if (bank_id) query = query.eq('bank_id', bank_id)
@@ -90,7 +101,7 @@ export async function getActiveCards() {
 export async function getCardById(id) {
   const { data, error } = await supabase
     .from('cards')
-    .select('*, banks(name)')
+    .select('*')
     .eq('id', id)
     .single()
   
