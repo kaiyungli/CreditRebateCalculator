@@ -93,35 +93,47 @@ export default function CardSelector({ onComplete, show: externalShow }) {
   if (!isVisible) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ 
+    <div style={{ 
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 9999,
       background: 'rgba(0, 0, 0, 0.5)',
       backdropFilter: 'blur(4px)',
       animation: 'fadeIn 0.2s ease-out'
     }}>
       {/* Backdrop click to close */}
       <div 
-        className="absolute inset-0" 
         onClick={handleClose}
         style={{ position: 'absolute', inset: 0 }}
       />
       
-      {/* Modal Container - Booking.com style */}
-      <div 
-        className="relative overflow-hidden"
-        style={{ 
-          width: '100%',
-          maxWidth: '480px',
-          maxHeight: '85vh',
-          background: 'white',
-          borderRadius: '16px',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          flexDirection: 'column',
-          animation: 'slideUp 0.3s ease-out',
-          position: 'relative',
-          zIndex: 1
-        }}
-      >
+      {/* Wrapper for centering - handles the transform centering */}
+      <div style={{
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 10000,
+        width: '100%',
+        maxWidth: '480px'
+      }}>
+        {/* Modal Container - Booking.com style - handles animation */}
+        <div 
+          style={{ 
+            width: '100%',
+            maxHeight: '85vh',
+            background: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+            display: 'flex',
+            flexDirection: 'column',
+            animation: 'slideUp 0.3s ease-out',
+            overflow: 'hidden'
+          }}
+        >
         {/* Decorative top bar - Booking.com style accent */}
         <div style={{ 
           height: '4px', 
@@ -312,6 +324,7 @@ export default function CardSelector({ onComplete, show: externalShow }) {
           >
             確認 ({selectedCards.length})
           </button>
+        </div>
         </div>
       </div>
     </div>
