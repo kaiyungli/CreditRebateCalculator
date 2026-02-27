@@ -209,7 +209,7 @@ export default function Home() {
           />
 
           {/* 商戶回贈比較 - 選擇信用卡同類別後顯示 */}
-          {selectedCategory {userCards.length > 0 && selectedCategory && {userCards.length > 0 && selectedCategory &&  (
+          {selectedCategory && (
             <div style={{ marginTop: '24px' }}>
               <MerchantRatesDisplay 
                 userCards={userCards}
