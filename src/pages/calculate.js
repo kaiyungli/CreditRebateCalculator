@@ -195,7 +195,7 @@ export default function Calculate() {
             >
               <option value="">不限類別（自動推薦最佳卡片）</option>
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
+                <option key={cat.id} value={cat.id.toString()}>
                   {cat.icon} {cat.name}
                 </option>
               ))}

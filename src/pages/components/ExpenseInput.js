@@ -51,7 +51,7 @@ export default function ExpenseInput({
             {categoriesLoading ? '載入中...' : '選擇類別'}
           </option>
           {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
+            <option key={cat.id} value={cat.id.toString()}>
               {cat.icon} {cat.name}
             </option>
           ))}
