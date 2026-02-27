@@ -198,11 +198,6 @@ export default function Home() {
         <meta name="theme-color" content={darkMode ? '#1a1a2e' : '#0066FF'} />
       </Head>
 
-      <CardSelector onComplete={(cards) => {
-        saveUserCards(cards);
-        setUserCards(cards);
-      }} />
-
       {/* 選擇信用卡按鈕 - 已移除，使用 Header 的按鈕 */}
 
       <div className={darkMode ? 'dark' : ''}>
