@@ -15,7 +15,10 @@ export default function CardSelector({ onComplete, show: externalShow }) {
   const [showSelectedOnly, setShowSelectedOnly] = useState(false)
   
   // 取得已選擇的卡片詳細資料
-  const selectedCardDetails = cards.filter(c => selectedCards.includes(c.id))
+  // Selected cards sorted alphabetically
+  const selectedCardDetails = cards
+    .filter(c => selectedCards.includes(c.id))
+    .sort((a, b) => (a.name || a.card_name || '').toLowerCase().localeCompare((b.name || b.card_name || '').toLowerCase()))
 
   // Use external show prop if provided, otherwise use internal state
   const isVisible = externalShow !== undefined ? externalShow : showSelector
@@ -238,9 +241,19 @@ export default function CardSelector({ onComplete, show: externalShow }) {
           {error && <div style={{ textAlign: 'center', color: '#DC2626', fontSize: '14px' }}>載入失敗: {error}</div>}
         </div>
 
-        {/* Card List */}
+        {/* Card List - sorted: selected first, then alphabetically by name */}
         <div style={{ flex: 1, overflow: 'auto', marginBottom: '20px' }}>
-          {cards.map(card => (
+          {[...cards].sort((a, b) => {
+            const aSelected = selectedCards.includes(a.id)
+            const bSelected = selectedCards.includes(b.id)
+            // Selected cards first
+            if (aSelected && !bSelected) return -1
+            if (!aSelected && bSelected) return 1
+            // Then sort alphabetically by name
+            const aName = (a.name || a.card_name || '').toLowerCase()
+            const bName = (b.name || b.card_name || '').toLowerCase()
+            return aName.localeCompare(bName)
+          }).map(card => (
             <button
               key={card.id}
               onClick={() => toggleCard(card.id)}
