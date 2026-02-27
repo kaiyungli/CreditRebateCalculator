@@ -11,6 +11,19 @@ export default function MerchantSearch({
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [allMerchants] = useState(() => getAllMerchants());
+  const [pendingMerchant, setPendingMerchant] = useState(null);
+
+  // 當 categories load 完之後，自動 set category 如果有 pending merchant
+  useEffect(() => {
+    if (pendingMerchant && onSelect && categories.length > 0) {
+      const category = categories.find(c => c.name === pendingMerchant.category);
+      if (category) {
+        onSelect(category.id.toString());
+        setSelectedMerchant(pendingMerchant);
+        setPendingMerchant(null); // clear pending after applying
+      }
+    }
+  }, [categories, onSelect, pendingMerchant, setSelectedMerchant]);
 
   // 當輸入改變時，搜尋商戶
   useEffect(() => {
@@ -21,16 +34,23 @@ export default function MerchantSearch({
       
       // 自動偵測商戶並選擇類別
       const matchedMerchant = findMerchantByInput(query);
-      if (matchedMerchant && onSelect && categories.length > 0) {
-        const category = categories.find(c => c.name === matchedMerchant.category);
-        if (category) {
-          onSelect(category.id.toString());
-          setSelectedMerchant(matchedMerchant);
+      if (matchedMerchant && onSelect) {
+        if (categories.length > 0) {
+          // categories 已 load，直接 set
+          const category = categories.find(c => c.name === matchedMerchant.category);
+          if (category) {
+            onSelect(category.id.toString());
+            setSelectedMerchant(matchedMerchant);
+          }
+        } else {
+          // categories 未 load，先 set pending，等 load 完之後再 set
+          setPendingMerchant(matchedMerchant);
         }
       }
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
+      setPendingMerchant(null);
     }
   }, [query, onSelect, categories, setSelectedMerchant]);
 
