@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import CardSelector from '../../components/CardSelector';
+import CardSelector from '../components/CardSelector';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import ExpenseInput from './components/ExpenseInput';
@@ -191,7 +191,6 @@ export default function Home() {
   const totalRebate = results.reduce((sum, r) => sum + r.rebate, 0);
 
   return (
-        <button onClick={() => setShowCardSelector(true)} style={{margin: "10px", padding: "10px 20px", background: "#007bff", color: "white", border: "none", borderRadius: "8px", cursor: "pointer"}}>選擇信用卡</button>
     <>
       <Head>
         <title>💳 香港信用卡回贈計算器</title>
