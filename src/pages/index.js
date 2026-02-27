@@ -108,6 +108,16 @@ export default function Home() {
     setExpenses(expenses.filter(e => e.id !== id));
   }
 
+  // 更新消費
+  function updateExpense(updatedExpense) {
+    setExpenses(expenses.map(e => e.id === updatedExpense.id ? updatedExpense : e));
+  }
+
+  // 重新排序消費
+  function reorderExpenses(newExpenses) {
+    setExpenses(newExpenses);
+  }
+
   // 選擇商戶時自動設定分類
   function handleSelectMerchant(merchant) {
     if (merchant && merchant.default_category_id) {
@@ -251,7 +261,9 @@ export default function Home() {
           <ExpenseList 
             expenses={expenses}
             onRemove={removeExpense}
+            onUpdate={(expense, isReorder) => isReorder ? reorderExpenses(expense) : updateExpense(expense)}
             totalAmount={totalAmount}
+            categories={categories}
           />
 
           {/* 計算按鈕 */}
