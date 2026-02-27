@@ -8,12 +8,15 @@ function formatCardName(card) {
   return `${bank ? bank + ' ' : ''}${card.name || card.card_name || ''}`.trim()
 }
 
-export default function CardSelector({ onComplete }) {
+export default function CardSelector({ onComplete, show: externalShow }) {
   const [selectedCards, setSelectedCards] = useState([])
   const [showSelector, setShowSelector] = useState(false)
   const [cards, setCards] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // Use external show prop if provided, otherwise use internal state
+  const isVisible = externalShow !== undefined ? externalShow : showSelector
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -22,7 +25,8 @@ export default function CardSelector({ onComplete }) {
     setSelectedCards(savedIds)
 
     // show selector for first-time users, otherwise keep hidden
-    if (isFirstTimeUser()) setShowSelector(true)
+    // Only auto-show if no external show prop is provided
+    if (externalShow === undefined && isFirstTimeUser()) setShowSelector(true)
 
     async function loadCards() {
       setLoading(true)
@@ -64,7 +68,7 @@ export default function CardSelector({ onComplete }) {
     if (onComplete) onComplete([])
   }
 
-  if (!showSelector) return null
+  if (!isVisible) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">

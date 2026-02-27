@@ -273,6 +273,7 @@ export default function Home() {
       {/* Card Selector Modal */}
       {showCardSelector && (
         <CardSelector 
+          show={true}
           onComplete={(cards) => {
             saveUserCards(cards);
             setUserCards(cards);
