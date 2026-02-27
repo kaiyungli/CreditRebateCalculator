@@ -23,10 +23,10 @@ export default async function handler(req, res) {
       POINTS: Number(body.valuation?.POINTS ?? 0.01),
     }
 
-    const [cards, { merchantKeyToId, rules }] = await Promise.all([
-      getActiveCards(),
-      getActiveRulesAndMerchants(),
-    ])
+    // Get cards (supports fallback mode)
+    const cards = await getActiveCards()
+
+    const { merchantKeyToId, rules } = await getActiveRulesAndMerchants()
 
     // rules by card for faster lookup
     const rulesByCard = new Map()
@@ -91,6 +91,7 @@ export default async function handler(req, res) {
               card: {
                 id: card.id,
                 name: card.name,
+                bank_name: card.bank_name || '',
                 reward_program: card.reward_program,
               },
               rule: {

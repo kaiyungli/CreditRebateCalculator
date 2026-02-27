@@ -20,6 +20,7 @@ export default function Home() {
   const [userCards, setUserCards] = useState([]);
   const [results, setResults] = useState([]);
   const [selectedMerchant, setSelectedMerchant] = useState(null);
+  const [breakdown, setBreakdown] = useState({ cashback: 0, miles: 0, points: 0 });
 
   // 初始化時載入用戶已選卡片和 categories
   useEffect(() => {
@@ -151,18 +152,36 @@ export default function Home() {
           bestCard: p.card ? {
             id: p.card.id,
             name: p.card.name,
-            rewardProgram: p.card.reward_program
+            bankName: p.card.bank_name || '',
+            rewardProgram: p.card.reward_program,
+            icon: p.card.icon || '💳'
           } : null,
+          ruleDetails: p.rule ? {
+            rewardKind: p.rule.reward_kind,
+            rateUnit: p.rule.rate_unit,
+            rateValue: p.rule.rate_value,
+            capValue: p.rule.cap_value,
+            capPeriod: p.rule.cap_period,
+            priority: p.rule.priority
+          } : null,
+          capInfo: p.capInfo || null,
+          capNote: p.note || null,
           rebate: p.rewardHKD
         }));
         setResults(displayResults);
+        // Set breakdown from API response
+        if (data.breakdown) {
+          setBreakdown(data.breakdown);
+        }
       } else {
         console.error('API error:', data.error);
         setResults([]);
+        setBreakdown({ cashback: 0, miles: 0, points: 0 });
       }
     } catch (error) {
       console.error('計算失敗:', error);
       setResults([]);
+      setBreakdown({ cashback: 0, miles: 0, points: 0 });
     } finally {
       setLoading(false);
     }
@@ -242,7 +261,8 @@ export default function Home() {
             results={results}
             totalAmount={totalAmount}
             totalRebate={totalRebate}
-            onReset={() => { setResults([]); setExpenses([]); }}
+            breakdown={breakdown}
+            onReset={() => { setResults([]); setExpenses([]); setBreakdown({ cashback: 0, miles: 0, points: 0 }); }}
           />
 
           <Footer />
