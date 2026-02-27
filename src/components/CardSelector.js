@@ -63,6 +63,12 @@ export default function CardSelector({ onComplete, show: externalShow }) {
     ))
   }
 
+  // 移除單張卡
+  const removeCard = (cardId, e) => {
+    e?.stopPropagation()
+    setSelectedCards(prev => prev.filter(id => id !== cardId))
+  }
+
   const handleSave = () => {
     saveUserCards(selectedCards)
     markAsSeenCardSelector()
@@ -78,7 +84,6 @@ export default function CardSelector({ onComplete, show: externalShow }) {
 
   const handleClose = () => {
     if (externalShow !== undefined) {
-      // 如果是外部控制，直接調用 onComplete
       if (onComplete) onComplete(selectedCards)
     } else {
       setShowSelector(false)
@@ -103,42 +108,51 @@ export default function CardSelector({ onComplete, show: externalShow }) {
           </p>
         </div>
 
-        {/* 已選擇的卡片展示 (僅在有選卡且處於查看模式時顯示) */}
+        {/* 已選擇的卡片列表 (可移除) */}
         {showSelectedOnly && selectedCardDetails.length > 0 && (
           <div style={{ 
-            background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)', 
+            background: '#F8FAFC', 
             borderRadius: '12px', 
             padding: '16px',
-            marginBottom: '16px'
+            marginBottom: '16px',
+            maxHeight: '200px',
+            overflow: 'auto'
           }}>
-            <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px', marginBottom: '8px', fontWeight: '600' }}>
-              已選擇 {selectedCardDetails.length} 張信用卡
+            <div style={{ color: '#64748B', fontSize: '12px', marginBottom: '12px', fontWeight: '600' }}>
+              已選擇 {selectedCardDetails.length} 張信用卡 ✕ 可以移除
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {selectedCardDetails.slice(0, 4).map(card => (
-                <span key={card.id} style={{ 
-                  background: 'rgba(255,255,255,0.2)', 
-                  color: 'white', 
-                  padding: '4px 12px', 
-                  borderRadius: '20px',
-                  fontSize: '13px',
-                  fontWeight: '500'
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {selectedCardDetails.map(card => (
+                <div key={card.id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  background: 'white',
+                  borderRadius: '10px',
+                  border: '1px solid #E2E8F0'
                 }}>
-                  {formatCardName(card)}
-                </span>
+                  <span style={{ fontSize: '14px', fontWeight: '500', color: '#1E293B' }}>
+                    {formatCardName(card)}
+                  </span>
+                  <button
+                    onClick={(e) => removeCard(card.id, e)}
+                    style={{
+                      background: '#FEE2E2',
+                      color: '#DC2626',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    ✕ 移除
+                  </button>
+                </div>
               ))}
-              {selectedCardDetails.length > 4 && (
-                <span style={{ 
-                  background: 'rgba(255,255,255,0.3)', 
-                  color: 'white', 
-                  padding: '4px 12px', 
-                  borderRadius: '20px',
-                  fontSize: '13px',
-                  fontWeight: '500'
-                }}>
-                  +{selectedCardDetails.length - 4} 張
-                </span>
-              )}
             </div>
           </div>
         )}
