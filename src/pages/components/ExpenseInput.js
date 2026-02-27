@@ -70,6 +70,8 @@ export default function ExpenseInput({
         </label>
         <input
           type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="輸入金額，例如：500"
