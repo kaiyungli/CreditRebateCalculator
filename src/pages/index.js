@@ -22,6 +22,11 @@ export default function Home() {
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [breakdown, setBreakdown] = useState({ cashback: 0, miles: 0, points: 0 });
 
+  // Categories state
+  const [dbCategories, setDbCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   // 初始化時載入用戶已選卡片和 categories
   useEffect(() => {
     // 恢復已選的卡片（確保只存 ID 格式）
@@ -34,34 +39,19 @@ export default function Home() {
     
     // 從 API 載入 categories
     async function loadCategories() {
-      try {
-        const res = await fetch('/api/categories');
-        const data = await res.json();
-        if (data.categories) {
-          setDbCategories(data.categories);
-        }
-      } catch (err) {
-        console.error('載入 categories 失敗:', err);
-      }
-    }
-    loadCategories();
-  }, []);
-
-  // 從 database拎 categories
-  const [dbCategories, setDbCategories] = useState([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadCategories() {
       setCategoriesLoading(true);
+      setError(null);
       try {
         const res = await fetch('/api/categories');
         const data = await res.json();
         if (data.categories) {
           setDbCategories(data.categories);
+        } else if (data.error) {
+          setError(data.error);
         }
       } catch (err) {
         console.error('載入 categories 失敗:', err);
+        setError('無法載入分類，請刷新頁面重試');
       } finally {
         setCategoriesLoading(false);
       }
@@ -69,11 +59,33 @@ export default function Home() {
     loadCategories();
   }, []);
 
-  const categories = dbCategories;
+  // Fallback categories in case API fails
+  const FALLBACK_CATEGORIES = [
+    { id: 1, name: '餐飲美食', icon: '🍜' },
+    { id: 2, name: '網上購物', icon: '🛒' },
+    { id: 3, name: '超市便利店', icon: '🏪' },
+    { id: 4, name: '交通出行', icon: '🚗' },
+    { id: 5, name: '娛樂休閒', icon: '🎬' },
+    { id: 6, name: '服飾美容', icon: '👗' },
+    { id: 7, name: '旅遊外遊', icon: '✈️' },
+    { id: 8, name: '水電煤氣', icon: '💡' },
+    { id: 9, name: '其他消費', icon: '💳' },
+  ];
+
+  const categories = dbCategories.length > 0 ? dbCategories : FALLBACK_CATEGORIES;
 
   // 新增多筆消費
   function addExpense() {
-    if (!amount || !selectedCategory) return;
+    // 驗證輸入
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+      alert('請輸入有效的消費金額');
+      return;
+    }
+    
+    if (!selectedCategory) {
+      alert('請選擇消費類別');
+      return;
+    }
     
     const expense = {
       id: Date.now(),
@@ -81,7 +93,7 @@ export default function Home() {
       categoryName: categories.find(c => c.id.toString() === selectedCategory.toString())?.name || '其他',
       categoryIcon: categories.find(c => c.id.toString() === selectedCategory.toString())?.icon || '💳',
       merchantKey: selectedMerchant?.merchant_key || null,
-      merchantName: selectedMerchant?.name || null,  // 可留做 UI display
+      merchantName: selectedMerchant?.name || null,
       amount: parseFloat(amount),
     };
     
