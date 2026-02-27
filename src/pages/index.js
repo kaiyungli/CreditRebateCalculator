@@ -204,6 +204,11 @@ export default function Home() {
         setUserCards(cards);
       }} />
 
+      {/* 選擇信用卡按鈕 */}
+      <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+        <button onClick={() => setShowCardSelector(true)} style={{margin: "10px", padding: "10px 20px", background: "#007bff", color: "white", border: "none", borderRadius: "8px", cursor: "pointer"}}>選擇信用卡</button>
+      </div>
+
       <div className={darkMode ? 'dark' : ''}>
         <Header 
           darkMode={darkMode} 
