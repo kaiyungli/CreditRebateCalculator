@@ -1,0 +1,161 @@
+{
+  "source": "hkcashrebate.com",
+  "scraped_at": "2026-02-27T18:18:07.306Z",
+  "categories": {
+    "dining": [
+      {
+        "bank": "Standard Chartered",
+        "name": "SCB Smart Card",
+        "rate": 5,
+        "condition": "$4000 min spend",
+        "cap": "$200/month"
+      },
+      {
+        "bank": "HSBC",
+        "name": "HSBC Red Card",
+        "rate": 4,
+        "condition": "$3000 min spend",
+        "cap": "$150/month"
+      },
+      {
+        "bank": "DBS",
+        "name": "DBS Compass Visa",
+        "rate": 5,
+        "condition": "$2000 min spend",
+        "cap": "$100/month"
+      },
+      {
+        "bank": "Citibank",
+        "name": "Citi Cash Back Card",
+        "rate": 5,
+        "condition": "$2000 min spend",
+        "cap": "$300/month"
+      }
+    ],
+    "supermarket": [
+      {
+        "bank": "Mox",
+        "name": "Mox Credit",
+        "rate": 3,
+        "condition": "None",
+        "cap": "Unlimited"
+      },
+      {
+        "bank": "Bank of China",
+        "name": "BOC Smart Card",
+        "rate": 2,
+        "condition": "$1000 min spend",
+        "cap": "$100/month"
+      },
+      {
+        "bank": "Citibank",
+        "name": "Citi Cash Back Card",
+        "rate": 2,
+        "condition": "$2000 min spend",
+        "cap": "$300/month"
+      }
+    ],
+    "online_shopping": [
+      {
+        "bank": "Mox",
+        "name": "Mox Credit",
+        "rate": 3,
+        "condition": "None",
+        "cap": "Unlimited"
+      },
+      {
+        "bank": "ZA Bank",
+        "name": "ZA Card",
+        "rate": 2,
+        "condition": "$5000 min spend",
+        "cap": "$500/month"
+      },
+      {
+        "bank": "HSBC",
+        "name": "HSBC Red Card",
+        "rate": 2,
+        "condition": "$3000 min spend",
+        "cap": "$150/month"
+      }
+    ],
+    "overseas": [
+      {
+        "bank": "AirstAR",
+        "name": "AirstAR World Mastercard",
+        "rate": 8,
+        "condition": "$1000 min spend",
+        "cap": "$200/month"
+      },
+      {
+        "bank": "sim",
+        "name": "sim World Mastercard",
+        "rate": 8,
+        "condition": "$1000 min spend",
+        "cap": "$200/month"
+      },
+      {
+        "bank": "Mox",
+        "name": "Mox Credit",
+        "rate": 2,
+        "condition": "None",
+        "cap": "Unlimited"
+      }
+    ],
+    "fuel": [
+      {
+        "bank": "Shell",
+        "name": "Shell Card",
+        "rate": 2,
+        "condition": "None",
+        "cap": "Unlimited"
+      },
+      {
+        "bank": "Citi",
+        "name": "Citi汽油優惠卡",
+        "rate": 2,
+        "condition": "None",
+        "cap": "Unlimited"
+      }
+    ],
+    "general": [
+      {
+        "bank": "Mox",
+        "name": "Mox Credit",
+        "rate": 1,
+        "condition": "None",
+        "cap": "Unlimited"
+      },
+      {
+        "bank": "ZA Bank",
+        "name": "ZA Card",
+        "rate": 1,
+        "condition": "None",
+        "cap": "$100/month"
+      },
+      {
+        "bank": "WeLab",
+        "name": "WeLab Card",
+        "rate": 1,
+        "condition": "None",
+        "cap": "$500/month"
+      }
+    ],
+    "tax_payment": [
+      {
+        "bank": "HSBC",
+        "name": "HSBC Red Card",
+        "rate": 1.5,
+        "condition": "$100000 min spend",
+        "cap": "$1500"
+      },
+      {
+        "bank": "Standard Chartered",
+        "name": "SCB Visa Signature",
+        "rate": 1.5,
+        "condition": "None",
+        "cap": "$500"
+      }
+    ]
+  },
+  "total_recommendations": 20
+}

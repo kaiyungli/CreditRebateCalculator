@@ -1,0 +1,223 @@
+{
+  "source": "HongKongCard.com",
+  "scraped_at": "2026-02-27T18:18:07.305Z",
+  "total_cards": 24,
+  "cards": [
+    {
+      "bank": "ZA Bank",
+      "name": "ZA Card",
+      "name_en": "ZA Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "special": "0.5% for all, 1% with $5000 spend"
+    },
+    {
+      "bank": "Mox",
+      "name": "Mox Credit",
+      "name_en": "Mox Credit",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "special": "1% unlimited, 2% with $250k balance"
+    },
+    {
+      "bank": "WeLab",
+      "name": "WeLab Card",
+      "name_en": "WeLab Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "special": "1% on all purchases"
+    },
+    {
+      "bank": "Tata",
+      "name": "Tata Card",
+      "name_en": "Tata Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "general",
+      "special": "2% on foreign currency"
+    },
+    {
+      "bank": "AirstAR",
+      "name": "AirstAR World Mastercard",
+      "name_en": "AirstAR World Mastercard",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "general",
+      "special": "2% overseas"
+    },
+    {
+      "bank": "HSBC",
+      "name": "HSBC Red Card",
+      "name_en": "HSBC Red Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 4,
+      "category": "dining",
+      "special": "4% on dining"
+    },
+    {
+      "bank": "HSBC",
+      "name": "HSBC Red Card",
+      "name_en": "HSBC Red Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "online",
+      "special": "2% online shopping"
+    },
+    {
+      "bank": "Standard Chartered",
+      "name": "SCB Smart Card",
+      "name_en": "SCB Smart Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 5,
+      "category": "dining",
+      "special": "5% dining (with $4k min spend)"
+    },
+    {
+      "bank": "DBS",
+      "name": "DBS Compass Visa",
+      "name_en": "DBS Compass Visa",
+      "reward_type": "CASHBACK",
+      "base_rate": 5,
+      "category": "dining",
+      "special": "5% dining"
+    },
+    {
+      "bank": "Citibank",
+      "name": "Citi Cash Back Card",
+      "name_en": "Citi Cash Back Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 5,
+      "category": "dining",
+      "special": "5% dining"
+    },
+    {
+      "bank": "Bank of China",
+      "name": "BOC Credit Card",
+      "name_en": "BOC Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 4,
+      "category": "supermarket",
+      "special": "4% supermarket"
+    },
+    {
+      "bank": "Hang Seng",
+      "name": "Hang Seng Compass Visa",
+      "name_en": "Hang Seng Compass Visa",
+      "reward_type": "CASHBACK",
+      "base_rate": 4,
+      "category": "dining",
+      "special": "4% dining"
+    },
+    {
+      "bank": "China Merchants Bank",
+      "name": "CMB Visa Signature",
+      "name_en": "CMB Visa Signature",
+      "reward_type": "CASHBACK",
+      "base_rate": 4,
+      "category": "dining",
+      "special": "4% dining"
+    },
+    {
+      "bank": "American Express",
+      "name": "American Express Platinum",
+      "name_en": "American Express Platinum",
+      "reward_type": "MILEAGE",
+      "base_rate": 2,
+      "category": "travel",
+      "special": "2 points per $1"
+    },
+    {
+      "bank": "American Express",
+      "name": "American Express Gold",
+      "name_en": "American Express Gold",
+      "reward_type": "MILEAGE",
+      "base_rate": 1.5,
+      "category": "travel",
+      "special": "1.5 points per $1"
+    },
+    {
+      "bank": "Citi",
+      "name": "Citi PremierMiles",
+      "name_en": "Citi PremierMiles",
+      "reward_type": "MILEAGE",
+      "base_rate": 1.5,
+      "category": "travel",
+      "special": "1.5 miles per $1"
+    },
+    {
+      "bank": "Standard Chartered",
+      "name": "SCB Asia Miles",
+      "name_en": "SCB Asia Miles",
+      "reward_type": "MILEAGE",
+      "base_rate": 1.5,
+      "category": "travel",
+      "special": "1.5 miles per $1"
+    },
+    {
+      "bank": "DBS",
+      "name": "DBS Black Card",
+      "name_en": "DBS Black Card",
+      "reward_type": "MILEAGE",
+      "base_rate": 1.5,
+      "category": "travel",
+      "special": "1.5 miles per $1"
+    },
+    {
+      "bank": "Mox",
+      "name": "Mox Credit",
+      "name_en": "Mox Credit",
+      "reward_type": "CASHBACK",
+      "base_rate": 3,
+      "category": "online",
+      "special": "3% on online shopping"
+    },
+    {
+      "bank": "ZA Bank",
+      "name": "ZA Card",
+      "name_en": "ZA Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "online",
+      "special": "2% on online shopping"
+    },
+    {
+      "bank": "Mox",
+      "name": "Mox Credit",
+      "name_en": "Mox Credit",
+      "reward_type": "CASHBACK",
+      "base_rate": 3,
+      "category": "supermarket",
+      "special": "3% supermarket"
+    },
+    {
+      "bank": "Citibank",
+      "name": "Citi Cash Back Card",
+      "name_en": "Citi Cash Back Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "supermarket",
+      "special": "2% supermarket"
+    },
+    {
+      "bank": "Shell",
+      "name": "Shell Card",
+      "name_en": "Shell Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "fuel",
+      "special": "2% at Shell"
+    },
+    {
+      "bank": "Citi",
+      "name": "Citi Octopus信用卡",
+      "name_en": "Citi Octopus Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "transport",
+      "special": "1.5% on Octopus reload"
+    }
+  ]
+}

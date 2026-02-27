@@ -1,0 +1,547 @@
+{
+  "merged_at": "2026-02-27T18:18:07.313Z",
+  "total_cards": 30,
+  "total_banks": 19,
+  "banks": [
+    "HSBC",
+    "Standard Chartered",
+    "Bank of China",
+    "Hang Seng",
+    "Citibank",
+    "DBS",
+    "AEON",
+    "China Merchants Bank",
+    "Bank of Communications",
+    "Nanyan",
+    "ICBC",
+    "ZA Bank",
+    "Mox",
+    "WeLab",
+    "Tata",
+    "AirstAR",
+    "American Express",
+    "Citi",
+    "Shell"
+  ],
+  "cards": [
+    {
+      "bank": "HSBC",
+      "name": "HSBC Red Card",
+      "name_en": "HSBC Red Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "general",
+      "sources": [
+        "MoneyHero",
+        "HongKongCard",
+        "HongKongCard"
+      ],
+      "special": "2% online shopping"
+    },
+    {
+      "bank": "HSBC",
+      "name": "HSBC Visa Signature",
+      "name_en": "HSBC Visa Signature",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "general",
+      "sources": [
+        "MoneyHero"
+      ]
+    },
+    {
+      "bank": "HSBC",
+      "name": "HSBC Premier Mastercard",
+      "name_en": "HSBC Premier Mastercard",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "general",
+      "sources": [
+        "MoneyHero"
+      ]
+    },
+    {
+      "bank": "Standard Chartered",
+      "name": "SCB Visa Signature",
+      "name_en": "SCB Visa Signature",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "general",
+      "sources": [
+        "MoneyHero"
+      ]
+    },
+    {
+      "bank": "Standard Chartered",
+      "name": "SCB Smart Card",
+      "name_en": "SCB Smart Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 0.56,
+      "category": "general",
+      "sources": [
+        "MoneyHero",
+        "HongKongCard"
+      ],
+      "special": "5% dining (with $4k min spend)"
+    },
+    {
+      "bank": "Standard Chartered",
+      "name": "SCB Asia Miles",
+      "name_en": "SCB Asia Miles",
+      "reward_type": "MILEAGE",
+      "base_rate": 1.5,
+      "category": "travel",
+      "sources": [
+        "MoneyHero",
+        "HongKongCard"
+      ],
+      "special": "1.5 miles per $1"
+    },
+    {
+      "bank": "Bank of China",
+      "name": "BOC Smart Card",
+      "name_en": "BOC Smart Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "general",
+      "sources": [
+        "MoneyHero"
+      ]
+    },
+    {
+      "bank": "Bank of China",
+      "name": "BOC Credit Card",
+      "name_en": "BOC Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "sources": [
+        "MoneyHero",
+        "HongKongCard"
+      ],
+      "special": "4% supermarket"
+    },
+    {
+      "bank": "Hang Seng",
+      "name": "Hang Seng Compass Visa",
+      "name_en": "Hang Seng Compass Visa",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "general",
+      "sources": [
+        "MoneyHero",
+        "HongKongCard"
+      ],
+      "special": "4% dining"
+    },
+    {
+      "bank": "Hang Seng",
+      "name": "Hang Seng Prestige Visa",
+      "name_en": "Hang Seng Prestige Visa",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "general",
+      "sources": [
+        "MoneyHero"
+      ]
+    },
+    {
+      "bank": "Citibank",
+      "name": "Citi Cash Back Card",
+      "name_en": "Citi Cash Back Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "sources": [
+        "MoneyHero",
+        "HongKongCard",
+        "HongKongCard"
+      ],
+      "special": "2% supermarket"
+    },
+    {
+      "bank": "Citibank",
+      "name": "Citi PremierMiles",
+      "name_en": "Citi PremierMiles",
+      "reward_type": "MILEAGE",
+      "base_rate": 1,
+      "category": "travel",
+      "sources": [
+        "MoneyHero"
+      ]
+    },
+    {
+      "bank": "DBS",
+      "name": "DBS Compass Visa",
+      "name_en": "DBS Compass Visa",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "sources": [
+        "MoneyHero",
+        "HongKongCard"
+      ],
+      "special": "5% dining"
+    },
+    {
+      "bank": "DBS",
+      "name": "DBS Black Card",
+      "name_en": "DBS Black Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "general",
+      "sources": [
+        "MoneyHero",
+        "HongKongCard"
+      ],
+      "special": "1.5 miles per $1"
+    },
+    {
+      "bank": "AEON",
+      "name": "AEON Credit Card",
+      "name_en": "AEON Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "sources": [
+        "MoneyHero"
+      ]
+    },
+    {
+      "bank": "AEON",
+      "name": "AEON Visual Card",
+      "name_en": "AEON Visual Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "sources": [
+        "MoneyHero"
+      ]
+    },
+    {
+      "bank": "China Merchants Bank",
+      "name": "CMB Visa Signature",
+      "name_en": "CMB Visa Signature",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "general",
+      "sources": [
+        "MoneyHero",
+        "HongKongCard"
+      ],
+      "special": "4% dining"
+    },
+    {
+      "bank": "Bank of Communications",
+      "name": "BoC Credit Card",
+      "name_en": "BoC Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "sources": [
+        "MoneyHero"
+      ]
+    },
+    {
+      "bank": "Nanyan",
+      "name": "Nanyan Credit Card",
+      "name_en": "Nanyan Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "sources": [
+        "MoneyHero"
+      ]
+    },
+    {
+      "bank": "ICBC",
+      "name": "ICBC Credit Card",
+      "name_en": "ICBC Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "sources": [
+        "MoneyHero"
+      ]
+    },
+    {
+      "bank": "ZA Bank",
+      "name": "ZA Card",
+      "name_en": "ZA Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "special": "2% on online shopping",
+      "sources": [
+        "HongKongCard",
+        "HongKongCard"
+      ]
+    },
+    {
+      "bank": "Mox",
+      "name": "Mox Credit",
+      "name_en": "Mox Credit",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "special": "3% supermarket",
+      "sources": [
+        "HongKongCard",
+        "HongKongCard",
+        "HongKongCard"
+      ]
+    },
+    {
+      "bank": "WeLab",
+      "name": "WeLab Card",
+      "name_en": "WeLab Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general",
+      "special": "1% on all purchases",
+      "sources": [
+        "HongKongCard"
+      ]
+    },
+    {
+      "bank": "Tata",
+      "name": "Tata Card",
+      "name_en": "Tata Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "general",
+      "special": "2% on foreign currency",
+      "sources": [
+        "HongKongCard"
+      ]
+    },
+    {
+      "bank": "AirstAR",
+      "name": "AirstAR World Mastercard",
+      "name_en": "AirstAR World Mastercard",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "general",
+      "special": "2% overseas",
+      "sources": [
+        "HongKongCard"
+      ]
+    },
+    {
+      "bank": "American Express",
+      "name": "American Express Platinum",
+      "name_en": "American Express Platinum",
+      "reward_type": "MILEAGE",
+      "base_rate": 2,
+      "category": "travel",
+      "special": "2 points per $1",
+      "sources": [
+        "HongKongCard"
+      ]
+    },
+    {
+      "bank": "American Express",
+      "name": "American Express Gold",
+      "name_en": "American Express Gold",
+      "reward_type": "MILEAGE",
+      "base_rate": 1.5,
+      "category": "travel",
+      "special": "1.5 points per $1",
+      "sources": [
+        "HongKongCard"
+      ]
+    },
+    {
+      "bank": "Citi",
+      "name": "Citi PremierMiles",
+      "name_en": "Citi PremierMiles",
+      "reward_type": "MILEAGE",
+      "base_rate": 1.5,
+      "category": "travel",
+      "special": "1.5 miles per $1",
+      "sources": [
+        "HongKongCard"
+      ]
+    },
+    {
+      "bank": "Shell",
+      "name": "Shell Card",
+      "name_en": "Shell Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "fuel",
+      "special": "2% at Shell",
+      "sources": [
+        "HongKongCard"
+      ]
+    },
+    {
+      "bank": "Citi",
+      "name": "Citi Octopus信用卡",
+      "name_en": "Citi Octopus Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "transport",
+      "special": "1.5% on Octopus reload",
+      "sources": [
+        "HongKongCard"
+      ]
+    }
+  ],
+  "category_recommendations": {
+    "dining": [
+      {
+        "bank": "Standard Chartered",
+        "name": "SCB Smart Card",
+        "rate": 5,
+        "condition": "$4000 min spend",
+        "cap": "$200/month"
+      },
+      {
+        "bank": "HSBC",
+        "name": "HSBC Red Card",
+        "rate": 4,
+        "condition": "$3000 min spend",
+        "cap": "$150/month"
+      },
+      {
+        "bank": "DBS",
+        "name": "DBS Compass Visa",
+        "rate": 5,
+        "condition": "$2000 min spend",
+        "cap": "$100/month"
+      },
+      {
+        "bank": "Citibank",
+        "name": "Citi Cash Back Card",
+        "rate": 5,
+        "condition": "$2000 min spend",
+        "cap": "$300/month"
+      }
+    ],
+    "supermarket": [
+      {
+        "bank": "Mox",
+        "name": "Mox Credit",
+        "rate": 3,
+        "condition": "None",
+        "cap": "Unlimited"
+      },
+      {
+        "bank": "Bank of China",
+        "name": "BOC Smart Card",
+        "rate": 2,
+        "condition": "$1000 min spend",
+        "cap": "$100/month"
+      },
+      {
+        "bank": "Citibank",
+        "name": "Citi Cash Back Card",
+        "rate": 2,
+        "condition": "$2000 min spend",
+        "cap": "$300/month"
+      }
+    ],
+    "online_shopping": [
+      {
+        "bank": "Mox",
+        "name": "Mox Credit",
+        "rate": 3,
+        "condition": "None",
+        "cap": "Unlimited"
+      },
+      {
+        "bank": "ZA Bank",
+        "name": "ZA Card",
+        "rate": 2,
+        "condition": "$5000 min spend",
+        "cap": "$500/month"
+      },
+      {
+        "bank": "HSBC",
+        "name": "HSBC Red Card",
+        "rate": 2,
+        "condition": "$3000 min spend",
+        "cap": "$150/month"
+      }
+    ],
+    "overseas": [
+      {
+        "bank": "AirstAR",
+        "name": "AirstAR World Mastercard",
+        "rate": 8,
+        "condition": "$1000 min spend",
+        "cap": "$200/month"
+      },
+      {
+        "bank": "sim",
+        "name": "sim World Mastercard",
+        "rate": 8,
+        "condition": "$1000 min spend",
+        "cap": "$200/month"
+      },
+      {
+        "bank": "Mox",
+        "name": "Mox Credit",
+        "rate": 2,
+        "condition": "None",
+        "cap": "Unlimited"
+      }
+    ],
+    "fuel": [
+      {
+        "bank": "Shell",
+        "name": "Shell Card",
+        "rate": 2,
+        "condition": "None",
+        "cap": "Unlimited"
+      },
+      {
+        "bank": "Citi",
+        "name": "Citi汽油優惠卡",
+        "rate": 2,
+        "condition": "None",
+        "cap": "Unlimited"
+      }
+    ],
+    "general": [
+      {
+        "bank": "Mox",
+        "name": "Mox Credit",
+        "rate": 1,
+        "condition": "None",
+        "cap": "Unlimited"
+      },
+      {
+        "bank": "ZA Bank",
+        "name": "ZA Card",
+        "rate": 1,
+        "condition": "None",
+        "cap": "$100/month"
+      },
+      {
+        "bank": "WeLab",
+        "name": "WeLab Card",
+        "rate": 1,
+        "condition": "None",
+        "cap": "$500/month"
+      }
+    ],
+    "tax_payment": [
+      {
+        "bank": "HSBC",
+        "name": "HSBC Red Card",
+        "rate": 1.5,
+        "condition": "$100000 min spend",
+        "cap": "$1500"
+      },
+      {
+        "bank": "Standard Chartered",
+        "name": "SCB Visa Signature",
+        "rate": 1.5,
+        "condition": "None",
+        "cap": "$500"
+      }
+    ]
+  }
+}

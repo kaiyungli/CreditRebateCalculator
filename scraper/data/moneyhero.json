@@ -1,0 +1,167 @@
+{
+  "source": "MoneyHero.com.hk",
+  "scraped_at": "2026-02-27T18:18:07.304Z",
+  "total_cards": 20,
+  "cards": [
+    {
+      "bank": "HSBC",
+      "name": "HSBC Red Card",
+      "name_en": "HSBC Red Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "general"
+    },
+    {
+      "bank": "HSBC",
+      "name": "HSBC Visa Signature",
+      "name_en": "HSBC Visa Signature",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "general"
+    },
+    {
+      "bank": "HSBC",
+      "name": "HSBC Premier Mastercard",
+      "name_en": "HSBC Premier Mastercard",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "general"
+    },
+    {
+      "bank": "Standard Chartered",
+      "name": "SCB Visa Signature",
+      "name_en": "SCB Visa Signature",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "general"
+    },
+    {
+      "bank": "Standard Chartered",
+      "name": "SCB Smart Card",
+      "name_en": "SCB Smart Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 0.56,
+      "category": "general"
+    },
+    {
+      "bank": "Standard Chartered",
+      "name": "SCB Asia Miles",
+      "name_en": "SCB Asia Miles",
+      "reward_type": "MILEAGE",
+      "base_rate": 1.5,
+      "category": "travel"
+    },
+    {
+      "bank": "Bank of China",
+      "name": "BOC Smart Card",
+      "name_en": "BOC Smart Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "general"
+    },
+    {
+      "bank": "Bank of China",
+      "name": "BOC Credit Card",
+      "name_en": "BOC Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general"
+    },
+    {
+      "bank": "Hang Seng",
+      "name": "Hang Seng Compass Visa",
+      "name_en": "Hang Seng Compass Visa",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "general"
+    },
+    {
+      "bank": "Hang Seng",
+      "name": "Hang Seng Prestige Visa",
+      "name_en": "Hang Seng Prestige Visa",
+      "reward_type": "CASHBACK",
+      "base_rate": 2,
+      "category": "general"
+    },
+    {
+      "bank": "Citibank",
+      "name": "Citi Cash Back Card",
+      "name_en": "Citi Cash Back Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general"
+    },
+    {
+      "bank": "Citibank",
+      "name": "Citi PremierMiles",
+      "name_en": "Citi PremierMiles",
+      "reward_type": "MILEAGE",
+      "base_rate": 1,
+      "category": "travel"
+    },
+    {
+      "bank": "DBS",
+      "name": "DBS Compass Visa",
+      "name_en": "DBS Compass Visa",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general"
+    },
+    {
+      "bank": "DBS",
+      "name": "DBS Black Card",
+      "name_en": "DBS Black Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "general"
+    },
+    {
+      "bank": "AEON",
+      "name": "AEON Credit Card",
+      "name_en": "AEON Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general"
+    },
+    {
+      "bank": "AEON",
+      "name": "AEON Visual Card",
+      "name_en": "AEON Visual Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general"
+    },
+    {
+      "bank": "China Merchants Bank",
+      "name": "CMB Visa Signature",
+      "name_en": "CMB Visa Signature",
+      "reward_type": "CASHBACK",
+      "base_rate": 1.5,
+      "category": "general"
+    },
+    {
+      "bank": "Bank of Communications",
+      "name": "BoC Credit Card",
+      "name_en": "BoC Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general"
+    },
+    {
+      "bank": "Nanyan",
+      "name": "Nanyan Credit Card",
+      "name_en": "Nanyan Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general"
+    },
+    {
+      "bank": "ICBC",
+      "name": "ICBC Credit Card",
+      "name_en": "ICBC Credit Card",
+      "reward_type": "CASHBACK",
+      "base_rate": 1,
+      "category": "general"
+    }
+  ]
+}

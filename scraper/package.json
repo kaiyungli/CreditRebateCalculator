@@ -1,0 +1,24 @@
+{
+  "name": "credit-card-scraper",
+  "version": "1.0.0",
+  "description": "Auto-scraper for Hong Kong credit card cash rebate data",
+  "main": "scraper.js",
+  "type": "module",
+  "scripts": {
+    "scrape": "node scraper.js",
+    "scrape:json": "node scraper.js --json-only",
+    "scrape:db": "node scraper.js --db-only"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.3.1"
+  },
+  "keywords": [
+    "credit-card",
+    "scraper",
+    "hong-kong",
+    "cashback"
+  ],
+  "author": "",
+  "license": "MIT"
+}
