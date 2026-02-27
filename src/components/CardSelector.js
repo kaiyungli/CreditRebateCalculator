@@ -27,7 +27,6 @@ export default function CardSelector({ onComplete, show: externalShow }) {
     setSelectedCards(savedIds)
 
     // show selector for first-time users, otherwise keep hidden
-    // Only auto-show if no external show prop is provided
     if (externalShow === undefined && isFirstTimeUser()) setShowSelector(true)
 
     async function loadCards() {
