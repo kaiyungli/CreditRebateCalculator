@@ -5,6 +5,19 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PU
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
+// Fallback categories data (when database is unavailable)
+export const DEMO_CATEGORIES = [
+  { id: 1, name: '餐飲美食', icon: '🍜', parent_id: null, description: '餐廳、咖啡店、外賣', sort_order: 1 },
+  { id: 2, name: '網上購物', icon: '🛒', parent_id: null, description: '網上平台購物', sort_order: 2 },
+  { id: 3, name: '超市便利店', icon: '🏪', parent_id: null, description: '超市、便利店消費', sort_order: 3 },
+  { id: 4, name: '交通出行', icon: '🚗', parent_id: null, description: '交通、燃油、停車', sort_order: 4 },
+  { id: 5, name: '娛樂休閒', icon: '🎬', parent_id: null, description: '電影、遊戲、娛樂', sort_order: 5 },
+  { id: 6, name: '服飾美容', icon: '👗', parent_id: null, description: '服裝、化妝品、護膚', sort_order: 6 },
+  { id: 7, name: '旅遊外遊', icon: '✈️', parent_id: null, description: '機票、酒店、外遊消費', sort_order: 6 },
+  { id: 8, name: '水電煤氣', icon: '💡', parent_id: null, description: '公用事業繳費', sort_order: 7 },
+  { id: 9, name: '其他消費', icon: '💳', parent_id: null, description: '其他一般消費', sort_order: 8 },
+]
+
 export default supabase
 
 export async function getMerchantRates(cardIds = [], categoryId = null) {
@@ -49,14 +62,29 @@ export async function getMerchantRates(cardIds = [], categoryId = null) {
 }
 
 export async function getCategories() {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .order('sort_order', { ascending: true })
-    .order('name', { ascending: true })
-  
-  if (error) throw error
-  return data || []
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true })
+    
+    if (error) throw error
+    
+    // If we got valid data, return it
+    if (data && data.length > 0) {
+      return data
+    }
+    
+    // Empty result - use fallback
+    console.log('[getCategories] Empty DB result, using DEMO_CATEGORIES fallback')
+    return DEMO_CATEGORIES
+    
+  } catch (error) {
+    // Database unavailable or error - use fallback
+    console.warn('[getCategories] DB error, using DEMO_CATEGORIES fallback:', error.message)
+    return DEMO_CATEGORIES
+  }
 }
 
 export async function getCards(filters = {}) {
@@ -110,12 +138,21 @@ export async function getCardById(id) {
 }
 
 export async function getCategoryById(id) {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('id', id)
-    .single()
-  
-  if (error) throw error
-  return data
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', id)
+      .single()
+    
+    if (error) throw error
+    return data
+    
+  } catch (error) {
+    // Fallback: find in DEMO_CATEGORIES
+    console.warn('[getCategoryById] DB error, searching DEMO_CATEGORIES:', error.message)
+    const fallback = DEMO_CATEGORIES.find(c => c.id === id)
+    if (fallback) return fallback
+    throw error
+  }
 }
