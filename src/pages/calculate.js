@@ -1,3 +1,5 @@
+import ResultCard from './components/ResultCard';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -56,23 +58,57 @@ export default function Calculate() {
     setResult(null);
 
     try {
-      let url = `/api/calculate?amount=${amount}`;
-      if (selectedCategory) url += `&category_id=${selectedCategory}`;
-      if (selectedCard) url += `&card_id=${selectedCard}`;
-
-      const res = await fetch(url);
+      const res = await fetch('/api/calculate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: [{
+            amount: parseFloat(amount),
+            category_id: selectedCategory ? parseInt(selectedCategory) : null,
+          }],
+        }),
+      });
+      
       const data = await res.json();
 
       if (data.error) {
         setError(data.error);
-      } else {
-        setResult(data);
+      } else if (data.ok) {
+        // Transform API response to match ResultCard format
+        const transformedResults = data.plan.map((item, index) => ({
+          id: index,
+          categoryName: item.item.category_id ? getCategoryName(item.item.category_id) : '消費',
+          categoryIcon: '💳',
+          merchantName: null,
+          amount: item.item.amount,
+          bestCard: {
+            bank_name: item.card.bank_name,
+            card_name: item.card.name,
+            icon: '💳',
+            base_rate: item.rule.rate_value / 100,
+          },
+          rebate: item.rewardHKD,
+        }));
+
+        setResult({
+          results: transformedResults,
+          totalAmount: transformedResults.reduce((sum, r) => sum + r.amount, 0),
+          totalRebate: data.totalHKD,
+        });
       }
     } catch (err) {
       setError('計算失敗，請稍後再試');
+      console.error('Calculate error:', err);
     } finally {
       setLoading(false);
     }
+  }
+
+  function getCategoryName(categoryId) {
+    const cat = categories.find(c => c.id === categoryId);
+    return cat ? cat.name : '消費';
   }
 
   return (
@@ -202,118 +238,19 @@ export default function Calculate() {
           </button>
         </div>
 
-        {/* 計算結果 */}
-        {result && (
-          <div className="card" style={{ marginBottom: '32px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '24px' }}>
-              📊 計算結果
-            </h2>
-
-            {/* 單張卡結果 */}
-            {result.card && (
-              <div style={{ 
-                padding: '24px', 
-                background: 'linear-gradient(135deg, #0066FF 0%, #00D4AA 100%)',
-                borderRadius: '16px',
-                color: 'white',
-                textAlign: 'center',
-                marginBottom: '24px'
-              }}>
-                <div style={{ fontSize: '16px', opacity: 0.9, marginBottom: '8px' }}>
-                  {result.bank_name} {result.card.name}
-                </div>
-                <div style={{ fontSize: '48px', fontWeight: '800', marginBottom: '8px' }}>
-                  {result.rebate_type === 'MILEAGE' ? (
-                    <>~{Math.round(result.rebate_amount)} 里</>
-                  ) : result.rebate_type === 'POINTS' ? (
-                    <>~{Math.round(result.rebate_amount)} 積分</>
-                  ) : (
-                    <>HK${result.rebate_amount}</>
-                  )}
-                </div>
-                <div style={{ fontSize: '14px', opacity: 0.9 }}>
-                  實際回贈率: {(result.effective_rate * 100).toFixed(2)}%
-                </div>
-              </div>
-            )}
-
-            {/* 多張卡結果 */}
-            {result.best_cards && result.best_cards.length > 0 && (
-              <div style={{ marginTop: '16px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
-                  🏆 最佳推薦 TOP {result.best_cards.length}
-                </h3>
-                
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  {result.best_cards.map((card, index) => (
-                    <div 
-                      key={card.id}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '16px',
-                        background: index === 0 ? '#F0F9FF' : '#F8FAFC',
-                        borderRadius: '12px',
-                        border: index === 0 ? '2px solid #0066FF' : '2px solid transparent'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ 
-                          width: '28px', 
-                          height: '28px', 
-                          background: index === 0 ? '#0066FF' : '#64748B',
-                          color: 'white',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '14px',
-                          fontWeight: '700'
-                        }}>
-                          {index + 1}
-                        </span>
-                        <div>
-                          <div style={{ fontWeight: '600' }}>
-                            {card.bank_name} {card.card_name}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#64748B' }}>
-                            回贈率: {(card.base_rate * 100).toFixed(1)}%
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '20px', fontWeight: '700', color: '#0066FF' }}>
-                          {card.rebate_type === 'MILEAGE' ? (
-                            <>~{Math.round(card.rebate_amount)} 里</>
-                          ) : card.rebate_type === 'POINTS' ? (
-                            <>~{Math.round(card.rebate_amount)} 積分</>
-                          ) : (
-                            <>HK${card.rebate_amount}</>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 消費金額 */}
-            {result.amount && (
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                padding: '16px',
-                background: '#F8FAFC',
-                borderRadius: '12px',
-                marginTop: '16px'
-              }}>
-                <span style={{ color: '#64748B' }}>消費金額</span>
-                <span style={{ fontWeight: '700' }}>HK${parseFloat(result.amount).toLocaleString()}</span>
-              </div>
-            )}
-          </div>
+        {/* 計算結果 - 使用 ResultCard 組件 */}
+        {result && result.results && (
+          <ResultCard
+            results={result.results}
+            totalAmount={result.totalAmount}
+            totalRebate={result.totalRebate}
+            onReset={() => {
+              setResult(null);
+              setAmount('');
+              setSelectedCategory('');
+              setSelectedCard('');
+            }}
+          />
         )}
 
         {/* 小提示 */}
