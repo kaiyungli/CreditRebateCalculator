@@ -93,10 +93,74 @@ export default function CardSelector({ onComplete, show: externalShow }) {
   if (!isVisible) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6" style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ 
+      background: 'rgba(0, 0, 0, 0.5)',
+      backdropFilter: 'blur(4px)',
+      animation: 'fadeIn 0.2s ease-out'
+    }}>
+      {/* Backdrop click to close */}
+      <div 
+        className="absolute inset-0" 
+        onClick={handleClose}
+        style={{ position: 'absolute', inset: 0 }}
+      />
+      
+      {/* Modal Container - Booking.com style */}
+      <div 
+        className="relative overflow-hidden"
+        style={{ 
+          width: '100%',
+          maxWidth: '480px',
+          maxHeight: '85vh',
+          background: 'white',
+          borderRadius: '16px',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+          display: 'flex',
+          flexDirection: 'column',
+          animation: 'slideUp 0.3s ease-out',
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
+        {/* Decorative top bar - Booking.com style accent */}
+        <div style={{ 
+          height: '4px', 
+          background: 'linear-gradient(90deg, #003580 0%, #0052CC 50%, #003580 100%)',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0
+        }} />
+        
+        {/* Close button - top right */}
+        <button
+          onClick={handleClose}
+          type="button"
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            background: '#F1F5F9',
+            border: 'none',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#64748B',
+            fontSize: '18px',
+            zIndex: 10,
+            transition: 'all 0.2s'
+          }}
+          onMouseOver={(e) => { e.target.style.background = '#E2E8F0'; e.target.style.color = '#1E293B'; }}
+          onMouseOut={(e) => { e.target.style.background = '#F1F5F9'; e.target.style.color = '#64748B'; }}
+        >
+          ✕
+        </button>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '20px', paddingTop: '16px' }}>
           <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1E293B', marginBottom: '8px' }}>
             {showSelectedOnly && selectedCards.length > 0 ? '🎴 我的信用卡' : '🎴 選擇你的信用卡'}
           </h2>
@@ -209,7 +273,7 @@ export default function CardSelector({ onComplete, show: externalShow }) {
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', paddingBottom: '8px', borderTop: '1px solid #E2E8F0' }}>
           <button 
             onClick={handleClose} 
             type="button"
@@ -219,8 +283,12 @@ export default function CardSelector({ onComplete, show: externalShow }) {
               color: '#64748B', 
               fontSize: '14px', 
               cursor: 'pointer',
-              padding: '8px 16px'
+              padding: '10px 20px',
+              borderRadius: '8px',
+              transition: 'background 0.2s'
             }}
+            onMouseOver={(e) => e.target.style.background = '#F1F5F9'}
+            onMouseOut={(e) => e.target.style.background = 'transparent'}
           >
             {selectedCards.length > 0 ? '關閉' : '暫時不揀'}
           </button>
@@ -228,16 +296,19 @@ export default function CardSelector({ onComplete, show: externalShow }) {
             onClick={handleSave}
             type="button"
             style={{
-              background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
+              background: '#003580',
               color: 'white',
-              padding: '12px 32px',
-              borderRadius: '12px',
+              padding: '12px 28px',
+              borderRadius: '8px',
               fontWeight: '600',
               border: 'none',
               cursor: 'pointer',
-              fontSize: '15px',
-              boxShadow: '0 4px 12px rgba(0, 102, 255, 0.3)'
+              fontSize: '14px',
+              boxShadow: '0 2px 8px rgba(0, 53, 128, 0.3)',
+              transition: 'all 0.2s'
             }}
+            onMouseOver={(e) => { e.target.style.background = '#00224f'; e.target.style.transform = 'translateY(-1px)'; }}
+            onMouseOut={(e) => { e.target.style.background = '#003580'; e.target.style.transform = 'translateY(0)'; }}
           >
             確認 ({selectedCards.length})
           </button>
