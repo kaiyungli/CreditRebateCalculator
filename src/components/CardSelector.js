@@ -14,6 +14,9 @@ export default function CardSelector({ onComplete, show: externalShow }) {
   const [cards, setCards] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  
+  // 取得已選擇的卡片詳細資料
+  const selectedCardDetails = cards.filter(c => selectedCards.includes(c.id))
 
   // Use external show prop if provided, otherwise use internal state
   const isVisible = externalShow !== undefined ? externalShow : showSelector
@@ -72,39 +75,141 @@ export default function CardSelector({ onComplete, show: externalShow }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-lg rounded-xl bg-white p-4">
-        <h2 className="text-lg font-semibold">選擇你有的信用卡</h2>
-        <p className="text-sm text-gray-600">幫你推薦最適合的回贈組合</p>
-
-        <div className="mt-3">
-          {loading && <div className="text-sm text-gray-600">載入信用卡中...</div>}
-          {error && <div className="text-sm text-red-600">載入失敗: {error}</div>}
+      <div className="w-full max-w-lg rounded-2xl bg-white p-6" style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1E293B', marginBottom: '8px' }}>
+            🎴 選擇你的信用卡
+          </h2>
+          <p style={{ color: '#64748B', fontSize: '14px' }}>
+            幫你推薦最適合的回贈組合
+          </p>
         </div>
 
-        <div className="mt-3 max-h-[50vh] overflow-auto space-y-2">
+        {/* 已選擇的卡片展示 */}
+        {selectedCardDetails.length > 0 && (
+          <div style={{ 
+            background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)', 
+            borderRadius: '12px', 
+            padding: '16px',
+            marginBottom: '16px'
+          }}>
+            <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px', marginBottom: '8px', fontWeight: '600' }}>
+              已選擇 {selectedCardDetails.length} 張信用卡
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {selectedCardDetails.slice(0, 4).map(card => (
+                <span key={card.id} style={{ 
+                  background: 'rgba(255,255,255,0.2)', 
+                  color: 'white', 
+                  padding: '4px 12px', 
+                  borderRadius: '20px',
+                  fontSize: '13px',
+                  fontWeight: '500'
+                }}>
+                  {formatCardName(card)}
+                </span>
+              ))}
+              {selectedCardDetails.length > 4 && (
+                <span style={{ 
+                  background: 'rgba(255,255,255,0.3)', 
+                  color: 'white', 
+                  padding: '4px 12px', 
+                  borderRadius: '20px',
+                  fontSize: '13px',
+                  fontWeight: '500'
+                }}>
+                  +{selectedCardDetails.length - 4} 張
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Loading/Error */}
+        <div style={{ marginBottom: '12px' }}>
+          {loading && <div style={{ textAlign: 'center', color: '#64748B', fontSize: '14px' }}>載入信用卡中...</div>}
+          {error && <div style={{ textAlign: 'center', color: '#DC2626', fontSize: '14px' }}>載入失敗: {error}</div>}
+        </div>
+
+        {/* Card List */}
+        <div style={{ flex: 1, overflow: 'auto', marginBottom: '20px' }}>
           {cards.map(card => (
             <button
               key={card.id}
-              className="w-full rounded-lg border px-3 py-2 text-left hover:bg-gray-50 flex items-center justify-between"
               onClick={() => toggleCard(card.id)}
               type="button"
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                marginBottom: '8px',
+                borderRadius: '12px',
+                border: selectedCards.includes(card.id) ? '2px solid #0066FF' : '2px solid #E2E8F0',
+                background: selectedCards.includes(card.id) ? '#EFF6FF' : 'white',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                transition: 'all 0.2s'
+              }}
             >
-              <span className="text-sm">{formatCardName(card)}</span>
-              <span className="text-sm">{selectedCards.includes(card.id) ? '已選' : '未選'}</span>
+              <span style={{ 
+                fontSize: '14px', 
+                fontWeight: '500', 
+                color: selectedCards.includes(card.id) ? '#0066FF' : '#1E293B'
+              }}>
+                {formatCardName(card)}
+              </span>
+              <span style={{
+                width: '22px',
+                height: '22px',
+                borderRadius: '50%',
+                border: selectedCards.includes(card.id) ? '2px solid #0066FF' : '2px solid #CBD5E1',
+                background: selectedCards.includes(card.id) ? '#0066FF' : 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '12px'
+              }}>
+                {selectedCards.includes(card.id) ? '✓' : ''}
+              </span>
             </button>
           ))}
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
-          <button className="text-sm text-gray-600" onClick={handleSkip} type="button">
+        {/* Actions */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
+          <button 
+            onClick={handleSkip} 
+            type="button"
+            style={{ 
+              background: 'transparent', 
+              border: 'none', 
+              color: '#64748B', 
+              fontSize: '14px', 
+              cursor: 'pointer',
+              padding: '8px 16px'
+            }}
+          >
             暫時不揀
           </button>
           <button
-            className="rounded-lg bg-black px-3 py-2 text-sm text-white"
             onClick={handleSave}
             type="button"
+            style={{
+              background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
+              color: 'white',
+              padding: '12px 32px',
+              borderRadius: '12px',
+              fontWeight: '600',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '15px',
+              boxShadow: '0 4px 12px rgba(0, 102, 255, 0.3)'
+            }}
           >
-            確認選擇 ({selectedCards.length})
+            確認 ({selectedCards.length})
           </button>
         </div>
       </div>
