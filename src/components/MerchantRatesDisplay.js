@@ -97,7 +97,7 @@ export default function MerchantRatesDisplay({ userCards = [], selectedCategory,
                   {rate.card_name || `Card #${rate.card_id}`}
                 </span>
                 <span className="font-semibold text-green-600">
-                  {rate.rebate_rate * 100}%
+                  {rate.rebate_rate ? (rate.rebate_rate * 100).toFixed(1) + "%" : "-"}%
                   {rate.conditions && (
                     <span className="text-xs text-gray-500 ml-1">
                       ({rate.conditions})
