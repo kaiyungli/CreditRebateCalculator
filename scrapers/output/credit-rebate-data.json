@@ -1,0 +1,1042 @@
+{
+  "cards": [
+    {
+      "card_id": "mh_001",
+      "name": "HSBC Red Card",
+      "bank": "HSBC",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "mh_002",
+      "name": "Citi Cash Back Card",
+      "bank": "Citibank",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "mh_003",
+      "name": "DBS Black Card",
+      "bank": "DBS",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "mh_004",
+      "name": "渣打Visa",
+      "bank": "渣打銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "mh_005",
+      "name": "恒生銀聯信用卡",
+      "bank": "恒生銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkc_001",
+      "name": "匯豐Red信用卡",
+      "bank": "匯豐銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkc_002",
+      "name": "渣打Smart信用卡",
+      "bank": "渣打銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkc_003",
+      "name": "DBS Compass Visa",
+      "bank": "星展銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkc_004",
+      "name": "Citi Prestige",
+      "bank": "花旗銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkc_005",
+      "name": "恒生enJoy卡",
+      "bank": "恒生銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkc_006",
+      "name": "美國運通Blue Cash",
+      "bank": "美國運通",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkc_007",
+      "name": "建行eye信用卡",
+      "bank": "建設銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkc_008",
+      "name": "WeWa銀聯卡",
+      "bank": "銀聯",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkr_001",
+      "name": "EarnMORE銀聯卡",
+      "bank": "銀聯",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkr_002",
+      "name": "TNG Wallet信用卡",
+      "bank": "TNG",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkr_003",
+      "name": "建行粵港澳卡",
+      "bank": "建設銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkr_004",
+      "name": "工銀亞洲信用卡",
+      "bank": "工商銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkr_005",
+      "name": "交銀信用卡",
+      "bank": "交通銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkr_006",
+      "name": "招商銀行信用卡",
+      "bank": "招商銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkr_007",
+      "name": "大新信用卡",
+      "bank": "大新銀行",
+      "last_updated": "2026-02-27"
+    },
+    {
+      "card_id": "hkr_008",
+      "name": "上海商業銀行信用卡",
+      "bank": "上海商業銀行",
+      "last_updated": "2026-02-27"
+    }
+  ],
+  "merchant_rates": [
+    {
+      "card_id": "mh_001",
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": "4%",
+      "rebate_type": "cashback",
+      "conditions": "HSBC Red Card 餐飲優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_001",
+      "merchant_name": "美心",
+      "category_id": 1,
+      "rebate_rate": "4%",
+      "rebate_type": "cashback",
+      "conditions": "HSBC Red Card 餐飲優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_001",
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "HSBC Red Card 超市優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_001",
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "HSBC Red Card 超市優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_001",
+      "merchant_name": "HKTVmall",
+      "category_id": 3,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "HSBC Red Card 網購優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_001",
+      "merchant_name": "Amazon",
+      "category_id": 3,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "HSBC Red Card 網購優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_001",
+      "merchant_name": "港鐵",
+      "category_id": 4,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "HSBC Red Card 交通優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_001",
+      "merchant_name": "巴士",
+      "category_id": 4,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "HSBC Red Card 交通優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_002",
+      "merchant_name": "7-Eleven",
+      "category_id": 1,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "Citi 便利店優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_002",
+      "merchant_name": "OK便利店",
+      "category_id": 1,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "Citi 便利店優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_002",
+      "merchant_name": "屈臣氏",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "Citi 屈臣氏優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_002",
+      "merchant_name": "莎莎",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "Citi 莎莎優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_002",
+      "merchant_name": "Deliveroo",
+      "category_id": 1,
+      "rebate_rate": "4%",
+      "rebate_type": "cashback",
+      "conditions": "Citi 外賣平台優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_002",
+      "merchant_name": "Foodpanda",
+      "category_id": 1,
+      "rebate_rate": "4%",
+      "rebate_type": "cashback",
+      "conditions": "Citi 外賣平台優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_003",
+      "merchant_name": "一田",
+      "category_id": 2,
+      "rebate_rate": "6%",
+      "rebate_type": "cashback",
+      "conditions": "DBS 一田優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_003",
+      "merchant_name": "AEON",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "DBS AEON優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_003",
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "DBS 超市優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_003",
+      "merchant_name": "MK筷子",
+      "category_id": 1,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "DBS 餐飲優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_003",
+      "merchant_name": "海底撈",
+      "category_id": 1,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "DBS 餐飲優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_003",
+      "merchant_name": "Netflix",
+      "category_id": 5,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "DBS 串流優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_004",
+      "merchant_name": "屈臣氏",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "渣打 屈臣氏優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_004",
+      "merchant_name": "萬寧",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "渣打 萬寧優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_004",
+      "merchant_name": "莎莎",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "渣打 莎莎優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_004",
+      "merchant_name": "大家樂",
+      "category_id": 1,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "渣打 餐飲優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_004",
+      "merchant_name": "大快活",
+      "category_id": 1,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "渣打 餐飲優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_005",
+      "merchant_name": "759阿信屋",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "恒生 759優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_005",
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "恒生 超市優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_005",
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "恒生 餐飲優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "mh_005",
+      "merchant_name": "港鐵",
+      "category_id": 4,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "恒生 交通優惠",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_001",
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": "4%",
+      "rebate_type": "cashback",
+      "conditions": "匯豐Red 餐飲",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_001",
+      "merchant_name": "美心",
+      "category_id": 1,
+      "rebate_rate": "4%",
+      "rebate_type": "cashback",
+      "conditions": "匯豐Red 餐飲",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_001",
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "匯豐Red 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_001",
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "匯豐Red 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_001",
+      "merchant_name": "HKTVmall",
+      "category_id": 3,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "匯豐Red 網購",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_002",
+      "merchant_name": "屈臣氏",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "渣打 屈臣氏",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_002",
+      "merchant_name": "萬寧",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "渣打 萬寧",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_002",
+      "merchant_name": "7-Eleven",
+      "category_id": 1,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "渣打 便利店",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_002",
+      "merchant_name": "Circle K",
+      "category_id": 1,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "渣打 便利店",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_002",
+      "merchant_name": "Deliveroo",
+      "category_id": 1,
+      "rebate_rate": "4%",
+      "rebate_type": "cashback",
+      "conditions": "渣打 外賣",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_003",
+      "merchant_name": "一田",
+      "category_id": 2,
+      "rebate_rate": "6%",
+      "rebate_type": "cashback",
+      "conditions": "DBS Compass 一田",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_003",
+      "merchant_name": "AEON",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "DBS Compass AEON",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_003",
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "DBS Compass 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_003",
+      "merchant_name": "海底撈",
+      "category_id": 1,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "DBS Compass 餐飲",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_003",
+      "merchant_name": "Netflix",
+      "category_id": 5,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "DBS Compass 串流",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_004",
+      "merchant_name": "7-Eleven",
+      "category_id": 1,
+      "rebate_rate": "8%",
+      "rebate_type": "cashback",
+      "conditions": "Citi Prestige 便利店",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_004",
+      "merchant_name": "OK便利店",
+      "category_id": 1,
+      "rebate_rate": "8%",
+      "rebate_type": "cashback",
+      "conditions": "Citi Prestige 便利店",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_004",
+      "merchant_name": "美心",
+      "category_id": 1,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "Citi Prestige 餐飲",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_004",
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "Citi Prestige 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_005",
+      "merchant_name": "759阿信屋",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "恒生enJoy 759",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_005",
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "恒生enJoy 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_005",
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "恒生enJoy 餐飲",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_005",
+      "merchant_name": "戲院",
+      "category_id": 5,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "恒生enJoy 娛樂",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_006",
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "Amex Blue Cash 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_006",
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "Amex Blue Cash 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_006",
+      "merchant_name": "屈臣氏",
+      "category_id": 2,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "Amex Blue Cash 藥房",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_006",
+      "merchant_name": "HKTVmall",
+      "category_id": 3,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "Amex Blue Cash 網購",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_006",
+      "merchant_name": "Amazon",
+      "category_id": 3,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "Amex Blue Cash 網購",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_007",
+      "merchant_name": "屈臣氏",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "建行eye 屈臣氏",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_007",
+      "merchant_name": "萬寧",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "建行eye 萬寧",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_007",
+      "merchant_name": "莎莎",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "建行eye 莎莎",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_007",
+      "merchant_name": "卓悅",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "建行eye 卓悅",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_008",
+      "merchant_name": "戲院",
+      "category_id": 5,
+      "rebate_rate": "4%",
+      "rebate_type": "cashback",
+      "conditions": "WeWa 戲院",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_008",
+      "merchant_name": "演唱會",
+      "category_id": 5,
+      "rebate_rate": "4%",
+      "rebate_type": "cashback",
+      "conditions": "WeWA 娛樂",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_008",
+      "merchant_name": "主題公園",
+      "category_id": 5,
+      "rebate_rate": "4%",
+      "rebate_type": "cashback",
+      "conditions": "WeWA 娛樂",
+      "status": "active"
+    },
+    {
+      "card_id": "hkc_008",
+      "merchant_name": "酒店",
+      "category_id": 5,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "WeWA 酒店",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_001",
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "EarnMORE 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_001",
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "EarnMORE 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_001",
+      "merchant_name": "AEON",
+      "category_id": 2,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "EarnMORE AEON",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_001",
+      "merchant_name": "屈臣氏",
+      "category_id": 2,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "EarnMORE 藥房",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_001",
+      "merchant_name": "港鐵",
+      "category_id": 4,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "EarnMORE 交通",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_001",
+      "merchant_name": "巴士",
+      "category_id": 4,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "EarnMORE 交通",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_001",
+      "merchant_name": "的士",
+      "category_id": 4,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "EarnMORE 交通",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_002",
+      "merchant_name": "7-Eleven",
+      "category_id": 1,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "TNG 便利店",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_002",
+      "merchant_name": "OK便利店",
+      "category_id": 1,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "TNG 便利店",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_002",
+      "merchant_name": "Circle K",
+      "category_id": 1,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "TNG 便利店",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_002",
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "TNG 快餐",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_002",
+      "merchant_name": "肯德基",
+      "category_id": 1,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "TNG 快餐",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_003",
+      "merchant_name": "屈臣氏",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "建行粵港澳 屈臣氏",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_003",
+      "merchant_name": "萬寧",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "建行粵港澳 萬寧",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_003",
+      "merchant_name": "莎莎",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "建行粵港澳 莎莎",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_003",
+      "merchant_name": "卓悅",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "建行粵港澳 卓悅",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_004",
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "工銀 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_004",
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "工銀 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_004",
+      "merchant_name": "7-Eleven",
+      "category_id": 1,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "工銀 便利店",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_004",
+      "merchant_name": "港鐵",
+      "category_id": 4,
+      "rebate_rate": "2%",
+      "rebate_type": "cashback",
+      "conditions": "工銀 交通",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_005",
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "交銀 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_005",
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "交銀 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_005",
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "交銀 餐飲",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_005",
+      "merchant_name": "大家樂",
+      "category_id": 1,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "交銀 餐飲",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_006",
+      "merchant_name": "屈臣氏",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "招行 屈臣氏",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_006",
+      "merchant_name": "萬寧",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "招行 萬寧",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_006",
+      "merchant_name": "莎莎",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "招行 莎莎",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_006",
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "招行 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_007",
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "大新 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_007",
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "大新 超市",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_007",
+      "merchant_name": "屈臣氏",
+      "category_id": 2,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "大新 藥房",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_007",
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": "3%",
+      "rebate_type": "cashback",
+      "conditions": "大新 餐飲",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_008",
+      "merchant_name": "759阿信屋",
+      "category_id": 2,
+      "rebate_rate": "5%",
+      "rebate_type": "cashback",
+      "conditions": "上海商銀 759",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_008",
+      "merchant_name": "屈臣氏",
+      "category_id": 2,
+      "rebate_rate": "4%",
+      "rebate_type": "cashback",
+      "conditions": "上海商銀 屈臣氏",
+      "status": "active"
+    },
+    {
+      "card_id": "hkr_008",
+      "merchant_name": "萬寧",
+      "category_id": 2,
+      "rebate_rate": "4%",
+      "rebate_type": "cashback",
+      "conditions": "上海商銀 萬寧",
+      "status": "active"
+    }
+  ],
+  "last_updated": "2026-02-27",
+  "summary": {
+    "total_cards": 21,
+    "total_merchant_rates": 100,
+    "sources": {
+      "moneyhero": 0,
+      "hongkongcard": 23,
+      "hkcashrebate": 28
+    }
+  }
+}

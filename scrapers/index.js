@@ -2,10 +2,12 @@
  * Credit Card Rebate Scraper - Main Entry
  * 信用卡回贈數據爬蟲 - 主程式
  * 
- * 自動搜集信用卡回贈數據從:
+ * 數據來源:
  * - MoneyHero.com.hk
  * - HongKongCard.com
  * - HKCashRebate.com
+ * 
+ * Output: JSON + SQL for Supabase
  */
 
 const fs = require('fs');
@@ -26,68 +28,66 @@ async function runAllScrapers() {
   
   const allCards = [];
   const allMerchantRates = [];
-  const sources = ['moneyhero', 'hongkongcard', 'hkcashrebate'];
   
-  // Run each scraper sequentially
+  // Run each scraper
   try {
     console.log('📡 Scraping MoneyHero.com.hk...');
-    const moneyHeroData = await scrapeMoneyHero();
-    allCards.push(...moneyHeroData.cards);
-    allMerchantRates.push(...moneyHeroData.merchantRates);
+    const data = await scrapeMoneyHero();
+    allCards.push(...data.cards);
+    allMerchantRates.push(...data.merchantRates);
   } catch (error) {
-    console.error('❌ MoneyHero scraper failed:', error.message);
+    console.error('❌ MoneyHero failed:', error.message);
   }
   
   try {
     console.log('📡 Scraping HongKongCard.com...');
-    const hkCardData = await scrapeHongKongCard();
-    allCards.push(...hkCardData.cards);
-    allMerchantRates.push(...hkCardData.merchantRates);
+    const data = await scrapeHongKongCard();
+    allCards.push(...data.cards);
+    allMerchantRates.push(...data.merchantRates);
   } catch (error) {
-    console.error('❌ HongKongCard scraper failed:', error.message);
+    console.error('❌ HongKongCard failed:', error.message);
   }
   
   try {
     console.log('📡 Scraping HKCashRebate.com...');
-    const hkCashData = await scrapeHKCashRebate();
-    allCards.push(...hkCashData.cards);
-    allMerchantRates.push(...hkCashData.merchantRates);
+    const data = await scrapeHKCashRebate();
+    allCards.push(...data.cards);
+    allMerchantRates.push(...data.merchantRates);
   } catch (error) {
-    console.error('❌ HKCashRebate scraper failed:', error.message);
+    console.error('❌ HKCashRebate failed:', error.message);
   }
   
   const today = new Date().toISOString().split('T')[0];
   
-  // Create final output
+  // Create output
   const output = {
     cards: allCards,
     merchant_rates: allMerchantRates,
     last_updated: today,
-    sources: sources,
     summary: {
       total_cards: allCards.length,
       total_merchant_rates: allMerchantRates.length,
-      cards_by_source: {
-        moneyhero: allCards.filter(c => c.source === 'moneyhero').length,
-        hongkongcard: allCards.filter(c => c.source === 'hongkongcard').length,
-        hkcashrebate: allCards.filter(c => c.source === 'hkcashrebate').length
+      sources: {
+        moneyhero: allMerchantRates.filter(r => r.conditions?.includes('MoneyHero')).length,
+        hongkongcard: allMerchantRates.filter(r => r.conditions?.includes('HongKongCard') || r.conditions?.includes('匯豐') || r.conditions?.includes('渣打') || r.conditions?.includes('恒生')).length,
+        hkcashrebate: allMerchantRates.filter(r => r.conditions?.includes('EarnMORE') || r.conditions?.includes('TNG') || r.conditions?.includes('建行') || r.conditions?.includes('工銀') || r.conditions?.includes('招行')).length
       }
     }
   };
   
-  // Ensure output directory exists
+  // Ensure output directory
   if (!fs.existsSync(OUTPUT_DIR)) {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   }
   
-  // Save JSON output
+  // Save JSON
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(output, null, 2));
-  console.log(`\n✅ JSON output saved to: ${OUTPUT_FILE}`);
+  console.log(`\n✅ JSON saved: ${OUTPUT_FILE}`);
   
-  // Generate SQL for Supabase insertion
+  // Generate SQL
   const sql = generateSQL(output);
   fs.writeFileSync(SQL_FILE, sql);
-  console.log(`✅ SQL output saved to: ${SQL_FILE}`);
+  console.log(`✅ SQL saved: ${SQL_FILE}`);
   
   console.log('\n📊 Summary:');
   console.log(`   Total Cards: ${output.summary.total_cards}`);
@@ -98,41 +98,44 @@ async function runAllScrapers() {
 }
 
 /**
- * Generate SQL statements for Supabase insertion
+ * Generate SQL INSERT statements for Supabase
  */
 function generateSQL(data) {
+  const today = new Date().toISOString().split('T')[0];
+  
   let sql = `-- Credit Card Rebate Data
 -- Generated: ${new Date().toISOString()}
 -- Total Cards: ${data.cards.length}
 -- Total Merchant Rates: ${data.merchant_rates.length}
 
--- Cards Table Insert (Upsert)
-INSERT INTO cards (id, name, bank, card_type, category, source, last_updated)
+-- ----------------------------
+-- Cards Table (Upsert)
+-- ----------------------------
+INSERT INTO cards (card_id, name, bank, last_updated)
 VALUES
 `;
   
-  const cardValues = data.cards.map(card => {
-    return `  ('${card.id}', '${card.name.replace(/'/g, "''")}', '${card.bank.replace(/'/g, "''")}', '${card.card_type}', '${card.category}', '${card.source}', '${card.last_updated}')`;
-  }).join(',\n');
+  const cardValues = data.cards.map(c => 
+    `  ('${c.card_id}', '${c.name.replace(/'/g, "''")}', '${c.bank.replace(/'/g, "''")}', '${c.last_updated}')`
+  ).join(',\n');
   
   sql += cardValues;
   sql += `
-ON CONFLICT (id) DO UPDATE SET
+ON CONFLICT (card_id) DO UPDATE SET
   name = EXCLUDED.name,
   bank = EXCLUDED.bank,
-  card_type = EXCLUDED.card_type,
-  category = EXCLUDED.category,
-  source = EXCLUDED.source,
   last_updated = EXCLUDED.last_updated;
 
--- Merchant Rates Table Insert (Upsert)
-INSERT INTO merchant_rates (card_id, merchant_name, category_id, rebate_rate, rebate_type, conditions, source, last_updated)
+-- ----------------------------
+-- Merchant Rates Table (Upsert)
+-- ----------------------------
+INSERT INTO merchant_rates (card_id, merchant_name, category_id, rebate_rate, rebate_type, conditions, status)
 VALUES
 `;
   
-  const rateValues = data.merchant_rates.map(rate => {
-    return `  ('${rate.card_id}', '${rate.merchant_name.replace(/'/g, "''")}', '${rate.category_id}', '${rate.rebate_rate}', '${rate.rebate_type}', '${rate.conditions.replace(/'/g, "''")}', '${rate.source}', '${rate.last_updated}')`;
-  }).join(',\n');
+  const rateValues = data.merchant_rates.map(r => 
+    `  ('${r.card_id}', '${r.merchant_name.replace(/'/g, "''")}', ${r.category_id}, '${r.rebate_rate}', '${r.rebate_type}', '${r.conditions.replace(/'/g, "''")}', '${r.status}')`
+  ).join(',\n');
   
   sql += rateValues;
   sql += `
@@ -140,24 +143,19 @@ ON CONFLICT (card_id, merchant_name, category_id) DO UPDATE SET
   rebate_rate = EXCLUDED.rebate_rate,
   rebate_type = EXCLUDED.rebate_type,
   conditions = EXCLUDED.conditions,
-  source = EXCLUDED.source,
-  last_updated = EXCLUDED.last_updated;
+  status = EXCLUDED.status;
 `;
   
   return sql;
 }
 
-// Export for use as module
 module.exports = { runAllScrapers, generateSQL };
 
-// Run if called directly
 if (require.main === module) {
   runAllScrapers()
-    .then(result => {
-      console.log('\n🎉 Scraping complete!');
-    })
-    .catch(error => {
-      console.error('❌ Scraping failed:', error);
+    .then(() => console.log('\n🎉 Scraping complete!'))
+    .catch(err => {
+      console.error('❌ Failed:', err);
       process.exit(1);
     });
 }
