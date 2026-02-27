@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { searchMerchant, getAllMerchants } from '../../lib/merchantMappings';
+import { useState, useEffect, useCallback } from 'react';
+import { searchMerchant, getAllMerchants, findMerchantByInput } from '../../lib/merchantMappings';
 
 export default function MerchantSearch({ 
   categories = [],
@@ -18,11 +18,21 @@ export default function MerchantSearch({
       const results = searchMerchant(query);
       setSuggestions(results);
       setShowSuggestions(results.length > 0);
+      
+      // 自動偵測商戶並選擇類別
+      const matchedMerchant = findMerchantByInput(query);
+      if (matchedMerchant && onSelect && categories.length > 0) {
+        const category = categories.find(c => c.name === matchedMerchant.category);
+        if (category) {
+          onSelect(category.id.toString());
+          setSelectedMerchant(matchedMerchant);
+        }
+      }
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
     }
-  }, [query]);
+  }, [query, onSelect, categories, setSelectedMerchant]);
 
   // 選擇商戶
   function selectMerchant(merchant) {

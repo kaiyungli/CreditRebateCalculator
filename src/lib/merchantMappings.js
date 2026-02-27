@@ -192,3 +192,34 @@ export function getMerchantCategory(merchantName) {
 export function getAllMerchants() {
   return Object.keys(merchantMappings).sort();
 }
+
+// 根據輸入自動偵測商戶（用於用戶輸入時自動選擇類別）
+export function findMerchantByInput(input) {
+  if (!input || input.length < 1) return null;
+  
+  const inputLower = input.toLowerCase();
+  
+  // 首先檢查完全匹配
+  for (const [merchantName, data] of Object.entries(merchantMappings)) {
+    if (merchantName.toLowerCase() === inputLower) {
+      return { name: merchantName, ...data };
+    }
+  }
+  
+  // 檢查關鍵字匹配
+  for (const [merchantName, data] of Object.entries(merchantMappings)) {
+    if (data.keywords.some(kw => kw.toLowerCase() === inputLower)) {
+      return { name: merchantName, ...data };
+    }
+  }
+  
+  // 檢查商戶名稱是否包含輸入（部分匹配）
+  for (const [merchantName, data] of Object.entries(merchantMappings)) {
+    if (merchantName.toLowerCase().includes(inputLower) || 
+        data.keywords.some(kw => kw.toLowerCase().includes(inputLower))) {
+      return { name: merchantName, ...data };
+    }
+  }
+  
+  return null;
+}
