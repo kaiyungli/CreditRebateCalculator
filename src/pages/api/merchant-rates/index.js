@@ -6,11 +6,18 @@ export default async function handler(req, res) {
   try {
     const categoryId = req.query.category_id ? Number(req.query.category_id) : null
     const cardIds = req.query.card_ids ? String(req.query.card_ids).split(',').map(n => Number(n)) : []
-    const rows = await getMerchantRates(cardIds, categoryId)
+    
+    console.log('categoryId:', categoryId)
+    console.log('cardIds:', cardIds)
+    
+    const rows = await getMerchantRates(cardIds.length > 0 ? cardIds : [], categoryId)
+    
+    console.log('rows:', rows.length)
+    
     res.status(200).json({ 
       merchantRates: rows, 
       count: rows.length, 
-      source: 'reward_rules' 
+      source: 'supabase' 
     })
   } catch (error) {
     console.error('Error fetching merchant rates:', error)

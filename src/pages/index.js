@@ -191,6 +191,7 @@ export default function Home() {
   const totalRebate = results.reduce((sum, r) => sum + r.rebate, 0);
 
   return (
+        <button onClick={() => setShowCardSelector(true)} style={{margin: "10px", padding: "10px 20px", background: "#007bff", color: "white", border: "none", borderRadius: "8px", cursor: "pointer"}}>選擇信用卡</button>
     <>
       <Head>
         <title>💳 香港信用卡回贈計算器</title>
@@ -228,7 +229,7 @@ export default function Home() {
           />
 
           {/* 商戶回贈比較 - 選擇信用卡同類別後顯示 */}
-          {userCards.length > 0 && selectedCategory && (
+          {selectedCategory && (
             <div style={{ marginTop: '24px' }}>
               <MerchantRatesDisplay 
                 userCards={userCards}
