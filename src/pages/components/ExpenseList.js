@@ -30,6 +30,22 @@ export default function ExpenseList({ expenses = [], onRemove, onUpdate, totalAm
     setEditingExpense(null);
   }
 
+  // Move expense up
+  function moveUp(index) {
+    if (index === 0) return;
+    const newExpenses = [...expenses];
+    [newExpenses[index - 1], newExpenses[index]] = [newExpenses[index], newExpenses[index - 1]];
+    onUpdate(newExpenses, true);
+  }
+
+  // Move expense down
+  function moveDown(index) {
+    if (index === expenses.length - 1) return;
+    const newExpenses = [...expenses];
+    [newExpenses[index], newExpenses[index + 1]] = [newExpenses[index + 1], newExpenses[index]];
+    onUpdate(newExpenses, true);
+  }
+
   return (
     <>
       <div style={{ marginBottom: '24px' }}>
@@ -83,19 +99,53 @@ export default function ExpenseList({ expenses = [], onRemove, onUpdate, totalAm
                   </div>
                 </div>
               </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); onRemove(expense.id); }}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#FF6B6B',
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                  padding: '4px 8px',
-                }}
-              >
-                ✕
-              </button>
+              {/* 操作按鈕：上移、下移、刪除 */}
+              <div style={{ display: 'flex', gap: '2px' }} onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => moveUp(index)}
+                  disabled={index === 0}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: index === 0 ? '#ccc' : 'var(--text-secondary)',
+                    cursor: index === 0 ? 'not-allowed' : 'pointer',
+                    fontSize: '16px',
+                    padding: '4px 6px',
+                  }}
+                  title="上移"
+                >
+                  ↑
+                </button>
+                <button
+                  onClick={() => moveDown(index)}
+                  disabled={index === expenses.length - 1}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: index === expenses.length - 1 ? '#ccc' : 'var(--text-secondary)',
+                    cursor: index === expenses.length - 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '16px',
+                    padding: '4px 6px',
+                  }}
+                  title="下移"
+                >
+                  ↓
+                </button>
+                <button
+                  onClick={() => onRemove(expense.id)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#FF6B6B',
+                    cursor: 'pointer',
+                    fontSize: '20px',
+                    padding: '4px 6px',
+                  }}
+                  title="刪除"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           ))}
         </div>
