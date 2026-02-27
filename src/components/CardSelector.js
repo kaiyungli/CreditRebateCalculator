@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 import { getUserCards, saveUserCards, isFirstTimeUser, markAsSeenCardSelector } from '../lib/userCards'
 
 function formatCardName(card) {
-  // cards API currently returns { id, bank_id, name, bank_name? ... }
-  // your deployed /api/cards already returns bank_name + name
   const bank = card.bank_name || card.bankName || ''
   return `${bank ? bank + ' ' : ''}${card.name || card.card_name || ''}`.trim()
 }
@@ -14,6 +12,7 @@ export default function CardSelector({ onComplete, show: externalShow }) {
   const [cards, setCards] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false)
   
   // 取得已選擇的卡片詳細資料
   const selectedCardDetails = cards.filter(c => selectedCards.includes(c.id))
@@ -49,6 +48,13 @@ export default function CardSelector({ onComplete, show: externalShow }) {
     loadCards()
   }, [])
 
+  // 當 modal 打開時，如果已有選卡，預設顯示已選列表
+  useEffect(() => {
+    if (isVisible && selectedCards.length > 0) {
+      setShowSelectedOnly(true)
+    }
+  }, [isVisible])
+
   const toggleCard = (cardId) => {
     setSelectedCards(prev => (
       prev.includes(cardId)
@@ -65,10 +71,19 @@ export default function CardSelector({ onComplete, show: externalShow }) {
   }
 
   const handleSkip = () => {
-    // allow no selection but still mark seen (optional)
     markAsSeenCardSelector()
     setShowSelector(false)
     if (onComplete) onComplete([])
+  }
+
+  const handleClose = () => {
+    if (externalShow !== undefined) {
+      // 如果是外部控制，直接調用 onComplete
+      if (onComplete) onComplete(selectedCards)
+    } else {
+      setShowSelector(false)
+      if (onComplete) onComplete(selectedCards)
+    }
   }
 
   if (!isVisible) return null
@@ -79,15 +94,17 @@ export default function CardSelector({ onComplete, show: externalShow }) {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1E293B', marginBottom: '8px' }}>
-            🎴 選擇你的信用卡
+            {showSelectedOnly && selectedCards.length > 0 ? '🎴 我的信用卡' : '🎴 選擇你的信用卡'}
           </h2>
           <p style={{ color: '#64748B', fontSize: '14px' }}>
-            幫你推薦最適合的回贈組合
+            {showSelectedOnly && selectedCards.length > 0 
+              ? '已選擇的信用卡可以直接移除' 
+              : '幫你推薦最適合的回贈組合'}
           </p>
         </div>
 
-        {/* 已選擇的卡片展示 */}
-        {selectedCardDetails.length > 0 && (
+        {/* 已選擇的卡片展示 (僅在有選卡且處於查看模式時顯示) */}
+        {showSelectedOnly && selectedCardDetails.length > 0 && (
           <div style={{ 
             background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)', 
             borderRadius: '12px', 
@@ -181,7 +198,7 @@ export default function CardSelector({ onComplete, show: externalShow }) {
         {/* Actions */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
           <button 
-            onClick={handleSkip} 
+            onClick={handleClose} 
             type="button"
             style={{ 
               background: 'transparent', 
@@ -192,7 +209,7 @@ export default function CardSelector({ onComplete, show: externalShow }) {
               padding: '8px 16px'
             }}
           >
-            暫時不揀
+            {selectedCards.length > 0 ? '關閉' : '暫時不揀'}
           </button>
           <button
             onClick={handleSave}
