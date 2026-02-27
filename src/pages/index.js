@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import CardSelector from '../components/CardSelector';
+import CardSelector from '../../components/CardSelector';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import ExpenseInput from './components/ExpenseInput';
