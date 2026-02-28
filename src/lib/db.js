@@ -3,203 +3,136 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-const supabase = createClient(supabaseUrl, supabaseKey)
+// Only create Supabase client if credentials are configured
+const supabase = (supabaseUrl && supabaseKey && !supabaseUrl.includes('YOUR_')) 
+  ? createClient(supabaseUrl, supabaseKey) 
+  : null
 
-// Fallback categories data (when database is unavailable)
-export const DEMO_CATEGORIES = [
-  { id: 1, name: '餐飲美食', icon: '🍜', parent_id: null, description: '餐廳、咖啡店、外賣', sort_order: 1 },
-  { id: 2, name: '網上購物', icon: '🛒', parent_id: null, description: '網上平台購物', sort_order: 2 },
-  { id: 3, name: '超市便利店', icon: '🏪', parent_id: null, description: '超市、便利店消費', sort_order: 3 },
-  { id: 4, name: '交通出行', icon: '🚗', parent_id: null, description: '交通、燃油、停車', sort_order: 4 },
-  { id: 5, name: '娛樂休閒', icon: '🎬', parent_id: null, description: '電影、遊戲、娛樂', sort_order: 5 },
-  { id: 6, name: '服飾美容', icon: '👗', parent_id: null, description: '服裝、化妝品、護膚', sort_order: 6 },
-  { id: 7, name: '旅遊外遊', icon: '✈️', parent_id: null, description: '機票、酒店、外遊消費', sort_order: 6 },
-  { id: 8, name: '水電煤氣', icon: '💡', parent_id: null, description: '公用事業繳費', sort_order: 7 },
-  { id: 9, name: '其他消費', icon: '💳', parent_id: null, description: '其他一般消費', sort_order: 8 },
+// Fallback demo data when no Supabase
+const DEMO_MERCHANT_RATES = [
+  { id: 1, card_id: 1, merchant_name: '壽司郎', category_id: 1, rebate_rate: 0.04, rebate_type: 'PERCENTAGE', conditions: '餐飲4%', status: 'ACTIVE' },
+  { id: 2, card_id: 1, merchant_name: '麥當勞', category_id: 1, rebate_rate: 0.04, rebate_type: 'PERCENTAGE', conditions: '快餐4%', status: 'ACTIVE' },
+  { id: 3, card_id: 1, merchant_name: '海底撈', category_id: 1, rebate_rate: 0.04, rebate_type: 'PERCENTAGE', conditions: '火鍋4%', status: 'ACTIVE' },
+  { id: 4, card_id: 1, merchant_name: '百佳', category_id: 3, rebate_rate: 0.02, rebate_type: 'PERCENTAGE', conditions: '超市2%', status: 'ACTIVE' },
+  { id: 5, card_id: 1, merchant_name: 'HKTVmall', category_id: 2, rebate_rate: 0.02, rebate_type: 'PERCENTAGE', conditions: '網購2%', status: 'ACTIVE' },
 ]
 
+const DEMO_CATEGORIES = [
+  { id: 1, name: '餐飲美食', icon: '🍜', sort_order: 1 },
+  { id: 2, name: '網上購物', icon: '🛒', sort_order: 2 },
+  { id: 3, name: '超市便利店', icon: '🏪', sort_order: 3 },
+  { id: 4, name: '交通出行', icon: '🚗', sort_order: 4 },
+  { id: 5, name: '娛樂休閒', icon: '🎬', sort_order: 5 },
+]
+
+const DEMO_CARDS = [
+  { id: 1, bank_id: 1, name: '滙豐 Visa Signature', card_type: 'CASHBACK', status: 'ACTIVE' },
+  { id: 2, bank_id: 1, name: '滙豐白金Visa', card_type: 'CASHBACK', status: 'ACTIVE' },
+  { id: 3, bank_id: 2, name: '渣打Asia Miles', card_type: 'MILEAGE', status: 'ACTIVE' },
+  { id: 4, bank_id: 2, name: '渣打Smart卡', card_type: 'CASHBACK', status: 'ACTIVE' },
+  { id: 5, bank_id: 3, name: '中銀Visa白金', card_type: 'CASHBACK', status: 'ACTIVE' },
+]
+
+const DEMO_BANKS = [
+  { id: 1, name: '滙豐銀行', status: 'ACTIVE' },
+  { id: 2, name: '渣打銀行', status: 'ACTIVE' },
+  { id: 3, name: '中銀香港', status: 'ACTIVE' },
+]
+
+export { DEMO_MERCHANT_RATES, DEMO_CATEGORIES, DEMO_CARDS, DEMO_BANKS }
 export default supabase
 
+// ============ Helper Functions ============
+
 export async function getMerchantRates(cardIds = [], categoryId = null) {
-  let query = supabase
-    .from('merchant_rates')
-    .select('*')
-    .eq('status', 'ACTIVE')
-
-  if (categoryId != null) {
-    query = query.eq('category_id', categoryId)
+  // Use demo data if no Supabase
+  if (!supabase) {
+    let rates = DEMO_MERCHANT_RATES.filter(r => r.status === 'ACTIVE')
+    if (categoryId) rates = rates.filter(r => r.category_id === categoryId)
+    if (cardIds?.length > 0) rates = rates.filter(r => cardIds.includes(r.card_id))
+    
+    // Join with card data
+    return rates.map(r => {
+      const card = DEMO_CARDS.find(c => c.id === r.card_id)
+      return { ...r, card_name: card?.name, bank_id: card?.bank_id, card_type: card?.card_type }
+    })
   }
 
-  if (Array.isArray(cardIds) && cardIds.length > 0) {
-    query = query.in('card_id', cardIds)
-  }
+  let query = supabase.from('merchant_rates').select('*').eq('status', 'ACTIVE')
+  if (categoryId) query = query.eq('category_id', categoryId)
+  if (cardIds?.length > 0) query = query.in('card_id', cardIds)
 
   const { data, error } = await query
-  
   if (error) throw error
 
-  // Get card details separately
   const cardIdsNeeded = [...new Set(data.map(r => r.card_id))]
-  const { data: cards } = await supabase
-    .from('cards')
-    .select('id, name, bank_id, card_type')
-    .in('id', cardIdsNeeded)
+  const { data: cards } = await supabase.from('cards').select('id, name, bank_id, card_type').in('id', cardIdsNeeded)
 
-  // Join card data to merchant rates
   const cardMap = {}
-  for (const c of (cards || [])) {
-    cardMap[c.id] = c
-  }
+  for (const c of (cards || [])) cardMap[c.id] = c
 
-  const result = data.map(r => ({
+  return data.map(r => ({
     ...r,
     card_name: cardMap[r.card_id]?.name,
     bank_id: cardMap[r.card_id]?.bank_id,
     card_type: cardMap[r.card_id]?.card_type
   }))
-  
-  return result
 }
 
 export async function getCategories() {
-  try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('sort_order', { ascending: true })
-      .order('name', { ascending: true })
-    
-    if (error) throw error
-    
-    // If we got valid data, return it
-    if (data && data.length > 0) {
-      return data
-    }
-    
-    // Empty result - use fallback
-    console.log('[getCategories] Empty DB result, using DEMO_CATEGORIES fallback')
-    return DEMO_CATEGORIES
-    
-  } catch (error) {
-    // Database unavailable or error - use fallback
-    console.warn('[getCategories] DB error, using DEMO_CATEGORIES fallback:', error.message)
-    return DEMO_CATEGORIES
-  }
+  if (!supabase) return DEMO_CATEGORIES
+  
+  const { data, error } = await supabase.from('categories').select('*').order('sort_order', { ascending: true }).order('name', { ascending: true })
+  if (error) return DEMO_CATEGORIES
+  return data?.length > 0 ? data : DEMO_CATEGORIES
 }
 
 export async function getCards(filters = {}) {
-  const { bank_id, card_type, status = 'ACTIVE', limit = 50 } = filters
+  if (!supabase) {
+    let cards = DEMO_CARDS
+    if (filters.bank_id) cards = cards.filter(c => c.bank_id === filters.bank_id)
+    if (filters.card_type) cards = cards.filter(c => c.card_type === filters.card_type)
+    if (filters.status) cards = cards.filter(c => c.status === filters.status)
+    return cards.slice(0, filters.limit || 50)
+  }
   
-  let query = supabase
-    .from('cards')
-    .select('*')
-    .eq('status', status)
+  let query = supabase.from('cards').select('*').eq('status', filters.status || 'ACTIVE')
+  if (filters.bank_id) query = query.eq('bank_id', filters.bank_id)
+  if (filters.card_type) query = query.eq('card_type', filters.card_type)
   
-  if (bank_id) query = query.eq('bank_id', bank_id)
-  if (card_type) query = query.eq('card_type', card_type)
-  
-  const { data, error } = await query.limit(limit)
-  
+  const { data, error } = await query.limit(filters.limit || 50)
   if (error) throw error
   return data || []
 }
 
 export async function getBanks() {
-  const { data, error } = await supabase
-    .from('banks')
-    .select('*')
-    .eq('status', 'ACTIVE')
-    .order('name', { ascending: true })
+  if (!supabase) return DEMO_BANKS
   
+  const { data, error } = await supabase.from('banks').select('*').eq('status', 'ACTIVE').order('name', { ascending: true })
   if (error) throw error
   return data || []
 }
 
 export async function getActiveCards() {
-  const { data, error } = await supabase
-    .from('cards')
-    .select('id, bank_id, name, name_en, card_type, banks(name_en)')
-    .eq('status', 'ACTIVE')
-    .order('id')
+  if (!supabase) return DEMO_CARDS
   
+  const { data, error } = await supabase.from('cards').select('id, bank_id, name, name_en, card_type').eq('status', 'ACTIVE').order('id')
   if (error) throw error
-  
-  // Transform to include bank_name and reward_program
-  return (data || []).map(c => ({
-    id: c.id,
-    bank_id: c.bank_id,
-    name: c.name,
-    name_en: c.name_en,
-    card_type: c.card_type,
-    bank_name: c.banks?.name_en || '',
-    reward_program: c.card_type  // Use card_type as reward_program for now
-  }))
+  return data || []
 }
 
 export async function getCardById(id) {
-  const { data, error } = await supabase
-    .from('cards')
-    .select('*')
-    .eq('id', id)
-    .single()
+  if (!supabase) return DEMO_CARDS.find(c => c.id === id)
   
+  const { data, error } = await supabase.from('cards').select('*').eq('id', id).single()
   if (error) throw error
   return data
 }
 
 export async function getCategoryById(id) {
-  try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('id', id)
-      .single()
-    
-    if (error) throw error
-    return data
-    
-  } catch (error) {
-    // Fallback: find in DEMO_CATEGORIES
-    console.warn('[getCategoryById] DB error, searching DEMO_CATEGORIES:', error.message)
-    const fallback = DEMO_CATEGORIES.find(c => c.id === id)
-    if (fallback) return fallback
-    throw error
-  }
-}
-
-// Get active rules and merchants for the calculate API
-export async function getActiveRulesAndMerchants() {
-  // Get all active rebate_rates (these act as rules)
-  const { data: rates } = await supabase
-    .from('rebate_rates')
-    .select('id, card_id, category_id, base_rate, rebate_type')
-    .eq('status', 'ACTIVE')
+  if (!supabase) return DEMO_CATEGORIES.find(c => c.id === id)
   
-  // Get all active cards
-  const { data: cards } = await supabase
-    .from('cards')
-    .select('id, name, bank_id, card_type')
-    .eq('status', 'ACTIVE')
-  
-  // Get merchants (empty for now - we can add merchant-specific rates later)
-  const merchantKeyToId = {}
-  
-  // Transform rates to rules format
-  const rules = (rates || []).map(r => ({
-    id: r.id,
-    card_id: r.card_id,
-    category_id: r.category_id,
-    merchant_id: null,
-    reward_kind: r.rebate_type === 'MILEAGE' ? 'MILES' : 'CASHBACK',
-    rate_unit: 'PERCENT',
-    rate_value: r.base_rate,
-    per_amount: null,
-    cap_value: null,
-    cap_period: null,
-    min_spend: null,
-    priority: r.category_id ? 100 : 200,  // Category rules have higher priority than general
-    status: 'ACTIVE'
-  }))
-  
-  return { merchantKeyToId, rules }
+  const { data, error } = await supabase.from('categories').select('*').eq('id', id).single()
+  if (error) throw error
+  return data
 }
