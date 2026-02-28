@@ -108,15 +108,6 @@ export default function CardSelector({ onComplete, onClose, show: externalShow }
     setSelectedCards([])
     setConfirmedCards([])
   }
-        onClose();
-      } else if (onComplete) {
-        onComplete(undefined);  // undefined = 只 close，唔 update
-      }
-    } else {
-      setShowSelector(false)
-      if (onComplete) onComplete([])
-    }
-  }
 
   const handleClose = () => {
     // Close the modal - 用 onClose (如果提供咗) 或者 onComplete
