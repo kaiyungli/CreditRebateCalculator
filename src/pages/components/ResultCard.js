@@ -1,5 +1,10 @@
 export default function ResultCard({ results = [], totalAmount = 0, totalRebate = 0, onReset = () => {} }) {
-  if (results.length === 0) return null;
+  if (!results || results.length === 0) return null;
+  
+  // Defensive: ensure numeric values
+  const safeTotalRebate = Number(totalRebate) || 0;
+  const safeTotalAmount = Number(totalAmount) || 0;
+  const rebateRate = safeTotalAmount > 0 ? ((safeTotalRebate / safeTotalAmount) * 100).toFixed(2) : 0;
 
   return (
     <div style={{ marginTop: '40px' }}>
@@ -20,10 +25,10 @@ export default function ResultCard({ results = [], totalAmount = 0, totalRebate 
           💰 總回贈
         </div>
         <div style={{ fontSize: '48px', fontWeight: '800' }}>
-          HK${totalRebate.toFixed(2)}
+          HK${safeTotalRebate.toFixed(2)}
         </div>
         <div style={{ fontSize: '16px', opacity: 0.9, marginTop: '8px' }}>
-          實際回贈率: {((totalRebate / totalAmount) * 100).toFixed(2)}%
+          實際回贈率: {rebateRate}%
         </div>
       </div>
 
