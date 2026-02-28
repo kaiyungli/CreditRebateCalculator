@@ -64,6 +64,11 @@ export default function Calculate() {
     setError('');
     setResult(null);
 
+    // 準備 card_ids 如果用戶選擇咗「我既卡」
+    const cardIdsParam = showMyCardsOnly && userCardIds.length > 0 
+      ? userCardIds 
+      : undefined;
+
     try {
       const res = await fetch('/api/calculate', {
         method: 'POST',
@@ -75,6 +80,7 @@ export default function Calculate() {
             amount: parseFloat(amount),
             category_id: selectedCategory ? parseInt(selectedCategory) : null,
           }],
+          card_ids: cardIdsParam,
         }),
       });
       
@@ -274,6 +280,17 @@ export default function Calculate() {
                   borderRadius: '12px'
                 }}>
                   {userCardIds.length} 張
+                </span>
+              )}
+              {showMyCardsOnly && userCardIds.length === 0 && (
+                <span style={{ 
+                  fontSize: '12px', 
+                  color: '#DC2626',
+                  background: '#FEE2E2',
+                  padding: '2px 8px',
+                  borderRadius: '12px'
+                }}>
+                  未選擇任何卡
                 </span>
               )}
             </div>

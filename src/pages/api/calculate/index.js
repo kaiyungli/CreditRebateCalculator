@@ -24,7 +24,13 @@ export default async function handler(req, res) {
     }
 
     // Get cards (supports fallback mode)
-    const cards = await getActiveCards()
+    let cards = await getActiveCards()
+    
+    // Filter cards by user selection if card_ids provided
+    if (body.card_ids && Array.isArray(body.card_ids) && body.card_ids.length > 0) {
+      const userCardIds = body.card_ids.map(Number)
+      cards = cards.filter(card => userCardIds.includes(card.id))
+    }
 
     const { merchantKeyToId, rules } = await getActiveRulesAndMerchants()
 
