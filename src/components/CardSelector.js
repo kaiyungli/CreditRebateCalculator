@@ -216,9 +216,9 @@ export default function CardSelector({ onComplete, onClose, show: externalShow }
         <div style={{ textAlign: 'center', marginBottom: '20px', paddingTop: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '8px' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1E293B', margin: 0 }}>
-              {showSelectedOnly && selectedCards.length > 0 ? '🎴 我的信用卡' : '🎴 選擇你的信用卡'}
+              {showSelectedOnly && confirmedCards.length > 0 ? '🎴 我的信用卡' : '🎴 選擇你的信用卡'}
             </h2>
-            {selectedCards.length > 0 && (
+            {confirmedCards.length > 0 && (
               <span style={{
                 background: '#0066FF',
                 color: 'white',
@@ -228,12 +228,12 @@ export default function CardSelector({ onComplete, onClose, show: externalShow }
                 borderRadius: '16px',
                 boxShadow: '0 2px 8px rgba(0, 102, 255, 0.3)'
               }}>
-                已選 {selectedCards.length} 張
+                已選 {confirmedCards.length} 張
               </span>
             )}
           </div>
           <p style={{ color: '#64748B', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            {selectedCards.length > 0 ? (
+            {confirmedCards.length > 0 ? (
               <>
                 <span style={{ color: '#F59E0B', fontSize: '16px' }}>⚠️</span>
                 <span style={{ color: '#D97706', fontWeight: '600' }}>請點擊下方「確認選擇」按鈕保存</span>
@@ -246,7 +246,7 @@ export default function CardSelector({ onComplete, onClose, show: externalShow }
           </p>
         </div>
 
-        {/* 已選擇的卡片列表 (可移除) */}
+        {/* 已選擇的卡片列表 (可移除) - 只顯示已確認既卡 */}
         {showSelectedOnly && selectedCardDetails.length > 0 && (
           <div style={{ 
             background: '#F8FAFC', 
@@ -257,7 +257,7 @@ export default function CardSelector({ onComplete, onClose, show: externalShow }
             overflow: 'auto'
           }}>
             <div style={{ color: '#64748B', fontSize: '12px', marginBottom: '12px', fontWeight: '600' }}>
-              已選擇 {selectedCardDetails.length} 張信用卡 ✕ 可以移除
+              已選擇 {selectedCardDetails.length} 張信用卡 (確認後生效)
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {selectedCardDetails.map(card => (
