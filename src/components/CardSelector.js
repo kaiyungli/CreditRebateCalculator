@@ -30,8 +30,8 @@ export default function CardSelector({ onComplete, onClose, show: externalShow }
     const savedIds = getUserCards()
     // selectedCards: user 既即時選擇（未confirm）
     setSelectedCards(savedIds)
-    // confirmedCards: 已經 confirm 既卡（呢啲先會顯示係上面既list）
-    setConfirmedCards(savedIds)
+    // confirmedCards: 呢度唔set，等用户confirm先至set
+    // setConfirmedCards(savedIds) // 移除呢句，等用户confirm先至會update上面既list
 
     // show selector for first-time users, otherwise keep hidden
     if (externalShow === undefined && isFirstTimeUser()) setShowSelector(true)
