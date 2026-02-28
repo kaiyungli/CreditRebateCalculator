@@ -3,6 +3,7 @@ import ResultCard from './components/ResultCard';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { getUserCards } from '../lib/userCards';
 
 export default function Calculate() {
   const router = useRouter();
@@ -13,6 +14,8 @@ export default function Calculate() {
   const [selectedCard, setSelectedCard] = useState('');
   const [categories, setCategories] = useState([]);
   const [cards, setCards] = useState([]);
+  const [userCardIds, setUserCardIds] = useState([]);
+  const [showMyCardsOnly, setShowMyCardsOnly] = useState(false);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,6 +34,10 @@ export default function Calculate() {
         
         if (catData.categories) setCategories(catData.categories);
         if (cardsData.cards) setCards(cardsData.cards);
+        
+        // 載入用戶已選擇的卡
+        const savedUserCards = getUserCards();
+        setUserCardIds(savedUserCards);
       } catch (err) {
         console.error('載入數據失敗:', err);
       }
@@ -203,7 +210,7 @@ export default function Calculate() {
           </div>
 
           {/* 指定信用卡 */}
-          <div style={{ marginBottom: '24px' }}>
+          <div style={{ marginBottom: '16px' }}>
             <label style={{ 
               display: 'block', 
               marginBottom: '8px', 
@@ -212,14 +219,77 @@ export default function Calculate() {
             }}>
               指定信用卡（可留空以比較所有卡）
             </label>
+            
+            {/* Toggle: My Cards vs All Cards */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '16px', 
+              marginBottom: '12px',
+              padding: '12px 16px',
+              background: '#F8FAFC',
+              borderRadius: '8px'
+            }}>
+              <span style={{ fontWeight: '600', color: '#374151' }}>顯示:</span>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px', 
+                cursor: 'pointer',
+                color: showMyCardsOnly ? '#374151' : '#0066FF',
+                fontWeight: showMyCardsOnly ? '400' : '600'
+              }}>
+                <input
+                  type="radio"
+                  name="cardFilter"
+                  checked={!showMyCardsOnly}
+                  onChange={() => setShowMyCardsOnly(false)}
+                  style={{ accentColor: '#0066FF' }}
+                />
+                全部卡
+              </label>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px', 
+                cursor: 'pointer',
+                color: showMyCardsOnly ? '#0066FF' : '#374151',
+                fontWeight: showMyCardsOnly ? '600' : '400'
+              }}>
+                <input
+                  type="radio"
+                  name="cardFilter"
+                  checked={showMyCardsOnly}
+                  onChange={() => setShowMyCardsOnly(true)}
+                  style={{ accentColor: '#0066FF' }}
+                />
+                我既卡
+              </label>
+              {showMyCardsOnly && userCardIds.length > 0 && (
+                <span style={{ 
+                  fontSize: '12px', 
+                  color: '#64748B',
+                  background: '#E2E8F0',
+                  padding: '2px 8px',
+                  borderRadius: '12px'
+                }}>
+                  {userCardIds.length} 張
+                </span>
+              )}
+            </div>
+            
             <select
               value={selectedCard}
               onChange={(e) => setSelectedCard(e.target.value)}
               className="input-field"
               style={{ cursor: 'pointer' }}
+              disabled={showMyCardsOnly && userCardIds.length === 0}
             >
               <option value="">不限信用卡（自動推薦最佳卡片）</option>
-              {cards.map((card) => (
+              {(showMyCardsOnly 
+                ? cards.filter(card => userCardIds.includes(card.id))
+                : cards
+              ).map((card) => (
                 <option key={card.id} value={card.id}>
                   {card.bank_name} {card.card_name}
                 </option>

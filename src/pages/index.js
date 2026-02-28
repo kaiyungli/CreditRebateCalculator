@@ -21,6 +21,7 @@ export default function Home() {
   const [results, setResults] = useState([]);
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [breakdown, setBreakdown] = useState({ cashback: 0, miles: 0, points: 0 });
+  const [showAllCards, setShowAllCards] = useState(false);
 
   // Categories state
   const [dbCategories, setDbCategories] = useState([]);
@@ -254,6 +255,8 @@ export default function Home() {
                 selectedCategory={parseInt(selectedCategory)}
                 categories={categories}
                 onSelectMerchant={handleSelectMerchant}
+                showAllCards={showAllCards}
+                onToggleShowAllCards={() => setShowAllCards(!showAllCards)}
               />
             </div>
           )}

@@ -4,7 +4,9 @@ export default function MerchantRatesDisplay({
   userCards = [], 
   selectedCategory,
   categories = [],
-  onSelectMerchant
+  onSelectMerchant,
+  showAllCards = false,
+  onToggleShowAllCards
 }) {
   const [merchantRates, setMerchantRates] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -32,16 +34,19 @@ export default function MerchantRatesDisplay({
         const params = new URLSearchParams();
         params.append('category_id', Number(selectedCategory));
         
-        // Parse userCards safely (handle both object {id} and plain ID)
-        const cardIds = (userCards || [])
-          .map(c => (typeof c === 'object' && c !== null ? c.id : c))
-          .map(n => Number(n))
-          .filter(n => Number.isFinite(n));
-        
-        console.log('MerchantRatesDisplay - cardIds:', cardIds);
-        
-        if (cardIds.length > 0) {
-          params.append('card_ids', cardIds.join(','));
+        // Only filter by card_ids if showAllCards is false and we have userCards
+        if (!showAllCards && userCards.length > 0) {
+          // Parse userCards safely (handle both object {id} and plain ID)
+          const cardIds = (userCards || [])
+            .map(c => (typeof c === 'object' && c !== null ? c.id : c))
+            .map(n => Number(n))
+            .filter(n => Number.isFinite(n));
+          
+          console.log('MerchantRatesDisplay - cardIds:', cardIds);
+          
+          if (cardIds.length > 0) {
+            params.append('card_ids', cardIds.join(','));
+          }
         }
         
         console.log('MerchantRatesDisplay - fetching:', `/api/merchant-rates?${params.toString()}`);
@@ -132,7 +137,7 @@ export default function MerchantRatesDisplay({
     }
 
     fetchMerchantRates();
-  }, [selectedCategory, userCards]);
+  }, [selectedCategory, userCards, showAllCards]);
 
   const handleMerchantClick = (merchant) => {
     setSelectedMerchant(merchant.merchant_name);
@@ -145,7 +150,8 @@ export default function MerchantRatesDisplay({
     }
   };
 
-  if (userCards.length === 0) {
+  // Show empty state if no cards selected and not showing all cards
+  if (!showAllCards && userCards.length === 0) {
     return (
       <div className="merchant-rates-empty">
         <p>🎴 請先選擇您的信用卡</p>
@@ -231,16 +237,31 @@ export default function MerchantRatesDisplay({
 
   return (
     <div className="merchant-rates-container">
-      <h3 style={{ 
-        fontSize: '20px', 
-        fontWeight: '700', 
-        marginBottom: '16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
-        🏪 商戶回贈比較
-      </h3>
+      <div className="rates-header">
+        <h3 style={{ 
+          fontSize: '20px', 
+          fontWeight: '700', 
+          margin: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          🏪 商戶回贈比較
+        </h3>
+        
+        {/* Toggle Switch */}
+        <label className="toggle-container">
+          <span className="toggle-label">全部卡</span>
+          <div className="toggle-switch">
+            <input 
+              type="checkbox" 
+              checked={showAllCards}
+              onChange={onToggleShowAllCards}
+            />
+            <span className="toggle-slider"></span>
+          </div>
+        </label>
+      </div>
 
       <div className="merchant-list">
         {merchantRates.map((merchant) => (
@@ -281,6 +302,71 @@ export default function MerchantRatesDisplay({
           border-radius: 16px;
           padding: 24px;
           margin-bottom: 24px;
+        }
+        
+        .rates-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+        }
+        
+        .toggle-container {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+        }
+        
+        .toggle-label {
+          font-size: 14px;
+          color: var(--text-secondary, #64748B);
+          font-weight: 500;
+        }
+        
+        .toggle-switch {
+          position: relative;
+          width: 48px;
+          height: 26px;
+        }
+        
+        .toggle-switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+        
+        .toggle-slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #CBD5E1;
+          transition: 0.3s;
+          border-radius: 26px;
+        }
+        
+        .toggle-slider:before {
+          position: absolute;
+          content: "";
+          height: 20px;
+          width: 20px;
+          left: 3px;
+          bottom: 3px;
+          background-color: white;
+          transition: 0.3s;
+          border-radius: 50%;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .toggle-switch input:checked + .toggle-slider {
+          background-color: var(--primary, #0066FF);
+        }
+        
+        .toggle-switch input:checked + .toggle-slider:before {
+          transform: translateX(22px);
         }
         
         .merchant-list {
