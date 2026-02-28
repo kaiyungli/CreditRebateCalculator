@@ -237,7 +237,9 @@ export default function CardSelector({ onComplete, onClose, show: externalShow }
                 已選 {confirmedCards.length} 張
               </span>
             )}
-            {(selectedCards.length > 0 || confirmedCards.length > 0) && (
+          </div>
+          {(selectedCards.length > 0 || confirmedCards.length > 0) && (
+            <div style={{ textAlign: 'center', marginTop: '4px' }}>
               <button
                 onClick={handleClearAll}
                 type="button"
@@ -249,13 +251,13 @@ export default function CardSelector({ onComplete, onClose, show: externalShow }
                   padding: '4px 10px',
                   borderRadius: '8px',
                   border: 'none',
-                  cursor: 'pointer',
-                  marginLeft: '8px'
+                  cursor: 'pointer'
                 }}
               >
                 清除全部
               </button>
-            )}
+            </div>
+          )}
           </div>
           <p style={{ color: '#64748B', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             {confirmedCards.length > 0 ? (
