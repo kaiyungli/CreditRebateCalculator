@@ -18,6 +18,7 @@ export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [showCardSelector, setShowCardSelector] = useState(false);
   const [userCards, setUserCards] = useState([]);
+  const [showAllCards, setShowAllCards] = useState(false);
   const [results, setResults] = useState([]);
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [breakdown, setBreakdown] = useState({ cashback: 0, miles: 0, points: 0 });
@@ -250,8 +251,58 @@ export default function Home() {
           {/* 商戶回贈比較 - 選擇信用卡同類別後顯示 */}
           {selectedCategory && (
             <div style={{ marginTop: '24px' }}>
+              {/* Toggle: 只睇我既卡 / 睇全部卡 */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                marginBottom: '16px',
+                gap: '12px'
+              }}>
+                <span style={{ 
+                  fontSize: '14px',
+                  color: !showAllCards ? 'var(--primary)' : 'var(--text-secondary)'
+                }}>
+                  只睇我既卡
+                </span>
+                <label style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={showAllCards}
+                    onChange={(e) => setShowAllCards(e.target.checked)}
+                    style={{ opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span style={{
+                    position: 'absolute',
+                    cursor: 'pointer',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    background: showAllCards ? 'var(--primary)' : '#ccc',
+                    borderRadius: '26px',
+                    transition: '0.3s'
+                  }}>
+                    <span style={{
+                      position: 'absolute',
+                      content: '""',
+                      height: '20px',
+                      width: '20px',
+                      left: showAllCards ? '24px' : '3px',
+                      bottom: '3px',
+                      background: 'white',
+                      borderRadius: '50%',
+                      transition: '0.3s'
+                    }}></span>
+                  </span>
+                </label>
+                <span style={{ 
+                  fontSize: '14px',
+                  color: showAllCards ? 'var(--primary)' : 'var(--text-secondary)'
+                }}>
+                  睇全部卡
+                </span>
+              </div>
+              
               <MerchantRatesDisplay 
-                userCards={userCards}
+                userCards={showAllCards ? [] : userCards}
                 selectedCategory={parseInt(selectedCategory)}
                 categories={categories}
                 onSelectMerchant={handleSelectMerchant}
