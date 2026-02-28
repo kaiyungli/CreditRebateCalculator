@@ -121,6 +121,33 @@ export async function getActiveCards() {
   return data || []
 }
 
+export async function getActiveRulesAndMerchants() {
+  // Returns merchantKeyToId mapping and rules for calculate API
+  if (!supabase) {
+    // Use demo data
+    const rates = DEMO_MERCHANT_RATES.filter(r => r.status === 'ACTIVE')
+    const merchantKeyToId = {}
+    for (const r of rates) {
+      if (r.merchant_name && !merchantKeyToId[r.merchant_name]) {
+        merchantKeyToId[r.merchant_name] = r.id
+      }
+    }
+    return { merchantKeyToId, rules: rates }
+  }
+  
+  const { data: rates, error } = await supabase.from('merchant_rates').select('*').eq('status', 'ACTIVE').order('priority', { ascending: true })
+  if (error) throw error
+  
+  const merchantKeyToId = {}
+  for (const r of (rates || [])) {
+    if (r.merchant_name && !merchantKeyToId[r.merchant_name]) {
+      merchantKeyToId[r.merchant_name] = r.id
+    }
+  }
+  
+  return { merchantKeyToId, rules: rates || [] }
+}
+
 export async function getCardById(id) {
   if (!supabase) return DEMO_CARDS.find(c => c.id === id)
   
