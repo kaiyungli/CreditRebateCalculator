@@ -44,12 +44,13 @@ export default supabase
 
 // ============ Helper Functions ============
 
-export async function getMerchantRates(cardIds = [], categoryId = null) {
+export async function getMerchantRates(cardIds = [], categoryId = null, merchantKey = null) {
   // Use demo data if no Supabase
   if (!supabase) {
     let rates = DEMO_MERCHANT_RATES.filter(r => r.status === 'ACTIVE')
     if (categoryId) rates = rates.filter(r => r.category_id === categoryId)
     if (cardIds?.length > 0) rates = rates.filter(r => cardIds.includes(r.card_id))
+    if (merchantKey) rates = rates.filter(r => r.merchant_name === merchantKey)
     
     // Join with card data
     return rates.map(r => {
@@ -61,6 +62,7 @@ export async function getMerchantRates(cardIds = [], categoryId = null) {
   let query = supabase.from('merchant_rates').select('*').eq('status', 'ACTIVE')
   if (categoryId) query = query.eq('category_id', categoryId)
   if (cardIds?.length > 0) query = query.in('card_id', cardIds)
+  if (merchantKey) query = query.eq('merchant_name', merchantKey)
 
   const { data, error } = await query
   if (error) throw error

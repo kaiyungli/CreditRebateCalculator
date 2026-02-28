@@ -6,11 +6,13 @@ export default async function handler(req, res) {
   try {
     const categoryId = req.query.category_id ? Number(req.query.category_id) : null
     const cardIds = req.query.card_ids ? String(req.query.card_ids).split(',').map(n => Number(n)) : []
+    const merchantKey = req.query.merchant_key || null
     
     console.log('categoryId:', categoryId)
     console.log('cardIds:', cardIds)
+    console.log('merchantKey:', merchantKey)
     
-    const rows = await getMerchantRates(cardIds.length > 0 ? cardIds : [], categoryId)
+    const rows = await getMerchantRates(cardIds.length > 0 ? cardIds : [], categoryId, merchantKey)
     
     console.log('rows:', rows.length)
     
