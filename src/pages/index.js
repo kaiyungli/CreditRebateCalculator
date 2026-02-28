@@ -23,6 +23,7 @@ export default function Home() {
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [breakdown, setBreakdown] = useState({ cashback: 0, miles: 0, points: 0 });
   const [showAllCards, setShowAllCards] = useState(false);
+  const [previewRebate, setPreviewRebate] = useState(0);
 
   // Categories state
   const [dbCategories, setDbCategories] = useState([]);
@@ -75,6 +76,49 @@ export default function Home() {
   ];
 
   const categories = dbCategories.length > 0 ? dbCategories : FALLBACK_CATEGORIES;
+
+  // 即時回贈預覽計算
+  useEffect(() => {
+    async function calculatePreview() {
+      if (!amount || !selectedCategory || parseFloat(amount) <= 0) {
+        setPreviewRebate(0);
+        return;
+      }
+
+      const amountNum = parseFloat(amount);
+      const categoryId = parseInt(selectedCategory);
+      const userCardIds = userCards.map(card => typeof card === 'object' ? card.id : card);
+
+      if (userCardIds.length === 0) {
+        setPreviewRebate(0);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/calculate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: [{ amount: amountNum, category_id: categoryId, merchant_key: selectedMerchant?.merchant_key || null }],
+            userCardIds,
+            valuation: { MILES: 0.05, POINTS: 0.01 }
+          })
+        });
+        
+        const data = await response.json();
+        if (data.ok && data.plan && data.plan.length > 0) {
+          setPreviewRebate(data.plan[0].rewardHKD || 0);
+        } else {
+          setPreviewRebate(0);
+        }
+      } catch (err) {
+        console.error('預覽計算失敗:', err);
+        setPreviewRebate(0);
+      }
+    }
+
+    calculatePreview();
+  }, [amount, selectedCategory, userCards, selectedMerchant]);
 
   // 新增多筆消費
   function addExpense() {
@@ -247,6 +291,23 @@ export default function Home() {
             selectedMerchant={selectedMerchant}
             setSelectedMerchant={setSelectedMerchant}
           />
+
+          {/* 即時回贈預覽 */}
+          {amount && selectedCategory && parseFloat(amount) > 0 && userCards.length > 0 && (
+            <div style={{ 
+              marginTop: '16px', 
+              padding: '16px', 
+              background: 'linear-gradient(135deg, #00D4AA 0%, #00B894 100%)',
+              borderRadius: '12px',
+              color: 'white',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '14px', opacity: 0.9 }}>預計回贈</div>
+              <div style={{ fontSize: '24px', fontWeight: '800' }}>
+                HK${previewRebate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+          )}
 
           {/* 商戶回贈比較 - 選擇信用卡同類別後顯示 */}
           {selectedCategory && (

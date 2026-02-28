@@ -85,11 +85,24 @@ export default function CardSelector({ onComplete, show: externalShow }) {
   }
 
   const handleClose = () => {
+    // Only close if called from internal close button (not from backdrop)
+    // Backdrop click no longer auto-closes
     if (externalShow !== undefined) {
-      if (onComplete) onComplete(selectedCards)
+      // External control - don't auto-close, wait for explicit onComplete
     } else {
-      setShowSelector(false)
-      if (onComplete) onComplete(selectedCards)
+      setShowSelector(false);
+      if (onComplete) onComplete(selectedCards);
+    }
+  }
+
+  const handleDone = () => {
+    saveUserCards(selectedCards);
+    markAsSeenCardSelector();
+    if (externalShow !== undefined) {
+      if (onComplete) onComplete(selectedCards);
+    } else {
+      setShowSelector(false);
+      if (onComplete) onComplete(selectedCards);
     }
   }
 
@@ -107,10 +120,9 @@ export default function CardSelector({ onComplete, show: externalShow }) {
       backdropFilter: 'blur(4px)',
       animation: 'fadeIn 0.2s ease-out'
     }}>
-      {/* Backdrop click to close */}
+      {/* Backdrop - click does NOT close modal anymore */}
       <div 
-        onClick={handleClose}
-        style={{ position: 'absolute', inset: 0 }}
+        style={{ position: 'absolute', inset: 0, cursor: 'default' }}
       />
       
       {/* Wrapper for centering - handles the transform centering */}
@@ -300,7 +312,14 @@ export default function CardSelector({ onComplete, show: externalShow }) {
         {/* Actions */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', paddingBottom: '8px', borderTop: '1px solid #E2E8F0' }}>
           <button 
-            onClick={handleClose} 
+            onClick={() => {
+              if (externalShow !== undefined) {
+                // External control - just close without saving
+                if (onComplete) onComplete(selectedCards);
+              } else {
+                handleSkip();
+              }
+            }} 
             type="button"
             style={{ 
               background: 'transparent', 
@@ -315,10 +334,10 @@ export default function CardSelector({ onComplete, show: externalShow }) {
             onMouseOver={(e) => e.target.style.background = '#F1F5F9'}
             onMouseOut={(e) => e.target.style.background = 'transparent'}
           >
-            {selectedCards.length > 0 ? '關閉' : '暫時不揀'}
+            {selectedCards.length > 0 ? '取消' : '暫時不揀'}
           </button>
           <button
-            onClick={handleSave}
+            onClick={handleDone}
             type="button"
             style={{
               background: '#003580',
@@ -335,7 +354,7 @@ export default function CardSelector({ onComplete, show: externalShow }) {
             onMouseOver={(e) => { e.target.style.background = '#00224f'; e.target.style.transform = 'translateY(-1px)'; }}
             onMouseOut={(e) => { e.target.style.background = '#003580'; e.target.style.transform = 'translateY(0)'; }}
           >
-            確認 ({selectedCards.length})
+            完成 ({selectedCards.length})
           </button>
         </div>
         </div>

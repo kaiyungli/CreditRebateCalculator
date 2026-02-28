@@ -53,7 +53,9 @@ export default function ExpenseList({ expenses = [], onRemove, onUpdate, totalAm
     if (index === 0) return;
     const newExpenses = [...expenses];
     [newExpenses[index - 1], newExpenses[index]] = [newExpenses[index], newExpenses[index - 1]];
-    onUpdate(newExpenses, true);
+    if (typeof onUpdate === 'function') {
+      onUpdate(newExpenses, true);
+    }
   }
 
   // Move expense down
@@ -61,7 +63,9 @@ export default function ExpenseList({ expenses = [], onRemove, onUpdate, totalAm
     if (index === expenses.length - 1) return;
     const newExpenses = [...expenses];
     [newExpenses[index], newExpenses[index + 1]] = [newExpenses[index + 1], newExpenses[index]];
-    onUpdate(newExpenses, true);
+    if (typeof onUpdate === 'function') {
+      onUpdate(newExpenses, true);
+    }
   }
 
   return (
@@ -143,7 +147,7 @@ export default function ExpenseList({ expenses = [], onRemove, onUpdate, totalAm
                       onMouseLeave={(e) => e.target.style.background = 'transparent'}
                       title="點擊修改金額"
                     >
-                      HK${expense.amount.toLocaleString()}
+                      HK${expense.amount.toLocaleString()} <span style={{ fontSize: '11px', opacity: 0.6, marginLeft: '4px' }}>✎ 點擊修改</span>
                     </span>
                   )}
                 </div>
