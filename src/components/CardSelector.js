@@ -301,10 +301,19 @@ export default function CardSelector({ onComplete, onClose, show: externalShow }
           {error && <div style={{ textAlign: 'center', color: '#DC2626', fontSize: '14px' }}>載入失敗: {error}</div>}
         </div>
 
-        {/* Card List - sorted alphabetically only (no jumping when selected) */}
+        {/* Card List - sorted: confirmed cards first (after user confirmed), then alphabetically */}
         <div style={{ flex: 1, overflow: 'auto', marginBottom: '20px' }}>
           {[...cards].sort((a, b) => {
-            // Sort alphabetically by name only - no jumping when selected
+            // If user has confirmed cards, show them at top
+            const hasConfirmed = confirmedCards.length > 0
+            if (hasConfirmed) {
+              const aConfirmed = confirmedCards.includes(a.id)
+              const bConfirmed = confirmedCards.includes(b.id)
+              // Confirmed cards first
+              if (aConfirmed && !bConfirmed) return -1
+              if (!aConfirmed && bConfirmed) return 1
+            }
+            // Then sort alphabetically by name
             const aName = (a.name || a.card_name || '').toLowerCase()
             const bName = (b.name || b.card_name || '').toLowerCase()
             return aName.localeCompare(bName)
