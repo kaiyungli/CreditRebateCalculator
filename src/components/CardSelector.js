@@ -85,10 +85,10 @@ export default function CardSelector({ onComplete, show: externalShow }) {
   }
 
   const handleClose = () => {
-    // Only close if called from internal close button (not from backdrop)
-    // Backdrop click no longer auto-closes
+    // Close the modal - for external control, call onComplete to notify parent
     if (externalShow !== undefined) {
-      // External control - don't auto-close, wait for explicit onComplete
+      // External control - notify parent to close
+      if (onComplete) onComplete(selectedCards);
     } else {
       setShowSelector(false);
       if (onComplete) onComplete(selectedCards);
