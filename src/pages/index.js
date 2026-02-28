@@ -19,6 +19,7 @@ export default function Home() {
   const [showCardSelector, setShowCardSelector] = useState(false);
   const [userCards, setUserCards] = useState([]);
   const [showAllCards, setShowAllCards] = useState(false);
+  const [previewRebate, setPreviewRebate] = useState(0);
   const [results, setResults] = useState([]);
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [breakdown, setBreakdown] = useState({ cashback: 0, miles: 0, points: 0 });
