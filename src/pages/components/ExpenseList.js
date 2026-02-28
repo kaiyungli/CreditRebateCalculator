@@ -183,21 +183,6 @@ export default function ExpenseList({ expenses = [], onRemove, onUpdate, totalAm
           HK${totalAmount.toLocaleString()}
         </div>
       </div>
-      
-      {/* 排序提示 */}
-      {expenses.length > 1 && (
-        <div style={{ 
-          marginTop: '12px', 
-          padding: '10px 14px', 
-          background: 'var(--background)',
-          borderRadius: '8px',
-          fontSize: '12px',
-          color: 'var(--text-secondary)',
-          textAlign: 'center'
-        }}>
-          💡 排序(↑↓)只係改變顯示順序，唔會影響回贈計算
-        </div>
-      )}
     </div>
   );
 }
