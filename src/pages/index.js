@@ -409,7 +409,7 @@ export default function Home() {
         <CardSelector 
           show={true}
           onComplete={(cards) => {
-            saveUserCards(cards);
+            // CardSelector 既 handleDone 已經 saveUserCards 了，呢度唔洗重複 save
             setUserCards(cards);
             setShowCardSelector(false);
           }} 

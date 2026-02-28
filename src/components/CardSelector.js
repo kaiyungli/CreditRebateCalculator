@@ -8,16 +8,17 @@ function formatCardName(card) {
 
 export default function CardSelector({ onComplete, show: externalShow }) {
   const [selectedCards, setSelectedCards] = useState([])
+  const [confirmedCards, setConfirmedCards] = useState([])  // 確認既卡先會影響上面既 list
   const [showSelector, setShowSelector] = useState(false)
   const [cards, setCards] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [showSelectedOnly, setShowSelectedOnly] = useState(false)
   
-  // 取得已選擇的卡片詳細資料
+  // 取得已選擇既卡片詳細資料 (based on confirmed cards for display)
   // Selected cards sorted alphabetically
   const selectedCardDetails = cards
-    .filter(c => selectedCards.includes(c.id))
+    .filter(c => confirmedCards.includes(c.id))
     .sort((a, b) => (a.name || a.card_name || '').toLowerCase().localeCompare((b.name || b.card_name || '').toLowerCase()))
 
   // Use external show prop if provided, otherwise use internal state
@@ -27,7 +28,10 @@ export default function CardSelector({ onComplete, show: externalShow }) {
     if (typeof window === 'undefined') return
 
     const savedIds = getUserCards()
+    // selectedCards: user 既即時選擇（未confirm）
     setSelectedCards(savedIds)
+    // confirmedCards: 已經 confirm 既卡（呢啲先會顯示係上面既list）
+    setConfirmedCards(savedIds)
 
     // show selector for first-time users, otherwise keep hidden
     if (externalShow === undefined && isFirstTimeUser()) setShowSelector(true)
@@ -50,9 +54,9 @@ export default function CardSelector({ onComplete, show: externalShow }) {
     loadCards()
   }, [])
 
-  // 當 modal 打開時，如果已有選卡，預設顯示已選列表
+  // 當 modal 打開時，如果已有確認既卡，預設顯示已選列表
   useEffect(() => {
-    if (isVisible && selectedCards.length > 0) {
+    if (isVisible && confirmedCards.length > 0) {
       setShowSelectedOnly(true)
     }
   }, [isVisible])
@@ -65,44 +69,52 @@ export default function CardSelector({ onComplete, show: externalShow }) {
     ))
   }
 
-  // 移除單張卡
+  // 移除單張卡 - 直接從 confirmed 度移除（呢個係 user 响 list 度明確既動作）
   const removeCard = (cardId, e) => {
     e?.stopPropagation()
+    setConfirmedCards(prev => prev.filter(id => id !== cardId))
+    // 同步更新 selectedCards
     setSelectedCards(prev => prev.filter(id => id !== cardId))
   }
 
   const handleSave = () => {
-    saveUserCards(selectedCards)
+    // 用 confirmedCards 去 save
+    saveUserCards(confirmedCards)
     markAsSeenCardSelector()
     setShowSelector(false)
-    if (onComplete) onComplete(selectedCards)
+    if (onComplete) onComplete(confirmedCards)
   }
 
   const handleSkip = () => {
+    // Skip 既話清除所有選擇
+    setConfirmedCards([])
+    setSelectedCards([])
     markAsSeenCardSelector()
     setShowSelector(false)
     if (onComplete) onComplete([])
   }
 
   const handleClose = () => {
-    // Close the modal - for external control, call onComplete to notify parent
+    // Close the modal - 但呢度唔好 notify parent 更新 userCards
+    // user 既選擇會 until confirm 先至生效
     if (externalShow !== undefined) {
-      // External control - notify parent to close
-      if (onComplete) onComplete(selectedCards);
+      // External control - 通知 parent close 但唔好更新 userCards
+      if (onComplete) onComplete(confirmedCards);  // 用 confirmedCards 而唔係 selectedCards
     } else {
       setShowSelector(false);
-      if (onComplete) onComplete(selectedCards);
+      // 都係用 confirmedCards
     }
   }
 
   const handleDone = () => {
-    saveUserCards(selectedCards);
+    // 用 confirmedCards 去 save，呢啲先係真正會影響上面 list 既卡
+    saveUserCards(confirmedCards);
     markAsSeenCardSelector();
     if (externalShow !== undefined) {
-      if (onComplete) onComplete(selectedCards);
+      if (onComplete) onComplete(confirmedCards);
     } else {
       setShowSelector(false);
-      if (onComplete) onComplete(selectedCards);
+      if (onComplete) onComplete(confirmedCards);
     }
   }
 
