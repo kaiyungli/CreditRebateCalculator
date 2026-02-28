@@ -118,12 +118,22 @@ export async function getBanks() {
 export async function getActiveCards() {
   const { data, error } = await supabase
     .from('cards')
-    .select('id, bank_id, name, name_en, card_type')
+    .select('id, bank_id, name, name_en, card_type, banks(name_en)')
     .eq('status', 'ACTIVE')
     .order('id')
   
   if (error) throw error
-  return data || []
+  
+  // Transform to include bank_name and reward_program
+  return (data || []).map(c => ({
+    id: c.id,
+    bank_id: c.bank_id,
+    name: c.name,
+    name_en: c.name_en,
+    card_type: c.card_type,
+    bank_name: c.banks?.name_en || '',
+    reward_program: c.card_type  // Use card_type as reward_program for now
+  }))
 }
 
 export async function getCardById(id) {
@@ -155,4 +165,41 @@ export async function getCategoryById(id) {
     if (fallback) return fallback
     throw error
   }
+}
+
+// Get active rules and merchants for the calculate API
+export async function getActiveRulesAndMerchants() {
+  // Get all active rebate_rates (these act as rules)
+  const { data: rates } = await supabase
+    .from('rebate_rates')
+    .select('id, card_id, category_id, base_rate, rebate_type')
+    .eq('status', 'ACTIVE')
+  
+  // Get all active cards
+  const { data: cards } = await supabase
+    .from('cards')
+    .select('id, name, bank_id, card_type')
+    .eq('status', 'ACTIVE')
+  
+  // Get merchants (empty for now - we can add merchant-specific rates later)
+  const merchantKeyToId = {}
+  
+  // Transform rates to rules format
+  const rules = (rates || []).map(r => ({
+    id: r.id,
+    card_id: r.card_id,
+    category_id: r.category_id,
+    merchant_id: null,
+    reward_kind: r.rebate_type === 'MILEAGE' ? 'MILES' : 'CASHBACK',
+    rate_unit: 'PERCENT',
+    rate_value: r.base_rate,
+    per_amount: null,
+    cap_value: null,
+    cap_period: null,
+    min_spend: null,
+    priority: r.category_id ? 100 : 200,  // Category rules have higher priority than general
+    status: 'ACTIVE'
+  }))
+  
+  return { merchantKeyToId, rules }
 }

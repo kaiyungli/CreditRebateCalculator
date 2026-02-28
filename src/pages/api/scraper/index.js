@@ -7,7 +7,7 @@
  * - GET /api/scraper?json=1 - Run scraper, only output JSON (no DB update)
  */
 
-import { runScraper } from '../scraper/scraper.js';
+import { runScraper } from '../../../../scraper/scraper.js';
 
 export default async function handler(req, res) {
   // Enable CORS
