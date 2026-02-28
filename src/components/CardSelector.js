@@ -301,15 +301,10 @@ export default function CardSelector({ onComplete, onClose, show: externalShow }
           {error && <div style={{ textAlign: 'center', color: '#DC2626', fontSize: '14px' }}>載入失敗: {error}</div>}
         </div>
 
-        {/* Card List - sorted: selected first, then alphabetically by name */}
+        {/* Card List - sorted alphabetically only (no jumping when selected) */}
         <div style={{ flex: 1, overflow: 'auto', marginBottom: '20px' }}>
           {[...cards].sort((a, b) => {
-            const aSelected = selectedCards.includes(a.id)
-            const bSelected = selectedCards.includes(b.id)
-            // Selected cards first
-            if (aSelected && !bSelected) return -1
-            if (!aSelected && bSelected) return 1
-            // Then sort alphabetically by name
+            // Sort alphabetically by name only - no jumping when selected
             const aName = (a.name || a.card_name || '').toLowerCase()
             const bName = (b.name || b.card_name || '').toLowerCase()
             return aName.localeCompare(bName)
