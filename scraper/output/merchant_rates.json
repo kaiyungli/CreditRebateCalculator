@@ -1,0 +1,806 @@
+{
+  "scraped_at": "2026-02-28T16:38:53.419Z",
+  "total_records": 80,
+  "records": [
+    {
+      "card_id": 1,
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": 0.04,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲4%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "美心",
+      "category_id": 1,
+      "rebate_rate": 0.04,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲4%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "海底撈",
+      "category_id": 1,
+      "rebate_rate": 0.04,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲4%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "壽司郎",
+      "category_id": 1,
+      "rebate_rate": 0.04,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲4%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "牛角",
+      "category_id": 1,
+      "rebate_rate": 0.04,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲4%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "譚仔",
+      "category_id": 1,
+      "rebate_rate": 0.04,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲4%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市2%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市2%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "HKTVmall",
+      "category_id": 3,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "網購2%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "淘寶",
+      "category_id": 3,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "網購2%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "Amazon",
+      "category_id": 3,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "網購2%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "港鐵",
+      "category_id": 4,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "交通2%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "Uber",
+      "category_id": 4,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "交通2%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 1,
+      "merchant_name": "Netflix",
+      "category_id": 5,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "娛樂2%回贈",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 2,
+      "merchant_name": "7-Eleven",
+      "category_id": 1,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲5% (簽賬滿HK$4,000/月)",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 2,
+      "merchant_name": "OK便利店",
+      "category_id": 1,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲5% (簽賬滿HK$4,000/月)",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 2,
+      "merchant_name": "屈臣氏",
+      "category_id": 2,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "指定商戶5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 2,
+      "merchant_name": "萬寧",
+      "category_id": 2,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "指定商戶5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 2,
+      "merchant_name": "莎莎",
+      "category_id": 2,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "指定商戶5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 2,
+      "merchant_name": "美心",
+      "category_id": 1,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲5% (簽賬滿HK$4,000/月)",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 2,
+      "merchant_name": "大家樂",
+      "category_id": 1,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲5% (簽賬滿HK$4,000/月)",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 2,
+      "merchant_name": "大快活",
+      "category_id": 1,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲5% (簽賬滿HK$4,000/月)",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 3,
+      "merchant_name": "7-Eleven",
+      "category_id": 1,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "便利店5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 3,
+      "merchant_name": "OK便利店",
+      "category_id": 1,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "便利店5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 3,
+      "merchant_name": "屈臣氏",
+      "category_id": 2,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "屈臣氏5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 3,
+      "merchant_name": "莎莎",
+      "category_id": 2,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "莎莎5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 3,
+      "merchant_name": "Deliveroo",
+      "category_id": 1,
+      "rebate_rate": 0.04,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "外賣4%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 3,
+      "merchant_name": "Foodpanda",
+      "category_id": 1,
+      "rebate_rate": 0.04,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "外賣4%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 3,
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市2%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 3,
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市2%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 4,
+      "merchant_name": "一田",
+      "category_id": 2,
+      "rebate_rate": 0.06,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "一田6%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 4,
+      "merchant_name": "AEON",
+      "category_id": 2,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "AEON 5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 4,
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 4,
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 4,
+      "merchant_name": "MK筷子",
+      "category_id": 1,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 4,
+      "merchant_name": "海底撈",
+      "category_id": 1,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 4,
+      "merchant_name": "Netflix",
+      "category_id": 5,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "串流3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 4,
+      "merchant_name": "Spotify",
+      "category_id": 5,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "串流3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 5,
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": 0.04,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市4% (簽賬滿HK$1,000/月)",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 5,
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": 0.04,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市4% (簽賬滿HK$1,000/月)",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 5,
+      "merchant_name": "759阿信屋",
+      "category_id": 2,
+      "rebate_rate": 0.04,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "759 4%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 5,
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲2%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 5,
+      "merchant_name": "美心",
+      "category_id": 1,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲2%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 6,
+      "merchant_name": "759阿信屋",
+      "category_id": 2,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "759 5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 6,
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 6,
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 6,
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 6,
+      "merchant_name": "港鐵",
+      "category_id": 4,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "交通2%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 7,
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 7,
+      "merchant_name": "美心",
+      "category_id": 1,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 7,
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 7,
+      "merchant_name": "惠康",
+      "category_id": 2,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 7,
+      "merchant_name": "HKTVmall",
+      "category_id": 3,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "網購3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 7,
+      "merchant_name": "Amazon",
+      "category_id": 3,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "網購3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 7,
+      "merchant_name": "港鐵",
+      "category_id": 4,
+      "rebate_rate": 0.01,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "交通1%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 7,
+      "merchant_name": "巴士",
+      "category_id": 4,
+      "rebate_rate": 0.01,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "交通1%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 8,
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": 0.01,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲1%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 8,
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": 0.01,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市1%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 8,
+      "merchant_name": "HKTVmall",
+      "category_id": 3,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "網購2% (簽賬滿HK$5,000/月)",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 8,
+      "merchant_name": "淘寶",
+      "category_id": 3,
+      "rebate_rate": 0.02,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "網購2% (簽賬滿HK$5,000/月)",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 8,
+      "merchant_name": "Deliveroo",
+      "category_id": 1,
+      "rebate_rate": 0.01,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "外賣1%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 9,
+      "merchant_name": "麥當勞",
+      "category_id": 1,
+      "rebate_rate": 0.01,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲1%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 9,
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": 0.01,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市1%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 9,
+      "merchant_name": "HKTVmall",
+      "category_id": 3,
+      "rebate_rate": 0.01,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "網購1%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 9,
+      "merchant_name": "Netflix",
+      "category_id": 5,
+      "rebate_rate": 0.01,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "娛樂1%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 10,
+      "merchant_name": "壽司郎",
+      "category_id": 1,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 10,
+      "merchant_name": "海底撈",
+      "category_id": 1,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 10,
+      "merchant_name": "美心",
+      "category_id": 1,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "餐飲5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 10,
+      "merchant_name": "百佳",
+      "category_id": 2,
+      "rebate_rate": 0.03,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "超市3%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 10,
+      "merchant_name": "HKTVmall",
+      "category_id": 3,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "網購5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 10,
+      "merchant_name": "Amazon",
+      "category_id": 3,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "網購5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 10,
+      "merchant_name": "Netflix",
+      "category_id": 5,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "娛樂5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 10,
+      "merchant_name": "Uber",
+      "category_id": 4,
+      "rebate_rate": 0.05,
+      "rebate_type": "PERCENTAGE",
+      "conditions": "交通5%",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 11,
+      "merchant_name": "國泰機票",
+      "category_id": 4,
+      "rebate_rate": 0.015,
+      "rebate_type": "MILEAGE",
+      "conditions": "HK$8/里",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 11,
+      "merchant_name": "酒店",
+      "category_id": 4,
+      "rebate_rate": 0.015,
+      "rebate_type": "MILEAGE",
+      "conditions": "HK$8/里",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 11,
+      "merchant_name": "Uber",
+      "category_id": 4,
+      "rebate_rate": 0.0125,
+      "rebate_type": "MILEAGE",
+      "conditions": "HK$12/里",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 11,
+      "merchant_name": "Deliveroo",
+      "category_id": 1,
+      "rebate_rate": 0.01,
+      "rebate_type": "MILEAGE",
+      "conditions": "HK$15/里",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 12,
+      "merchant_name": "國泰機票",
+      "category_id": 4,
+      "rebate_rate": 0.015,
+      "rebate_type": "MILEAGE",
+      "conditions": "HK$6/里",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 12,
+      "merchant_name": "酒店",
+      "category_id": 4,
+      "rebate_rate": 0.015,
+      "rebate_type": "MILEAGE",
+      "conditions": "HK$7/里",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    },
+    {
+      "card_id": 12,
+      "merchant_name": "Uber",
+      "category_id": 4,
+      "rebate_rate": 0.01,
+      "rebate_type": "MILEAGE",
+      "conditions": "HK$12/里",
+      "status": "ACTIVE",
+      "scraped_at": "2026-02-28T16:38:53.419Z"
+    }
+  ]
+}

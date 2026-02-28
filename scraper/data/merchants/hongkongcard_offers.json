@@ -1,0 +1,267 @@
+{
+  "source": "HongKongCard.com",
+  "scraped_at": "2026-02-28T16:37:59.199Z",
+  "total_offers": 40,
+  "offers": [
+    {
+      "merchant": "麥當勞 McDonald's",
+      "offer": "HK$25 Mega Meal Set FREE",
+      "bank": "ZA Bank",
+      "category": "dining",
+      "exclusive": true
+    },
+    {
+      "merchant": "KFC",
+      "offer": "50% Off Wings",
+      "bank": "Mox",
+      "category": "dining",
+      "exclusive": true
+    },
+    {
+      "merchant": "太興餐廳",
+      "offer": "20% Cashback",
+      "bank": "WeLab",
+      "category": "dining",
+      "exclusive": true
+    },
+    {
+      "merchant": "海底撈",
+      "offer": "25% Cashback",
+      "bank": "Citibank",
+      "category": "dining"
+    },
+    {
+      "merchant": "oshi",
+      "offer": "30% Cashback",
+      "bank": "Standard Chartered",
+      "category": "dining"
+    },
+    {
+      "merchant": "板前壽司",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "dining"
+    },
+    {
+      "merchant": "元氣壽司",
+      "offer": "15% Cashback",
+      "bank": "DBS",
+      "category": "dining"
+    },
+    {
+      "merchant": "Taste 超級市場",
+      "offer": "30% Cashback (Sat/Sun)",
+      "bank": "ZA Bank",
+      "category": "shopping",
+      "exclusive": true
+    },
+    {
+      "merchant": "Aeon 超市",
+      "offer": "25% Cashback (Wed)",
+      "bank": "Mox",
+      "category": "shopping",
+      "exclusive": true
+    },
+    {
+      "merchant": "Fusion",
+      "offer": "20% Cashback",
+      "bank": "WeLab",
+      "category": "shopping"
+    },
+    {
+      "merchant": "U Select",
+      "offer": "15% Cashback",
+      "bank": "HSBC",
+      "category": "shopping"
+    },
+    {
+      "merchant": "MCL Cinema",
+      "offer": "HK$35 Movie Ticket",
+      "bank": "ZA Bank",
+      "category": "entertainment",
+      "exclusive": true
+    },
+    {
+      "merchant": "MCL Cinema",
+      "offer": "Buy 1 Get 1 Free",
+      "bank": "Mox",
+      "category": "entertainment",
+      "exclusive": true
+    },
+    {
+      "merchant": "百老匯 BroadWay",
+      "offer": "HK$40 Ticket",
+      "bank": "WeLab",
+      "category": "entertainment",
+      "exclusive": true
+    },
+    {
+      "merchant": "英皇 Cinema",
+      "offer": "30% Off",
+      "bank": "Citibank",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "HKTVmall",
+      "offer": "HK$100 Coupon + 15% Cashback",
+      "bank": "ZA Bank",
+      "category": "online",
+      "exclusive": true
+    },
+    {
+      "merchant": "Zalora",
+      "offer": "40% Off + 10% Cashback",
+      "bank": "Mox",
+      "category": "online",
+      "exclusive": true
+    },
+    {
+      "merchant": "ASOS",
+      "offer": "25% Cashback",
+      "bank": "WeLab",
+      "category": "online"
+    },
+    {
+      "merchant": "Shopee",
+      "offer": "HK$30 Coupon",
+      "bank": "HSBC",
+      "category": "online"
+    },
+    {
+      "merchant": "國泰航空",
+      "offer": "8000 Miles + 10% Off",
+      "bank": "ZA Bank",
+      "category": "travel",
+      "exclusive": true
+    },
+    {
+      "merchant": "HK Express",
+      "offer": "25% Off Booking Fee",
+      "bank": "Mox",
+      "category": "travel",
+      "exclusive": true
+    },
+    {
+      "merchant": "Klook",
+      "offer": "HK$50 Coupon + 15% Cashback",
+      "bank": "WeLab",
+      "category": "travel",
+      "exclusive": true
+    },
+    {
+      "merchant": "Agoda",
+      "offer": "30% Off Hotels",
+      "bank": "Citibank",
+      "category": "travel"
+    },
+    {
+      "merchant": "Uber",
+      "offer": "3 Free Trips (up to $50 each)",
+      "bank": "ZA Bank",
+      "category": "transport",
+      "exclusive": true
+    },
+    {
+      "merchant": "Uber",
+      "offer": "40% Off (10 rides)",
+      "bank": "Mox",
+      "category": "transport",
+      "exclusive": true
+    },
+    {
+      "merchant": "GOGOVAN",
+      "offer": "HK$30 Off First 3 Orders",
+      "bank": "WeLab",
+      "category": "transport",
+      "exclusive": true
+    },
+    {
+      "merchant": "Lalamove",
+      "offer": "50% Off First Order",
+      "bank": "HSBC",
+      "category": "transport"
+    },
+    {
+      "merchant": "Hair Concept",
+      "offer": "40% Off Cut + Color",
+      "bank": "ZA Bank",
+      "category": "beauty",
+      "exclusive": true
+    },
+    {
+      "merchant": "La Mer",
+      "offer": "20% Cashback",
+      "bank": "Mox",
+      "category": "beauty",
+      "exclusive": true
+    },
+    {
+      "merchant": "卓越 Beaut",
+      "offer": "25% Cashback",
+      "bank": "Citibank",
+      "category": "beauty"
+    },
+    {
+      "merchant": "Subway",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "dining"
+    },
+    {
+      "merchant": "Burger King",
+      "offer": "25% Cashback",
+      "bank": "Standard Chartered",
+      "category": "dining"
+    },
+    {
+      "merchant": "Shake Shack",
+      "offer": "20% Cashback",
+      "bank": "DBS",
+      "category": "dining"
+    },
+    {
+      "merchant": "Din Tai Fung 鼎泰豐",
+      "offer": "15% Cashback",
+      "bank": "Hang Seng",
+      "category": "dining"
+    },
+    {
+      "merchant": "Apple",
+      "offer": "12% Cashback",
+      "bank": "Citibank",
+      "category": "shopping"
+    },
+    {
+      "merchant": "Samsung",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "shopping"
+    },
+    {
+      "merchant": "小米",
+      "offer": "25% Cashback",
+      "bank": "WeLab",
+      "category": "shopping"
+    },
+    {
+      "merchant": "屈臣氏",
+      "offer": "30% Cashback (Mon)",
+      "bank": "ZA Bank",
+      "category": "shopping",
+      "exclusive": true
+    },
+    {
+      "merchant": "萬寧",
+      "offer": "25% Cashback",
+      "bank": "Mox",
+      "category": "shopping",
+      "exclusive": true
+    },
+    {
+      "merchant": "卓悅",
+      "offer": "20% Cashback",
+      "bank": "DBS",
+      "category": "shopping"
+    }
+  ]
+}

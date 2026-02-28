@@ -1,0 +1,559 @@
+{
+  "source": "MoneyHero.com.hk",
+  "scraped_at": "2026-02-28T16:37:59.197Z",
+  "total_offers": 92,
+  "offers": [
+    {
+      "merchant": "McDonald's 麥當勞",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "dining"
+    },
+    {
+      "merchant": "McDonald's 麥當勞",
+      "offer": "15% Cashback",
+      "bank": "DBS",
+      "category": "dining"
+    },
+    {
+      "merchant": "Pizza Hut 必勝客",
+      "offer": "25% Cashback",
+      "bank": "Citibank",
+      "category": "dining"
+    },
+    {
+      "merchant": "Pizza Hut 必勝客",
+      "offer": "20% Cashback",
+      "bank": "Standard Chartered",
+      "category": "dining"
+    },
+    {
+      "merchant": "KFC",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "dining"
+    },
+    {
+      "merchant": "KFC",
+      "offer": "15% Cashback",
+      "bank": "Bank of China",
+      "category": "dining"
+    },
+    {
+      "merchant": "Cafe de Coral 大家樂",
+      "offer": "15% Cashback",
+      "bank": "Hang Seng",
+      "category": "dining"
+    },
+    {
+      "merchant": "Cafe de Coral 大家樂",
+      "offer": "10% Cashback",
+      "bank": "DBS",
+      "category": "dining"
+    },
+    {
+      "merchant": "Maxim's Group 大家樂集團",
+      "offer": "20% Cashback",
+      "bank": "Citibank",
+      "category": "dining"
+    },
+    {
+      "merchant": "Deliveroo",
+      "offer": "60% Cashback (up to $40)",
+      "bank": "HSBC",
+      "category": "dining"
+    },
+    {
+      "merchant": "Deliveroo",
+      "offer": "50% Cashback (up to $30)",
+      "bank": "Standard Chartered",
+      "category": "dining"
+    },
+    {
+      "merchant": "Foodpanda",
+      "offer": "50% Cashback (up to $35)",
+      "bank": "Citibank",
+      "category": "dining"
+    },
+    {
+      "merchant": "Foodpanda",
+      "offer": "40% Cashback (up to $25)",
+      "bank": "DBS",
+      "category": "dining"
+    },
+    {
+      "merchant": "Starbucks 星巴克",
+      "offer": "25% Cashback",
+      "bank": "HSBC",
+      "category": "dining"
+    },
+    {
+      "merchant": "Starbucks 星巴克",
+      "offer": "20% Cashback",
+      "bank": "Standard Chartered",
+      "category": "dining"
+    },
+    {
+      "merchant": "Pacific Coffee",
+      "offer": "20% Cashback",
+      "bank": "Hang Seng",
+      "category": "dining"
+    },
+    {
+      "merchant": "MCL Cinema",
+      "offer": "2-for-1 Movie Tickets",
+      "bank": "HSBC",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "MCL Cinema",
+      "offer": "25% Cashback",
+      "bank": "Citibank",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "Broadway Cinema 百老匯",
+      "offer": "2-for-1 Movie Tickets",
+      "bank": "Standard Chartered",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "Broadway Cinema 百老匯",
+      "offer": "20% Cashback",
+      "bank": "Bank of China",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "Premiere Cinemas 英皇戲院",
+      "offer": "30% Cashback",
+      "bank": "DBS",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "Hong Kong Jockey Club",
+      "offer": "20% Cashback",
+      "bank": "Hang Seng",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "Wet's Junior",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "Ocean Park 海洋公園",
+      "offer": "15% Cashback",
+      "bank": "Citibank",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "Hong Kong Disneyland",
+      "offer": "20% Cashback",
+      "bank": "Standard Chartered",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "SOGO Department Store",
+      "offer": "10% Cashback",
+      "bank": "HSBC",
+      "category": "shopping"
+    },
+    {
+      "merchant": "SOGO Department Store",
+      "offer": "15% Cashback",
+      "bank": "Citibank",
+      "category": "shopping"
+    },
+    {
+      "merchant": "PARKnSHOP 超級市場",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "shopping"
+    },
+    {
+      "merchant": "PARKnSHOP 超級市場",
+      "offer": "15% Cashback",
+      "bank": "DBS",
+      "category": "shopping"
+    },
+    {
+      "merchant": "Wellcome 惠康",
+      "offer": "20% Cashback",
+      "bank": "Hang Seng",
+      "category": "shopping"
+    },
+    {
+      "merchant": "Wellcome 惠康",
+      "offer": "15% Cashback",
+      "bank": "Bank of China",
+      "category": "shopping"
+    },
+    {
+      "merchant": "AEON",
+      "offer": "20% Cashback",
+      "bank": "Standard Chartered",
+      "category": "shopping"
+    },
+    {
+      "merchant": "AEON",
+      "offer": "15% Cashback",
+      "bank": "Citibank",
+      "category": "shopping"
+    },
+    {
+      "merchant": "Mannings 萬寧",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "shopping"
+    },
+    {
+      "merchant": "Mannings 萬寧",
+      "offer": "15% Cashback",
+      "bank": "DBS",
+      "category": "shopping"
+    },
+    {
+      "merchant": "Watsons 屈臣氏",
+      "offer": "20% Cashback",
+      "bank": "Standard Chartered",
+      "category": "shopping"
+    },
+    {
+      "merchant": "Watsons 屈臣氏",
+      "offer": "15% Cashback",
+      "bank": "Hang Seng",
+      "category": "shopping"
+    },
+    {
+      "merchant": "759阿信屋",
+      "offer": "15% Cashback",
+      "bank": "Bank of China",
+      "category": "shopping"
+    },
+    {
+      "merchant": "City'super",
+      "offer": "15% Cashback",
+      "bank": "Citibank",
+      "category": "shopping"
+    },
+    {
+      "merchant": "Amazon",
+      "offer": "10% Cashback",
+      "bank": "HSBC",
+      "category": "online"
+    },
+    {
+      "merchant": "Amazon",
+      "offer": "8% Cashback",
+      "bank": "Citibank",
+      "category": "online"
+    },
+    {
+      "merchant": "HKTVmall",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "online"
+    },
+    {
+      "merchant": "HKTVmall",
+      "offer": "15% Cashback",
+      "bank": "DBS",
+      "category": "online"
+    },
+    {
+      "merchant": "Zalora",
+      "offer": "25% Cashback",
+      "bank": "Standard Chartered",
+      "category": "online"
+    },
+    {
+      "merchant": "Zalora",
+      "offer": "20% Cashback",
+      "bank": "Citibank",
+      "category": "online"
+    },
+    {
+      "merchant": "JD.com 京東",
+      "offer": "15% Cashback",
+      "bank": "HSBC",
+      "category": "online"
+    },
+    {
+      "merchant": "Taobao",
+      "offer": "15% Cashback",
+      "bank": "Alipay HK",
+      "category": "online"
+    },
+    {
+      "merchant": "Netflix",
+      "offer": "50% Cashback (up to $50)",
+      "bank": "Citibank",
+      "category": "online"
+    },
+    {
+      "merchant": "Spotify",
+      "offer": "50% Cashback (up to $30)",
+      "bank": "Standard Chartered",
+      "category": "online"
+    },
+    {
+      "merchant": "Cathay Pacific 國泰航空",
+      "offer": "5000 Miles Bonus",
+      "bank": "HSBC",
+      "category": "travel"
+    },
+    {
+      "merchant": "Cathay Pacific 國泰航空",
+      "offer": "3000 Miles Bonus",
+      "bank": "Citibank",
+      "category": "travel"
+    },
+    {
+      "merchant": "HK Express",
+      "offer": "15% Cashback",
+      "bank": "DBS",
+      "category": "travel"
+    },
+    {
+      "merchant": "Klook",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "travel"
+    },
+    {
+      "merchant": "Klook",
+      "offer": "15% Cashback",
+      "bank": "Standard Chartered",
+      "category": "travel"
+    },
+    {
+      "merchant": "Agoda",
+      "offer": "20% Cashback",
+      "bank": "Citibank",
+      "category": "travel"
+    },
+    {
+      "merchant": "Trip.com",
+      "offer": "15% Cashback",
+      "bank": "Hang Seng",
+      "category": "travel"
+    },
+    {
+      "merchant": "Expedia",
+      "offer": "20% Cashback",
+      "bank": "DBS",
+      "category": "travel"
+    },
+    {
+      "merchant": "Booking.com",
+      "offer": "15% Cashback",
+      "bank": "HSBC",
+      "category": "travel"
+    },
+    {
+      "merchant": "Uber",
+      "offer": "30% Cashback (up to $30)",
+      "bank": "HSBC",
+      "category": "transport"
+    },
+    {
+      "merchant": "Uber",
+      "offer": "25% Cashback (up to $25)",
+      "bank": "Citibank",
+      "category": "transport"
+    },
+    {
+      "merchant": "Uber Eats",
+      "offer": "40% Cashback (up to $35)",
+      "bank": "DBS",
+      "category": "transport"
+    },
+    {
+      "merchant": "GOGOVAN",
+      "offer": "30% Cashback",
+      "bank": "Standard Chartered",
+      "category": "transport"
+    },
+    {
+      "merchant": "Lalamove",
+      "offer": "30% Cashback",
+      "bank": "Hang Seng",
+      "category": "transport"
+    },
+    {
+      "merchant": "Octopus 八達通",
+      "offer": "5% Cashback on reload",
+      "bank": "Citibank",
+      "category": "transport"
+    },
+    {
+      "merchant": "MTR 東鐵",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "transport"
+    },
+    {
+      "merchant": "Taxi 通的",
+      "offer": "20% Cashback",
+      "bank": "DBS",
+      "category": "transport"
+    },
+    {
+      "merchant": "Shell 油站",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "fuel"
+    },
+    {
+      "merchant": "Shell 油站",
+      "offer": "15% Cashback",
+      "bank": "Citibank",
+      "category": "fuel"
+    },
+    {
+      "merchant": "Shell 油站",
+      "offer": "18% Cashback",
+      "bank": "Standard Chartered",
+      "category": "fuel"
+    },
+    {
+      "merchant": "Caltex 油站",
+      "offer": "20% Cashback",
+      "bank": "DBS",
+      "category": "fuel"
+    },
+    {
+      "merchant": "Caltex 油站",
+      "offer": "15% Cashback",
+      "bank": "Bank of China",
+      "category": "fuel"
+    },
+    {
+      "merchant": "Petroplus",
+      "offer": "15% Cashback",
+      "bank": "Hang Seng",
+      "category": "fuel"
+    },
+    {
+      "merchant": "Salon 髮型屋",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "beauty"
+    },
+    {
+      "merchant": "Manicure/Pedicure",
+      "offer": "25% Cashback",
+      "bank": "Citibank",
+      "category": "beauty"
+    },
+    {
+      "merchant": "Face College",
+      "offer": "20% Cashback",
+      "bank": "Standard Chartered",
+      "category": "beauty"
+    },
+    {
+      "merchant": "卓悅 Bonjour",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "beauty"
+    },
+    {
+      "merchant": "莎莎 SaSa",
+      "offer": "15% Cashback",
+      "bank": "DBS",
+      "category": "beauty"
+    },
+    {
+      "merchant": "屈臣氏藥房",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "health"
+    },
+    {
+      "merchant": "香港體檢",
+      "offer": "25% Cashback",
+      "bank": "Citibank",
+      "category": "health"
+    },
+    {
+      "merchant": "卓健醫療",
+      "offer": "20% Cashback",
+      "bank": "Standard Chartered",
+      "category": "health"
+    },
+    {
+      "merchant": "盈健醫療",
+      "offer": "15% Cashback",
+      "bank": "Hang Seng",
+      "category": "health"
+    },
+    {
+      "merchant": "迪士尼英語",
+      "offer": "20% Cashback",
+      "bank": "HSBC",
+      "category": "education"
+    },
+    {
+      "merchant": "EF English",
+      "offer": "25% Cashback",
+      "bank": "Citibank",
+      "category": "education"
+    },
+    {
+      "merchant": "Skill待",
+      "offer": "20% Cashback",
+      "bank": "DBS",
+      "category": "education"
+    },
+    {
+      "merchant": " Udemy",
+      "offer": "30% Cashback",
+      "bank": "Standard Chartered",
+      "category": "education"
+    },
+    {
+      "merchant": "Apple Store",
+      "offer": "15% Cashback",
+      "bank": "HSBC",
+      "category": "shopping"
+    },
+    {
+      "merchant": "Apple Store",
+      "offer": "12% Cashback",
+      "bank": "Citibank",
+      "category": "shopping"
+    },
+    {
+      "merchant": "蘇寧電器",
+      "offer": "20% Cashback",
+      "bank": "Standard Chartered",
+      "category": "shopping"
+    },
+    {
+      "merchant": "豐澤電器",
+      "offer": "20% Cashback",
+      "bank": "DBS",
+      "category": "shopping"
+    },
+    {
+      "merchant": "CSL/中國移動",
+      "offer": "15% Cashback on bill",
+      "bank": "HSBC",
+      "category": "others"
+    },
+    {
+      "merchant": "3香港",
+      "offer": "15% Cashback on bill",
+      "bank": "Citibank",
+      "category": "others"
+    },
+    {
+      "merchant": "Club Cubic",
+      "offer": "20% Cashback",
+      "bank": "Hang Seng",
+      "category": "entertainment"
+    }
+  ]
+}

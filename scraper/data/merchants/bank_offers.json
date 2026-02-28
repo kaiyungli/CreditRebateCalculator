@@ -1,0 +1,181 @@
+{
+  "source": "Direct Bank Websites",
+  "scraped_at": "2026-02-28T16:37:59.201Z",
+  "total_offers": 29,
+  "offers": [
+    {
+      "merchant": "HSBC 信用卡積分",
+      "offer": "3000 Points = $30 Cash",
+      "bank": "HSBC",
+      "category": "others"
+    },
+    {
+      "merchant": "HSBC Rate$",
+      "offer": "15% Cashback on All",
+      "bank": "HSBC",
+      "category": "general"
+    },
+    {
+      "merchant": "HSBC 綜合理財",
+      "offer": "25% Cashback Dining",
+      "bank": "HSBC",
+      "category": "dining"
+    },
+    {
+      "merchant": "HSBC Premier",
+      "offer": "30% Cashback Travel",
+      "bank": "HSBC",
+      "category": "travel"
+    },
+    {
+      "merchant": "Citi Pay with Points",
+      "offer": "$1 = 1 Point (DBS Points)",
+      "bank": "Citibank",
+      "category": "general"
+    },
+    {
+      "merchant": "Citi 餐飲優惠",
+      "offer": "30% Cashback Dining",
+      "bank": "Citibank",
+      "category": "dining"
+    },
+    {
+      "merchant": "Citi 電影優惠",
+      "offer": "Buy 1 Get 1 Free",
+      "bank": "Citibank",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "Citi 網上購物",
+      "offer": "20% Cashback Online",
+      "bank": "Citibank",
+      "category": "online"
+    },
+    {
+      "merchant": "DBS Compass",
+      "offer": "5% Dining Cashback",
+      "bank": "DBS",
+      "category": "dining"
+    },
+    {
+      "merchant": "DBS PowerUp",
+      "offer": "$1 = 1 PowerPoint",
+      "bank": "DBS",
+      "category": "general"
+    },
+    {
+      "merchant": "DBS 戲院優惠",
+      "offer": "25% Cashback Cinema",
+      "bank": "DBS",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "DBS 旅遊優惠",
+      "offer": "15% Cashback Travel",
+      "bank": "DBS",
+      "category": "travel"
+    },
+    {
+      "merchant": "SCB 360° Rewards",
+      "offer": "Points Redemption",
+      "bank": "Standard Chartered",
+      "category": "general"
+    },
+    {
+      "merchant": "SCB 餐飲優惠",
+      "offer": "25% Cashback Dining",
+      "bank": "Standard Chartered",
+      "category": "dining"
+    },
+    {
+      "merchant": "SCB 網上購物",
+      "offer": "20% Cashback Online",
+      "bank": "Standard Chartered",
+      "category": "online"
+    },
+    {
+      "merchant": "恒生信用卡",
+      "offer": "15% Cashback All",
+      "bank": "Hang Seng",
+      "category": "general"
+    },
+    {
+      "merchant": "恒生 dining",
+      "offer": "20% Cashback Dining",
+      "bank": "Hang Seng",
+      "category": "dining"
+    },
+    {
+      "merchant": "恒生 戲院",
+      "offer": "20% Cashback Cinema",
+      "bank": "Hang Seng",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "中銀信用卡",
+      "offer": "20% Cashback All",
+      "bank": "Bank of China",
+      "category": "general"
+    },
+    {
+      "merchant": "中銀 dining",
+      "offer": "15% Cashback Dining",
+      "bank": "Bank of China",
+      "category": "dining"
+    },
+    {
+      "merchant": "中銀 電影",
+      "offer": "Buy 1 Get 1 Free",
+      "bank": "Bank of China",
+      "category": "entertainment"
+    },
+    {
+      "merchant": "ZA Bank",
+      "offer": "1% Unlimited Cashback",
+      "bank": "ZA Bank",
+      "category": "general"
+    },
+    {
+      "merchant": "ZA Card",
+      "offer": "2% Online Cashback",
+      "bank": "ZA Bank",
+      "category": "online"
+    },
+    {
+      "merchant": "Mox",
+      "offer": "1% Unlimited Cashback",
+      "bank": "Mox",
+      "category": "general"
+    },
+    {
+      "merchant": "Mox Credit",
+      "offer": "3% Shopping Cashback",
+      "bank": "Mox",
+      "category": "shopping"
+    },
+    {
+      "merchant": "WeLab",
+      "offer": "1% Unlimited Cashback",
+      "bank": "WeLab",
+      "category": "general"
+    },
+    {
+      "merchant": "WeLab Card",
+      "offer": "2% Dining Cashback",
+      "bank": "WeLab",
+      "category": "dining"
+    },
+    {
+      "merchant": "AEON 信用卡",
+      "offer": "15% Cashback All",
+      "bank": "AEON",
+      "category": "general"
+    },
+    {
+      "merchant": "AEON 週日優惠",
+      "offer": "20% Cashback Sun",
+      "bank": "AEON",
+      "category": "shopping"
+    }
+  ]
+}
