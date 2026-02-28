@@ -31,6 +31,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1.5,
       "category": "general",
+      "rates": {
+        "general": 1.5,
+        "dining": 4,
+        "online_shopping": 2,
+        "supermarket": 0.5,
+        "overseas": 1.5,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero",
         "HongKongCard",
@@ -45,6 +53,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1.5,
       "category": "general",
+      "rates": {
+        "general": 1.5,
+        "dining": 2,
+        "online_shopping": 2,
+        "supermarket": 1,
+        "overseas": 1.5,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero"
       ]
@@ -56,6 +72,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 2,
       "category": "general",
+      "rates": {
+        "general": 2,
+        "dining": 2,
+        "online_shopping": 2,
+        "supermarket": 2,
+        "overseas": 2,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero"
       ]
@@ -67,6 +91,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1.5,
       "category": "general",
+      "rates": {
+        "general": 1.5,
+        "dining": 2,
+        "online_shopping": 1.5,
+        "supermarket": 1,
+        "overseas": 1.5,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero"
       ]
@@ -78,6 +110,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 0.56,
       "category": "general",
+      "rates": {
+        "general": 0.56,
+        "dining": 5,
+        "online_shopping": 0.56,
+        "supermarket": 0.56,
+        "overseas": 0.56,
+        "fuel": 0.56
+      },
       "sources": [
         "MoneyHero",
         "HongKongCard"
@@ -91,6 +131,15 @@
       "reward_type": "MILEAGE",
       "base_rate": 1.5,
       "category": "travel",
+      "rates": {
+        "general": 1,
+        "dining": 1,
+        "online_shopping": 1,
+        "supermarket": 1,
+        "overseas": 1.5,
+        "travel": 1.5,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero",
         "HongKongCard"
@@ -104,6 +153,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 2,
       "category": "general",
+      "rates": {
+        "general": 2,
+        "dining": 1,
+        "online_shopping": 1,
+        "supermarket": 2,
+        "overseas": 0.5,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero"
       ]
@@ -115,6 +172,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1,
       "category": "general",
+      "rates": {
+        "general": 1,
+        "dining": 1,
+        "online_shopping": 1,
+        "supermarket": 4,
+        "overseas": 1,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero",
         "HongKongCard"
@@ -128,6 +193,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1.5,
       "category": "general",
+      "rates": {
+        "general": 1.5,
+        "dining": 4,
+        "online_shopping": 1.5,
+        "supermarket": 1,
+        "overseas": 1.5,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero",
         "HongKongCard"
@@ -141,6 +214,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 2,
       "category": "general",
+      "rates": {
+        "general": 2,
+        "dining": 2,
+        "online_shopping": 2,
+        "supermarket": 2,
+        "overseas": 2,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero"
       ]
@@ -152,6 +233,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1,
       "category": "general",
+      "rates": {
+        "general": 1,
+        "dining": 5,
+        "online_shopping": 1,
+        "supermarket": 2,
+        "overseas": 1,
+        "fuel": 1
+      },
       "sources": [
         "MoneyHero",
         "HongKongCard",
@@ -166,6 +255,15 @@
       "reward_type": "MILEAGE",
       "base_rate": 1,
       "category": "travel",
+      "rates": {
+        "general": 0.67,
+        "dining": 0.67,
+        "online_shopping": 0.67,
+        "supermarket": 0.67,
+        "overseas": 1,
+        "travel": 1,
+        "fuel": 0.67
+      },
       "sources": [
         "MoneyHero"
       ]
@@ -177,6 +275,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1,
       "category": "general",
+      "rates": {
+        "general": 1,
+        "dining": 5,
+        "online_shopping": 1,
+        "supermarket": 1,
+        "overseas": 1,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero",
         "HongKongCard"
@@ -190,6 +296,15 @@
       "reward_type": "CASHBACK",
       "base_rate": 1.5,
       "category": "general",
+      "rates": {
+        "general": 1.5,
+        "dining": 1.5,
+        "online_shopping": 1.5,
+        "supermarket": 1.5,
+        "overseas": 1.5,
+        "travel": 1.5,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero",
         "HongKongCard"
@@ -203,6 +318,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1,
       "category": "general",
+      "rates": {
+        "general": 1,
+        "dining": 1,
+        "online_shopping": 1,
+        "supermarket": 2,
+        "overseas": 0.5,
+        "fuel": 1
+      },
       "sources": [
         "MoneyHero"
       ]
@@ -214,6 +337,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1,
       "category": "general",
+      "rates": {
+        "general": 1,
+        "dining": 1,
+        "online_shopping": 1,
+        "supermarket": 2,
+        "overseas": 0.5,
+        "fuel": 1
+      },
       "sources": [
         "MoneyHero"
       ]
@@ -225,6 +356,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1.5,
       "category": "general",
+      "rates": {
+        "general": 1.5,
+        "dining": 4,
+        "online_shopping": 1.5,
+        "supermarket": 1,
+        "overseas": 1.5,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero",
         "HongKongCard"
@@ -238,6 +377,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1,
       "category": "general",
+      "rates": {
+        "general": 1,
+        "dining": 1,
+        "online_shopping": 1,
+        "supermarket": 1,
+        "overseas": 1,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero"
       ]
@@ -249,6 +396,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1,
       "category": "general",
+      "rates": {
+        "general": 1,
+        "dining": 1,
+        "online_shopping": 1,
+        "supermarket": 1,
+        "overseas": 0.5,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero"
       ]
@@ -260,6 +415,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1,
       "category": "general",
+      "rates": {
+        "general": 1,
+        "dining": 1,
+        "online_shopping": 1,
+        "supermarket": 1,
+        "overseas": 1,
+        "fuel": 0.5
+      },
       "sources": [
         "MoneyHero"
       ]
@@ -271,6 +434,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1,
       "category": "general",
+      "rates": {
+        "general": 1,
+        "dining": 1,
+        "online_shopping": 2,
+        "supermarket": 1,
+        "overseas": 1,
+        "fuel": 0.5
+      },
       "special": "2% on online shopping",
       "sources": [
         "HongKongCard",
@@ -284,6 +455,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1,
       "category": "general",
+      "rates": {
+        "general": 1,
+        "dining": 1,
+        "online_shopping": 3,
+        "supermarket": 3,
+        "overseas": 2,
+        "fuel": 0.5
+      },
       "special": "3% supermarket",
       "sources": [
         "HongKongCard",
@@ -298,6 +477,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 1,
       "category": "general",
+      "rates": {
+        "general": 1,
+        "dining": 1,
+        "online_shopping": 1,
+        "supermarket": 1,
+        "overseas": 1,
+        "fuel": 0.5
+      },
       "special": "1% on all purchases",
       "sources": [
         "HongKongCard"
@@ -310,6 +497,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 2,
       "category": "general",
+      "rates": {
+        "general": 2,
+        "dining": 1,
+        "online_shopping": 1,
+        "supermarket": 1,
+        "overseas": 2,
+        "fuel": 0.5
+      },
       "special": "2% on foreign currency",
       "sources": [
         "HongKongCard"
@@ -322,6 +517,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 2,
       "category": "general",
+      "rates": {
+        "general": 2,
+        "dining": 1,
+        "online_shopping": 1,
+        "supermarket": 1,
+        "overseas": 8,
+        "fuel": 0.5
+      },
       "special": "2% overseas",
       "sources": [
         "HongKongCard"
@@ -334,6 +537,15 @@
       "reward_type": "MILEAGE",
       "base_rate": 2,
       "category": "travel",
+      "rates": {
+        "general": 2,
+        "dining": 2,
+        "online_shopping": 2,
+        "supermarket": 2,
+        "overseas": 2,
+        "travel": 2,
+        "fuel": 1
+      },
       "special": "2 points per $1",
       "sources": [
         "HongKongCard"
@@ -346,6 +558,15 @@
       "reward_type": "MILEAGE",
       "base_rate": 1.5,
       "category": "travel",
+      "rates": {
+        "general": 1.5,
+        "dining": 1.5,
+        "online_shopping": 1.5,
+        "supermarket": 1.5,
+        "overseas": 1.5,
+        "travel": 1.5,
+        "fuel": 1
+      },
       "special": "1.5 points per $1",
       "sources": [
         "HongKongCard"
@@ -358,6 +579,15 @@
       "reward_type": "MILEAGE",
       "base_rate": 1.5,
       "category": "travel",
+      "rates": {
+        "general": 1,
+        "dining": 1,
+        "online_shopping": 1,
+        "supermarket": 1,
+        "overseas": 1.5,
+        "travel": 1.5,
+        "fuel": 0.5
+      },
       "special": "1.5 miles per $1",
       "sources": [
         "HongKongCard"
@@ -370,6 +600,14 @@
       "reward_type": "CASHBACK",
       "base_rate": 2,
       "category": "fuel",
+      "rates": {
+        "general": 0.5,
+        "dining": 0.5,
+        "online_shopping": 0.5,
+        "supermarket": 0.5,
+        "overseas": 0.5,
+        "fuel": 2
+      },
       "special": "2% at Shell",
       "sources": [
         "HongKongCard"
@@ -382,6 +620,15 @@
       "reward_type": "CASHBACK",
       "base_rate": 1.5,
       "category": "transport",
+      "rates": {
+        "general": 0.5,
+        "dining": 0.5,
+        "online_shopping": 0.5,
+        "supermarket": 0.5,
+        "overseas": 0.5,
+        "transport": 1.5,
+        "fuel": 0.5
+      },
       "special": "1.5% on Octopus reload",
       "sources": [
         "HongKongCard"
