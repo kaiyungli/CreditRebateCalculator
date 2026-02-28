@@ -188,9 +188,24 @@ export default function CardSelector({ onComplete, show: externalShow }) {
         </button>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '20px', paddingTop: '16px' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1E293B', marginBottom: '8px' }}>
-            {showSelectedOnly && selectedCards.length > 0 ? '🎴 我的信用卡' : '🎴 選擇你的信用卡'}
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '8px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1E293B', margin: 0 }}>
+              {showSelectedOnly && selectedCards.length > 0 ? '🎴 我的信用卡' : '🎴 選擇你的信用卡'}
+            </h2>
+            {selectedCards.length > 0 && (
+              <span style={{
+                background: '#0066FF',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: '700',
+                padding: '4px 12px',
+                borderRadius: '16px',
+                boxShadow: '0 2px 8px rgba(0, 102, 255, 0.3)'
+              }}>
+                已選 {selectedCards.length} 張
+              </span>
+            )}
+          </div>
           <p style={{ color: '#64748B', fontSize: '14px' }}>
             {showSelectedOnly && selectedCards.length > 0 
               ? '已選擇的信用卡可以直接移除' 

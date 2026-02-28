@@ -48,26 +48,6 @@ export default function ExpenseList({ expenses = [], onRemove, onUpdate, totalAm
     setEditingExpenseId(null);
   }
 
-  // Move expense up
-  function moveUp(index) {
-    if (index === 0) return;
-    const newExpenses = [...expenses];
-    [newExpenses[index - 1], newExpenses[index]] = [newExpenses[index], newExpenses[index - 1]];
-    if (typeof onUpdate === 'function') {
-      onUpdate(newExpenses, true);
-    }
-  }
-
-  // Move expense down
-  function moveDown(index) {
-    if (index === expenses.length - 1) return;
-    const newExpenses = [...expenses];
-    [newExpenses[index], newExpenses[index + 1]] = [newExpenses[index + 1], newExpenses[index]];
-    if (typeof onUpdate === 'function') {
-      onUpdate(newExpenses, true);
-    }
-  }
-
   return (
     <div style={{ marginBottom: '24px' }}>
       <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-secondary)' }}>
@@ -139,52 +119,37 @@ export default function ExpenseList({ expenses = [], onRemove, onUpdate, totalAm
                       onClick={(e) => handleAmountClick(e, expense)}
                       style={{ 
                         cursor: 'pointer',
-                        padding: '2px 4px',
-                        borderRadius: '4px',
-                        transition: 'background 0.2s',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        border: '1px dashed transparent',
+                        transition: 'all 0.2s',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
                       }}
-                      onMouseEnter={(e) => e.target.style.background = 'var(--border-color)'}
-                      onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = 'rgba(0, 102, 255, 0.1)';
+                        e.target.style.borderColor = 'var(--primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = 'transparent';
+                        e.target.style.borderColor = 'transparent';
+                      }}
                       title="點擊修改金額"
                     >
-                      HK${expense.amount.toLocaleString()} <span style={{ fontSize: '11px', opacity: 0.6, marginLeft: '4px' }}>✎ 點擊修改</span>
+                      <span style={{ 
+                        fontSize: '14px', 
+                        fontWeight: '600',
+                        color: 'var(--primary)'
+                      }}>HK${expense.amount.toLocaleString()}</span>
+                      <span style={{ fontSize: '11px', opacity: 0.7, background: 'var(--border-color)', padding: '2px 6px', borderRadius: '4px' }}>✎ 編輯</span>
                     </span>
                   )}
                 </div>
               </div>
             </div>
-            {/* 操作按鈕：上移、下移、刪除 */}
+            {/* 刪除按鈕 */}
             <div style={{ display: 'flex', gap: '2px' }}>
-              <button
-                onClick={() => moveUp(index)}
-                disabled={index === 0}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: index === 0 ? '#ccc' : 'var(--text-secondary)',
-                  cursor: index === 0 ? 'not-allowed' : 'pointer',
-                  fontSize: '16px',
-                  padding: '4px 6px',
-                }}
-                title="上移"
-              >
-                ↑
-              </button>
-              <button
-                onClick={() => moveDown(index)}
-                disabled={index === expenses.length - 1}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: index === expenses.length - 1 ? '#ccc' : 'var(--text-secondary)',
-                  cursor: index === expenses.length - 1 ? 'not-allowed' : 'pointer',
-                  fontSize: '16px',
-                  padding: '4px 6px',
-                }}
-                title="下移"
-              >
-                ↓
-              </button>
               <button
                 onClick={() => onRemove(expense.id)}
                 style={{
@@ -218,6 +183,21 @@ export default function ExpenseList({ expenses = [], onRemove, onUpdate, totalAm
           HK${totalAmount.toLocaleString()}
         </div>
       </div>
+      
+      {/* 排序提示 */}
+      {expenses.length > 1 && (
+        <div style={{ 
+          marginTop: '12px', 
+          padding: '10px 14px', 
+          background: 'var(--background)',
+          borderRadius: '8px',
+          fontSize: '12px',
+          color: 'var(--text-secondary)',
+          textAlign: 'center'
+        }}>
+          💡 排序(↑↓)只係改變顯示順序，唔會影響回贈計算
+        </div>
+      )}
     </div>
   );
 }

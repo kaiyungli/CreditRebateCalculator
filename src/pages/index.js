@@ -22,8 +22,6 @@ export default function Home() {
   const [results, setResults] = useState([]);
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [breakdown, setBreakdown] = useState({ cashback: 0, miles: 0, points: 0 });
-  const [showAllCards, setShowAllCards] = useState(false);
-  const [previewRebate, setPreviewRebate] = useState(0);
 
   // Categories state
   const [dbCategories, setDbCategories] = useState([]);
@@ -290,6 +288,7 @@ export default function Home() {
             disabled={!amount || !selectedCategory || categoriesLoading}
             selectedMerchant={selectedMerchant}
             setSelectedMerchant={setSelectedMerchant}
+            userCards={userCards}
           />
 
           {/* 即時回贈預覽 */}

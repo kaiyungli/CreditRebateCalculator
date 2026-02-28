@@ -1,5 +1,6 @@
 export default function Header({ darkMode = false, setDarkMode = () => {}, userCards = [], onOpenCardSelector = () => {} }) {
-  const buttonText = userCards?.length > 0 ? `已選 ${userCards.length} 張卡` : '選擇信用卡';
+  const cardCount = userCards?.length || 0;
+  const buttonText = cardCount > 0 ? `已選 ${cardCount} 張` : '選擇信用卡';
   
   return (
     <nav className="navbar container">
@@ -17,11 +18,30 @@ export default function Header({ darkMode = false, setDarkMode = () => {}, userC
             alignItems: 'center',
             gap: '8px',
             fontSize: '14px',
-            padding: '10px 20px'
+            padding: '10px 20px',
+            position: 'relative'
           }}
         >
           <span>🎴</span>
           <span>{buttonText}</span>
+          {cardCount > 0 && (
+            <span style={{
+              position: 'absolute',
+              top: '-8px',
+              right: '-8px',
+              background: 'var(--secondary)',
+              color: 'white',
+              fontSize: '12px',
+              fontWeight: '700',
+              padding: '4px 8px',
+              borderRadius: '12px',
+              boxShadow: '0 2px 8px rgba(0, 212, 170, 0.4)',
+              minWidth: '20px',
+              textAlign: 'center'
+            }}>
+              {cardCount}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setDarkMode(!darkMode)}
