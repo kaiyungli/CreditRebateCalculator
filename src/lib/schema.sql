@@ -2,6 +2,7 @@
 -- CardCal Phase 1 - Full DB Schema
 -- =====================================
 
+-- Use DROP IF EXISTS for clean migration (comment out in production)
 DROP TABLE IF EXISTS calculations CASCADE;
 DROP TABLE IF EXISTS user_cards CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
@@ -14,7 +15,7 @@ DROP TABLE IF EXISTS banks CASCADE;
 -- =====================================
 -- BANKS
 -- =====================================
-CREATE TABLE banks (
+CREATE TABLE IF NOT EXISTS banks (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   name_en VARCHAR(100),
@@ -26,7 +27,7 @@ CREATE TABLE banks (
 -- =====================================
 -- CARDS
 -- =====================================
-CREATE TABLE cards (
+CREATE TABLE IF NOT EXISTS cards (
   id SERIAL PRIMARY KEY,
   bank_id INTEGER REFERENCES banks(id),
   name VARCHAR(255) NOT NULL,
@@ -45,7 +46,7 @@ CREATE INDEX idx_cards_bank ON cards(bank_id);
 -- =====================================
 -- CATEGORIES
 -- =====================================
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   name_en VARCHAR(100),
@@ -57,7 +58,7 @@ CREATE TABLE categories (
 -- =====================================
 -- MERCHANTS
 -- =====================================
-CREATE TABLE merchants (
+CREATE TABLE IF NOT EXISTS merchants (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   name_en VARCHAR(255),
@@ -74,7 +75,7 @@ CREATE INDEX idx_merchants_category ON merchants(default_category_id);
 -- =====================================
 -- REWARD RULES (核心)
 -- =====================================
-CREATE TABLE reward_rules (
+CREATE TABLE IF NOT EXISTS reward_rules (
   id SERIAL PRIMARY KEY,
   card_id INTEGER NOT NULL REFERENCES cards(id),
   merchant_id INTEGER REFERENCES merchants(id),
@@ -101,7 +102,7 @@ CREATE INDEX idx_rule_category ON reward_rules(category_id);
 -- =====================================
 -- USERS
 -- =====================================
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   telegram_id VARCHAR(100) UNIQUE,
   email VARCHAR(255) UNIQUE,
@@ -113,7 +114,7 @@ CREATE TABLE users (
 -- =====================================
 -- USER CARDS
 -- =====================================
-CREATE TABLE user_cards (
+CREATE TABLE IF NOT EXISTS user_cards (
   user_id INTEGER REFERENCES users(id),
   card_id INTEGER REFERENCES cards(id),
   is_active BOOLEAN DEFAULT TRUE,
@@ -123,7 +124,7 @@ CREATE TABLE user_cards (
 -- =====================================
 -- CALCULATIONS
 -- =====================================
-CREATE TABLE calculations (
+CREATE TABLE IF NOT EXISTS calculations (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id),
   input_json JSONB NOT NULL,
