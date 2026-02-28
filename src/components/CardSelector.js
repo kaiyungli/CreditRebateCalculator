@@ -6,7 +6,7 @@ function formatCardName(card) {
   return `${bank ? bank + ' ' : ''}${card.name || card.card_name || ''}`.trim()
 }
 
-export default function CardSelector({ onComplete, show: externalShow }) {
+export default function CardSelector({ onComplete, onClose, show: externalShow }) {
   const [selectedCards, setSelectedCards] = useState([])
   const [confirmedCards, setConfirmedCards] = useState([])  // 確認既卡先會影響上面既 list
   const [showSelector, setShowSelector] = useState(false)
@@ -90,31 +90,45 @@ export default function CardSelector({ onComplete, show: externalShow }) {
     setConfirmedCards([])
     setSelectedCards([])
     markAsSeenCardSelector()
-    setShowSelector(false)
-    if (onComplete) onComplete([])
+    if (externalShow !== undefined) {
+      // External control - 用 onClose 如果有提供，否則用 onComplete 但傳 undefined 表示只close
+      if (onClose) {
+        onClose();
+      } else if (onComplete) {
+        onComplete(undefined);  // undefined = 只 close，唔 update
+      }
+    } else {
+      setShowSelector(false)
+      if (onComplete) onComplete([])
+    }
   }
 
   const handleClose = () => {
-    // Close the modal - 但呢度唔好 notify parent 更新 userCards
-    // user 既選擇會 until confirm 先至生效
+    // Close the modal - 用 onClose (如果提供咗) 或者 onComplete
+    // 確保唔會因為 toggle 卡而即刻彈上去
     if (externalShow !== undefined) {
-      // External control - 通知 parent close 但唔好更新 userCards
-      if (onComplete) onComplete(confirmedCards);  // 用 confirmedCards 而唔係 selectedCards
+      // External control - 用 onClose 如果有提供，否則用 onComplete 但傳 undefined 表示只close
+      if (onClose) {
+        onClose();
+      } else if (onComplete) {
+        onComplete(undefined);  // undefined = 只 close，唔 update cards
+      }
     } else {
       setShowSelector(false);
-      // 都係用 confirmedCards
     }
   }
 
   const handleDone = () => {
-    // 用 confirmedCards 去 save，呢啲先係真正會影響上面 list 既卡
-    saveUserCards(confirmedCards);
+    // 先將 selectedCards sync 去 confirmedCards (user toggle 既卡)
+    setConfirmedCards(selectedCards);
+    // 用 selectedCards (而家已經包含晒 user toggle 既卡) 去 save
+    saveUserCards(selectedCards);
     markAsSeenCardSelector();
     if (externalShow !== undefined) {
-      if (onComplete) onComplete(confirmedCards);
+      if (onComplete) onComplete(selectedCards);
     } else {
       setShowSelector(false);
-      if (onComplete) onComplete(confirmedCards);
+      if (onComplete) onComplete(selectedCards);
     }
   }
 
@@ -360,7 +374,11 @@ export default function CardSelector({ onComplete, show: externalShow }) {
             onClick={() => {
               if (externalShow !== undefined) {
                 // External control - just close without saving
-                if (onComplete) onComplete(selectedCards);
+                if (onClose) {
+                  onClose();
+                } else if (onComplete) {
+                  onComplete(undefined);  // undefined = 只 close，唔 update cards
+                }
               } else {
                 handleSkip();
               }

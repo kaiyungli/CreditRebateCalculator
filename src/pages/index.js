@@ -408,9 +408,13 @@ export default function Home() {
       {showCardSelector && (
         <CardSelector 
           show={true}
+          onClose={() => setShowCardSelector(false)}
           onComplete={(cards) => {
-            // CardSelector 既 handleDone 已經 saveUserCards 了，呢度唔洗重複 save
-            setUserCards(cards);
+            // 只有當用户 confirm 先會 update cards
+            // cards 係 undefined 表示用户 click 左 X 或 Cancel，呢啲情況唔 update
+            if (cards !== undefined) {
+              setUserCards(cards);
+            }
             setShowCardSelector(false);
           }} 
         />
