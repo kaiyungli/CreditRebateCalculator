@@ -95,6 +95,21 @@ export default function CardSelector({ onComplete, onClose, show: externalShow }
       if (onClose) {
         onClose();
       } else if (onComplete) {
+        onComplete(undefined);
+      }
+    } else {
+      setShowSelector(false)
+      if (onComplete) onComplete([]);
+    }
+  }
+
+  const handleClearAll = () => {
+    // 清除所有已選擇既卡
+    setSelectedCards([])
+    setConfirmedCards([])
+  }
+        onClose();
+      } else if (onComplete) {
         onComplete(undefined);  // undefined = 只 close，唔 update
       }
     } else {
@@ -230,6 +245,25 @@ export default function CardSelector({ onComplete, onClose, show: externalShow }
               }}>
                 已選 {confirmedCards.length} 張
               </span>
+            )}
+            {(selectedCards.length > 0 || confirmedCards.length > 0) && (
+              <button
+                onClick={handleClearAll}
+                type="button"
+                style={{
+                  background: '#FEE2E2',
+                  color: '#DC2626',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  marginLeft: '8px'
+                }}
+              >
+                清除全部
+              </button>
             )}
           </div>
           <p style={{ color: '#64748B', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
