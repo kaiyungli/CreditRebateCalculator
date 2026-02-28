@@ -206,10 +206,17 @@ export default function CardSelector({ onComplete, show: externalShow }) {
               </span>
             )}
           </div>
-          <p style={{ color: '#64748B', fontSize: '14px' }}>
-            {showSelectedOnly && selectedCards.length > 0 
-              ? '已選擇的信用卡可以直接移除' 
-              : '幫你推薦最適合的回贈組合'}
+          <p style={{ color: '#64748B', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            {selectedCards.length > 0 ? (
+              <>
+                <span style={{ color: '#F59E0B', fontSize: '16px' }}>⚠️</span>
+                <span style={{ color: '#D97706', fontWeight: '600' }}>請點擊下方「確認選擇」按鈕保存</span>
+              </>
+            ) : (
+              showSelectedOnly && selectedCards.length > 0 
+                ? '已選擇的信用卡可以直接移除' 
+                : '幫你推薦最適合的回贈組合'
+            )}
           </p>
         </div>
 
@@ -324,8 +331,19 @@ export default function CardSelector({ onComplete, show: externalShow }) {
           ))}
         </div>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', paddingBottom: '8px', borderTop: '1px solid #E2E8F0' }}>
+        {/* Actions - 重要：選擇卡片後必須點擊確認才能保存 */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          paddingTop: '16px', 
+          paddingBottom: '8px', 
+          borderTop: '1px solid #E2E8F0',
+          background: selectedCards.length > 0 ? 'linear-gradient(180deg, #FFF9E6 0%, #FFF 100%)' : 'white',
+          padding: '16px',
+          margin: '0 -24px -24px -24px',
+          borderRadius: '0 0 16px 16px'
+        }}>
           <button 
             onClick={() => {
               if (externalShow !== undefined) {
@@ -338,38 +356,65 @@ export default function CardSelector({ onComplete, show: externalShow }) {
             type="button"
             style={{ 
               background: 'transparent', 
-              border: 'none', 
+              border: '2px solid #E2E8F0', 
               color: '#64748B', 
               fontSize: '14px', 
               cursor: 'pointer',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              transition: 'background 0.2s'
+              padding: '12px 20px',
+              borderRadius: '10px',
+              fontWeight: '600',
+              transition: 'all 0.2s'
             }}
-            onMouseOver={(e) => e.target.style.background = '#F1F5F9'}
-            onMouseOut={(e) => e.target.style.background = 'transparent'}
+            onMouseOver={(e) => { e.target.style.borderColor = '#CBD5E1'; e.target.style.background = '#F8FAFC'; }}
+            onMouseOut={(e) => { e.target.style.borderColor = '#E2E8F0'; e.target.style.background = 'transparent'; }}
           >
             {selectedCards.length > 0 ? '取消' : '暫時不揀'}
           </button>
+          
+          {/* 確認/完成按鈕 - 更明顯的設計 */}
           <button
             onClick={handleDone}
             type="button"
+            disabled={selectedCards.length === 0}
             style={{
-              background: '#003580',
+              background: selectedCards.length > 0 
+                ? 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)' 
+                : '#CBD5E1',
               color: 'white',
-              padding: '12px 28px',
-              borderRadius: '8px',
-              fontWeight: '600',
+              padding: '14px 36px',
+              borderRadius: '12px',
+              fontWeight: '700',
               border: 'none',
-              cursor: 'pointer',
-              fontSize: '14px',
-              boxShadow: '0 2px 8px rgba(0, 53, 128, 0.3)',
-              transition: 'all 0.2s'
+              cursor: selectedCards.length > 0 ? 'pointer' : 'not-allowed',
+              fontSize: '16px',
+              boxShadow: selectedCards.length > 0 
+                ? '0 4px 16px rgba(0, 102, 255, 0.4)' 
+                : 'none',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
             }}
-            onMouseOver={(e) => { e.target.style.background = '#00224f'; e.target.style.transform = 'translateY(-1px)'; }}
-            onMouseOut={(e) => { e.target.style.background = '#003580'; e.target.style.transform = 'translateY(0)'; }}
+            onMouseOver={(e) => { 
+              if (selectedCards.length > 0) {
+                e.target.style.background = 'linear-gradient(135deg, #0052CC 0%, #003580 100%)'; 
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 20px rgba(0, 102, 255, 0.5)';
+              }
+            }}
+            onMouseOut={(e) => { 
+              e.target.style.background = 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)'; 
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 16px rgba(0, 102, 255, 0.4)';
+            }}
           >
-            完成 ({selectedCards.length})
+            {/* 圖標 */}
+            <span style={{ fontSize: '18px' }}>
+              {selectedCards.length > 0 ? '✓' : '✕'}
+            </span>
+            {selectedCards.length > 0 
+              ? `確認選擇 (${selectedCards.length} 張)` 
+              : '請選擇信用卡'}
           </button>
         </div>
         </div>
