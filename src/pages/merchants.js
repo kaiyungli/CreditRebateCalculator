@@ -6,8 +6,17 @@ import Footer from './components/Footer';
 
 export default function Merchants() {
   const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const [sortBy, setSortBy] = useState('rate'); // 'rate' or 'name'
   const [merchants, setMerchants] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
+
+  const CATEGORIES = [
+    { id: '', name: '全部' },
+    { id: '餐飲', name: '餐飲' },
+    { id: '超市', name: '超市' },
+    { id: '網購', name: '網購' },
+  ];
 
   // Demo merchants data
   const DEMO_MERCHANTS = [
@@ -50,16 +59,32 @@ export default function Merchants() {
   ];
 
   useEffect(() => {
+    let filtered = [...DEMO_MERCHANTS];
+    
+    // Filter by search
     if (search.length > 0) {
-      const filtered = DEMO_MERCHANTS.filter(m => 
+      filtered = filtered.filter(m => 
         m.name.toLowerCase().includes(search.toLowerCase()) ||
         m.category.toLowerCase().includes(search.toLowerCase())
       );
-      setMerchants(filtered);
-    } else {
-      setMerchants(DEMO_MERCHANTS);
     }
-  }, [search]);
+    
+    // Filter by category
+    if (category) {
+      filtered = filtered.filter(m => m.category === category);
+    }
+    
+    // Sort by rate (high to low)
+    if (sortBy === 'rate') {
+      filtered.sort((a, b) => {
+        const maxRateA = Math.max(...a.rates.map(r => parseFloat(r.rate)));
+        const maxRateB = Math.max(...b.rates.map(r => parseFloat(r.rate)));
+        return maxRateB - maxRateA;
+      });
+    }
+    
+    setMerchants(filtered);
+  }, [search, category, sortBy]);
 
   return (
     <>
@@ -90,8 +115,62 @@ export default function Merchants() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="input-field"
-              style={{ width: '100%', marginBottom: '0' }}
+              style={{ width: '100%', marginBottom: '16px' }}
             />
+            
+            {/* Category Filter */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setCategory(cat.id)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    background: category === cat.id ? 'var(--primary)' : 'var(--background)',
+                    color: category === cat.id ? 'white' : 'var(--text-primary)',
+                  }}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+            
+            {/* Sort */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>排序：</span>
+              <button
+                onClick={() => setSortBy('rate')}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '16px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  background: sortBy === 'rate' ? 'var(--primary)' : 'var(--background)',
+                  color: sortBy === 'rate' ? 'white' : 'var(--text-primary)',
+                }}
+              >
+                回贈高至低
+              </button>
+              <button
+                onClick={() => setSortBy('name')}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '16px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  background: sortBy === 'name' ? 'var(--primary)' : 'var(--background)',
+                  color: sortBy === 'name' ? 'white' : 'var(--text-primary)',
+                }}
+              >
+                名稱順序
+              </button>
+            </div>
           </div>
 
           {/* Merchant List */}
