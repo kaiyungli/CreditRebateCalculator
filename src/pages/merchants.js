@@ -7,8 +7,9 @@ import Footer from './components/Footer';
 export default function Merchants() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [sortBy, setSortBy] = useState('rate'); // 'rate' or 'name'
+  const [sortBy, setSortBy] = useState('rate');
   const [merchants, setMerchants] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
   const CATEGORIES = [
@@ -18,73 +19,59 @@ export default function Merchants() {
     { id: '網購', name: '網購' },
   ];
 
-  // Demo merchants data
-  const DEMO_MERCHANTS = [
-    { name: '麥當勞', category: '餐飲', icon: '🍔', rates: [
-      { card: 'HSBC Visa Signature', rate: '4%', bank: 'HSBC' },
-      { card: '渣打Smart卡', rate: '5%', bank: '渣打' },
-      { card: 'Citi Rewards', rate: '5%', bank: 'Citi' },
-    ]},
-    { name: '百佳', category: '超市', icon: '🛒', rates: [
-      { card: 'HSBC Visa Signature', rate: '2%', bank: 'HSBC' },
-      { card: '渣打Smart卡', rate: '2%', bank: '渣打' },
-    ]},
-    { name: '壽司郎', category: '餐飲', icon: '🍣', rates: [
-      { card: 'HSBC Visa Signature', rate: '4%', bank: 'HSBC' },
-      { card: '渣打Smart卡', rate: '5%', bank: '渣打' },
-    ]},
-    { name: '淘寶', category: '網購', icon: '🛍️', rates: [
-      { card: 'HSBC Visa Signature', rate: '2%', bank: 'HSBC' },
-      { card: 'DBS Black Card', rate: '3%', bank: 'DBS' },
-    ]},
-    { name: '星巴克', category: '餐飲', icon: '☕', rates: [
-      { card: 'HSBC Visa Signature', rate: '4%', bank: 'HSBC' },
-    ]},
-    { name: '惠康', category: '超市', icon: '🛒', rates: [
-      { card: 'HSBC Visa Signature', rate: '2%', bank: 'HSBC' },
-    ]},
-    { name: '海底撈', category: '餐飲', icon: '🍲', rates: [
-      { card: 'HSBC Visa Signature', rate: '4%', bank: 'HSBC' },
-      { card: '渣打Smart卡', rate: '5%', bank: '渣打' },
-    ]},
-    { name: 'HKTVmall', category: '網購', icon: '🛍️', rates: [
-      { card: 'HSBC Visa Signature', rate: '2%', bank: 'HSBC' },
-    ]},
-    { name: '7-11', category: '超市', icon: '🏪', rates: [
-      { card: 'Citi Cash Back', rate: '5%', bank: 'Citi' },
-    ]},
-    { name: '肯德基', category: '餐飲', icon: '🍗', rates: [
-      { card: 'HSBC Visa Signature', rate: '4%', bank: 'HSBC' },
-    ]},
-  ];
-
+  // Fetch from API
   useEffect(() => {
-    let filtered = [...DEMO_MERCHANTS];
-    
-    // Filter by search
-    if (search.length > 0) {
-      filtered = filtered.filter(m => 
-        m.name.toLowerCase().includes(search.toLowerCase()) ||
-        m.category.toLowerCase().includes(search.toLowerCase())
-      );
+    async function fetchMerchants() {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (search) params.set('search', search);
+        if (category) params.set('category', category);
+        
+        const res = await fetch(`/api/merchants?${params}`);
+        const data = await res.json();
+        
+        if (data.merchants) {
+          // Transform to display format
+          const transformed = data.merchants.map(m => ({
+            name: m.name,
+            category_id: m.category_id,
+            category: getCategoryName(m.category_id),
+            icon: getCategoryIcon(m.category_id),
+            rates: m.rates.map(r => ({
+              card: r.card_name,
+              rate: formatRate(r.rate, r.rate_type),
+              bank: r.bank
+            }))
+          }));
+          setMerchants(transformed);
+        }
+      } catch (err) {
+        console.error('Error:', err);
+      } finally {
+        setLoading(false);
+      }
     }
     
-    // Filter by category
-    if (category) {
-      filtered = filtered.filter(m => m.category === category);
-    }
-    
-    // Sort by rate (high to low)
-    if (sortBy === 'rate') {
-      filtered.sort((a, b) => {
-        const maxRateA = Math.max(...a.rates.map(r => parseFloat(r.rate)));
-        const maxRateB = Math.max(...b.rates.map(r => parseFloat(r.rate)));
-        return maxRateB - maxRateA;
-      });
-    }
-    
-    setMerchants(filtered);
+    fetchMerchants();
   }, [search, category, sortBy]);
+
+  function getCategoryName(id) {
+    const cats = { 1: '餐飲', 2: '超市', 3: '網購', 4: '交通費', 5: '娛樂' };
+    return cats[id] || '其他';
+  }
+  
+  function getCategoryIcon(id) {
+    const icons = { 1: '🍜', 2: '🛒', 3: '🛍️', 4: '🚗', 5: '🎬' };
+    return icons[id] || '💳';
+  }
+  
+  function formatRate(rate, type) {
+    if (type === 'PERCENTAGE' || type === 'PERCENT') {
+      return (parseFloat(rate) * 100).toFixed(0) + '%';
+    }
+    return rate + (type === 'MILEAGE' ? '里' : '');
+  }
 
   return (
     <>

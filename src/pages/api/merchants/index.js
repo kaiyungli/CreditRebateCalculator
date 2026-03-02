@@ -1,5 +1,11 @@
-// API: Get merchants with rebate rates
-import { getMerchantRates } from '../../../lib/db'
+// API: Get merchants with rebate rates from Supabase
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabase = (supabaseUrl && supabaseKey && !supabaseUrl.includes('YOUR_')) 
+  ? createClient(supabaseUrl, supabaseKey) 
+  : null
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -9,8 +15,19 @@ export default async function handler(req, res) {
   try {
     const { search, category } = req.query
     
-    // Get all merchant rates
-    const rates = await getMerchantRates([], category ? parseInt(category) : null)
+    // Get merchant rates from Supabase
+    let query = supabase
+      .from('merchant_rates')
+      .select('*, cards(name, bank_id, banks(name))')
+      .eq('status', 'ACTIVE')
+    
+    if (category) {
+      query = query.eq('category_id', parseInt(category))
+    }
+    
+    const { data: rates, error } = await query
+    
+    if (error) throw error
     
     // Group by merchant
     const merchantMap = {}
@@ -24,8 +41,8 @@ export default async function handler(req, res) {
       }
       merchantMap[rate.merchant_name].rates.push({
         card_id: rate.card_id,
-        card_name: rate.card_name,
-        bank_id: rate.bank_id,
+        card_name: rate.cards?.name || 'Unknown',
+        bank: rate.cards?.banks?.name || 'Unknown',
         rate: rate.rebate_rate,
         rate_type: rate.rebate_type,
         conditions: rate.conditions
@@ -41,9 +58,17 @@ export default async function handler(req, res) {
       )
     }
     
+    // Sort by max rate (high to low)
+    merchants.sort((a, b) => {
+      const maxRateA = Math.max(...a.rates.map(r => parseFloat(r.rate || 0)))
+      const maxRateB = Math.max(...b.rates.map(r => parseFloat(r.rate || 0)))
+      return maxRateB - maxRateA
+    })
+    
     res.status(200).json({ 
       merchants,
-      count: merchants.length
+      count: merchants.length,
+      source: 'supabase'
     })
   } catch (error) {
     console.error('Error fetching merchants:', error)
