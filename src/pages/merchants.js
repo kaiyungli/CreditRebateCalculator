@@ -40,7 +40,7 @@ export default function Merchants() {
             icon: getCategoryIcon(m.category_id),
             rates: m.rates.map(r => ({
               card: r.card_name,
-              rate: formatRate(r.rate, r.rate_type),
+              rate: formatRate(r.rate, r.rate_type, r.offer_value),
               bank: r.bank
             }))
           }));
@@ -66,7 +66,23 @@ export default function Merchants() {
     return icons[id] || '💳';
   }
   
-  function formatRate(rate, type) {
+  function formatRate(rate, type, offerValue) {
+    // If offer_value exists, use it directly
+    if (offerValue) {
+      const val = String(offerValue);
+      if (val.includes('%')) return val;
+      if (val.includes('折')) return val;
+      if (val.includes('里')) return val;
+      // Check if it's a number
+      const num = parseFloat(val);
+      if (!isNaN(num)) {
+        if (num < 10) return num + '%';
+        return '$' + Math.round(num);
+      }
+      return val;
+    }
+    
+    // Fallback to old format
     if (type === 'PERCENTAGE' || type === 'PERCENT') {
       return (parseFloat(rate) * 100).toFixed(0) + '%';
     }
