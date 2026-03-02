@@ -7,6 +7,7 @@ import Footer from './components/Footer';
 export default function Merchants() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [unitFilter, setUnitFilter] = useState('');
   const [sortBy, setSortBy] = useState('rate');
   const [merchants, setMerchants] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -17,6 +18,13 @@ export default function Merchants() {
     { id: '餐飲', name: '餐飲' },
     { id: '超市', name: '超市' },
     { id: '網購', name: '網購' },
+  ];
+
+  const UNIT_FILTERS = [
+    { id: '', name: '全部' },
+    { id: '%', name: '% 回贈' },
+    { id: '$', name: '$ 優惠' },
+    { id: '里', name: '里數' },
   ];
 
   // Fetch from API
@@ -33,7 +41,7 @@ export default function Merchants() {
         
         if (data.merchants) {
           // Transform to display format
-          const transformed = data.merchants.map(m => ({
+          let transformed = data.merchants.map(m => ({
             name: m.name,
             category_id: m.category_id,
             category: getCategoryName(m.category_id),
@@ -41,9 +49,24 @@ export default function Merchants() {
             rates: m.rates.map(r => ({
               card: r.card_name,
               rate: formatRate(r.rate, r.rate_type, r.offer_value, r.offer_type),
-              bank: r.bank
+              bank: r.bank,
+              offer_type: r.offer_type
             }))
           }));
+          
+          // Filter by unit if selected
+          if (unitFilter) {
+            transformed = transformed.map(m => ({
+              ...m,
+              rates: m.rates.filter(r => {
+                if (unitFilter === '%') return r.rate.includes('%') && !r.rate.includes('折');
+                if (unitFilter === '$') return r.rate.includes('$') || r.rate.includes('折');
+                if (unitFilter === '里') return r.rate.includes('里');
+                return true;
+              })
+            })).filter(m => m.rates.length > 0);
+          }
+          
           setMerchants(transformed);
         }
       } catch (err) {
@@ -54,7 +77,7 @@ export default function Merchants() {
     }
     
     fetchMerchants();
-  }, [search, category, sortBy]);
+  }, [search, category, unitFilter, sortBy]);
 
   function getCategoryName(id) {
     const cats = { 1: '餐飲', 2: '超市', 3: '網購', 4: '交通費', 5: '娛樂' };
@@ -146,6 +169,27 @@ export default function Merchants() {
                   }}
                 >
                   {cat.name}
+                </button>
+              ))}
+            </div>
+            
+            {/* Unit Filter */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+              {UNIT_FILTERS.map(unit => (
+                <button
+                  key={unit.id}
+                  onClick={() => setUnitFilter(unit.id)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '16px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    background: unitFilter === unit.id ? 'var(--primary)' : 'var(--background)',
+                    color: unitFilter === unit.id ? 'white' : 'var(--text-primary)',
+                  }}
+                >
+                  {unit.name}
                 </button>
               ))}
             </div>
