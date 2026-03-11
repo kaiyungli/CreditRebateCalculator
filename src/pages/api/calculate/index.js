@@ -1,6 +1,7 @@
 // API: Calculate best rebate combo for multiple items
 // Features: beam search, merchant override, caps, miles/points valuation
 import { getActiveCards, getActiveRulesAndMerchants } from '../../../lib/db'
+import { getActiveOffers, calculateOfferValue, getApplicableOffers } from '../../../lib/offers'
 
 const BEAM_WIDTH = 80
 
@@ -59,9 +60,18 @@ export default async function handler(req, res) {
       }
     })
 
+    // Fetch offers for all unique merchants
+    const merchantIds = [...new Set(normalizedItems.filter(it => it.merchant_id).map(it => it.merchant_id))]
+    const offersByMerchant = {}
+    for (const mid of merchantIds) {
+      offersByMerchant[mid] = await getActiveOffers({ merchantId: mid }) || []
+    }
+
     // Beam search state
     let states = [{
       totalHKD: 0,
+      totalOfferValue: 0,
+      totalSpent: 0,
       totalBreakdown: { cashback: 0, miles: 0, points: 0 },
       capUsed: {},
       plan: [],
@@ -146,16 +156,23 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
-      totalHKD: round2(best.totalHKD),
+      // New response format with offer breakdown
+      spentAmount: round2(best.totalSpent || normalizedItems.reduce((sum, it) => sum + it.amount, 0)),
+      baseRebate: round2(best.totalHKD),
+      offerValue: round2(best.totalOfferValue || 0),
+      totalValue: round2(best.totalHKD + (best.totalOfferValue || 0)),
+      effectiveRebatePercent: round2(((best.totalHKD + (best.totalOfferValue || 0)) / (best.totalSpent || 1)) * 100),
       breakdown: {
         cashback: round2(best.totalBreakdown.cashback),
         miles: Math.floor(best.totalBreakdown.miles),
         points: Math.floor(best.totalBreakdown.points),
+        promoDiscount: round2(best.totalOfferValue || 0),
       },
       plan: best.plan,
       assumptions: {
         capTracking: 'not-tracked', // 無登入：唔知道本月已用 cap
         valuation,
+        offersStackable: true,
       },
     })
 
