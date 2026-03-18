@@ -1,4 +1,4 @@
-import { getActiveOffers, getAllActiveOffers } from '@/lib/offers'
+import { getActiveOffers, getAllActiveOffers } from '../../../lib/offers'
 
 export default async function handler(req, res) {
   const { 

@@ -1,15 +1,17 @@
-import { getCards } from '../../../lib/db'
+import { getActiveCards } from '../../../lib/db'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'GET only' })
 
-  const { bank_id, limit } = req.query
+  const { bank_id } = req.query
 
   try {
-    const cards = await getCards({
-      bank_id: bank_id ? parseInt(bank_id, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : 100,
-    })
+    let cards = await getActiveCards()
+    
+    // Filter by bank_id if provided
+    if (bank_id) {
+      cards = cards.filter(c => c.bank_id === parseInt(bank_id, 10))
+    }
 
     return res.status(200).json({ cards, count: cards.length })
   } catch (error) {

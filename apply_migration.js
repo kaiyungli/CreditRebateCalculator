@@ -6,73 +6,138 @@ const pool = new Pool({
 
 async function applyMigration() {
   const migrationSQL = `
--- Add new columns to merchant_rates table
-ALTER TABLE merchant_rates ADD COLUMN IF NOT EXISTS source VARCHAR(50) DEFAULT 'scraped';
-ALTER TABLE merchant_rates ADD COLUMN IF NOT EXISTS start_date DATE;
-ALTER TABLE merchant_rates ADD COLUMN IF NOT EXISTS end_date DATE;
-ALTER TABLE merchant_rates ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
-ALTER TABLE merchant_rates ADD COLUMN IF NOT EXISTS submitted_by VARCHAR(100);
-ALTER TABLE merchant_rates ADD COLUMN IF NOT EXISTS verification_votes INT DEFAULT 0;
+-- =====================================
+-- NEW SCHEMA (banks, cards, categories, merchants, reward_rules)
+-- =====================================
 
--- Add index for source column
-CREATE INDEX IF NOT EXISTS idx_merchant_rates_source ON merchant_rates(source);
-
--- Add index for verification status
-CREATE INDEX IF NOT EXISTS idx_merchant_rates_verified ON merchant_rates(is_verified);
-
--- Create user_offer_submissions table
-CREATE TABLE IF NOT EXISTS user_offer_submissions (
-    id SERIAL PRIMARY KEY,
-    merchant_rate_id INTEGER REFERENCES merchant_rates(id),
-    user_id INTEGER REFERENCES users(id),
-    suggested_rate DECIMAL(5,3) NOT NULL,
-    suggested_rebate_type VARCHAR(50),
-    notes TEXT,
-    status VARCHAR(20) DEFAULT 'PENDING',
-    reviewed_by VARCHAR(100),
-    reviewed_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- BANKS
+CREATE TABLE IF NOT EXISTS banks (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  name_en VARCHAR(100),
+  status VARCHAR(20) DEFAULT 'ACTIVE',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_offer_submissions_rate ON user_offer_submissions(merchant_rate_id);
-CREATE INDEX IF NOT EXISTS idx_offer_submissions_user ON user_offer_submissions(user_id);
-CREATE INDEX IF NOT EXISTS idx_offer_submissions_status ON user_offer_submissions(status);
-
--- Create offer_votes table
-CREATE TABLE IF NOT EXISTS offer_votes (
-    id SERIAL PRIMARY KEY,
-    merchant_rate_id INTEGER REFERENCES merchant_rates(id),
-    user_id INTEGER REFERENCES users(id),
-    vote_value INTEGER DEFAULT 1,
-    comment TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(merchant_rate_id, user_id)
+-- CARDS
+CREATE TABLE IF NOT EXISTS cards (
+  id SERIAL PRIMARY KEY,
+  bank_id INTEGER REFERENCES banks(id),
+  name VARCHAR(255) NOT NULL,
+  name_en VARCHAR(255),
+  reward_program VARCHAR(20) NOT NULL,
+  annual_fee INTEGER DEFAULT 0,
+  image_url TEXT,
+  apply_url TEXT,
+  status VARCHAR(20) DEFAULT 'ACTIVE',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_offer_votes_rate ON offer_votes(merchant_rate_id);
-CREATE INDEX IF NOT EXISTS idx_offer_votes_user ON offer_votes(user_id);
+CREATE INDEX IF NOT EXISTS idx_cards_bank ON cards(bank_id);
 
--- Function: Update verification_votes count
-CREATE OR REPLACE FUNCTION update_verification_votes()
-RETURNS TRIGGER AS $$
-BEGIN
-    UPDATE merchant_rates
-    SET verification_votes = (
-        SELECT COALESCE(SUM(vote_value), 0)
-        FROM offer_votes
-        WHERE merchant_rate_id = NEW.merchant_rate_id
-    )
-    WHERE id = NEW.merchant_rate_id;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- CATEGORIES
+CREATE TABLE IF NOT EXISTS categories (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  name_en VARCHAR(100),
+  parent_id INTEGER REFERENCES categories(id),
+  level INTEGER DEFAULT 1,
+  sort_order INTEGER DEFAULT 0
+);
 
--- Trigger to auto-update verification_votes
-DROP TRIGGER IF EXISTS trigger_update_votes ON offer_votes;
-CREATE TRIGGER trigger_update_votes
-AFTER INSERT OR UPDATE OR DELETE ON offer_votes
-FOR EACH ROW EXECUTE FUNCTION update_verification_votes();
+-- MERCHANTS
+CREATE TABLE IF NOT EXISTS merchants (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  name_en VARCHAR(255),
+  merchant_key VARCHAR(120) UNIQUE NOT NULL,
+  default_category_id INTEGER REFERENCES categories(id),
+  aliases TEXT[] DEFAULT '{}',
+  status VARCHAR(20) DEFAULT 'ACTIVE',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_merchants_category ON merchants(default_category_id);
+
+-- REWARD RULES
+CREATE TABLE IF NOT EXISTS reward_rules (
+  id SERIAL PRIMARY KEY,
+  card_id INTEGER NOT NULL REFERENCES cards(id),
+  merchant_id INTEGER REFERENCES merchants(id),
+  category_id INTEGER REFERENCES categories(id),
+  reward_kind VARCHAR(20) NOT NULL,
+  rate_unit VARCHAR(20) NOT NULL,
+  rate_value NUMERIC(12,6) NOT NULL,
+  per_amount NUMERIC(12,2),
+  cap_value NUMERIC(12,2),
+  cap_period VARCHAR(20) DEFAULT 'MONTHLY',
+  min_spend NUMERIC(12,2),
+  valid_from DATE DEFAULT CURRENT_DATE,
+  valid_to DATE,
+  priority INTEGER DEFAULT 100,
+  status VARCHAR(20) DEFAULT 'ACTIVE',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_rule_card ON reward_rules(card_id);
+CREATE INDEX IF NOT EXISTS idx_rule_merchant ON reward_rules(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_rule_category ON reward_rules(category_id);
+
+-- USERS
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  telegram_id VARCHAR(100) UNIQUE,
+  email VARCHAR(255) UNIQUE,
+  preferences JSONB DEFAULT '{}',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- USER CARDS
+CREATE TABLE IF NOT EXISTS user_cards (
+  user_id INTEGER REFERENCES users(id),
+  card_id INTEGER REFERENCES cards(id),
+  is_active BOOLEAN DEFAULT TRUE,
+  PRIMARY KEY (user_id, card_id)
+);
+
+-- CALCULATIONS
+CREATE TABLE IF NOT EXISTS calculations (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  input_json JSONB NOT NULL,
+  result_json JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- SEED DATA
+INSERT INTO banks (name) VALUES ('HSBC'), ('Standard Chartered')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO categories (name, sort_order) VALUES 
+  ('Dining', 1), ('Supermarket', 2), ('Online', 3)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO merchants (name, merchant_key, default_category_id) VALUES 
+  ('壽司郎', 'sushiro', 1),
+  ('百佳', 'parknshop', 2),
+  ('麥當勞', 'mcdonalds', 1)
+ON CONFLICT (merchant_key) DO NOTHING;
+
+INSERT INTO cards (bank_id, name, reward_program) VALUES 
+  (1, 'HSBC Red', 'CASHBACK'),
+  (2, 'SCB Asia Miles', 'MILEAGE')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO reward_rules (card_id, merchant_id, category_id, reward_kind, rate_unit, rate_value, cap_value, priority, valid_from, valid_to) VALUES 
+  (1, NULL, 1, 'CASHBACK', 'PERCENT', 0.04, NULL, 100, '2026-01-01', '2026-12-31'),
+  (1, 1, NULL, 'CASHBACK', 'PERCENT', 0.06, 30, 10, '2026-01-01', '2026-12-31'),
+  (2, 2, NULL, 'MILEAGE', 'PER_AMOUNT', 1, NULL, 10, '2026-01-01', '2026-12-31')
+ON CONFLICT DO NOTHING;
 `;
 
   try {
@@ -84,35 +149,27 @@ FOR EACH ROW EXECUTE FUNCTION update_verification_votes();
     await client.query(migrationSQL);
     console.log('\n✅ Migration applied successfully!');
     
-    // Verify: check if columns were added
-    const result = await client.query(`
-      SELECT column_name, data_type 
-      FROM information_schema.columns 
-      WHERE table_name = 'merchant_rates' 
-      AND column_name IN ('source', 'start_date', 'end_date', 'is_verified', 'submitted_by', 'verification_votes')
-      ORDER BY column_name
-    `);
-    console.log('\n📋 New columns in merchant_rates:');
-    console.table(result.rows);
-    
-    // Verify new tables exist
+    // Verify tables
     const tables = await client.query(`
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public' 
-      AND table_name IN ('user_offer_submissions', 'offer_votes')
+      AND table_name IN ('banks', 'cards', 'categories', 'merchants', 'reward_rules', 'users', 'user_cards', 'calculations')
+      ORDER BY table_name
     `);
-    console.log('\n📋 New tables created:');
+    console.log('\n📋 Tables created:');
     console.table(tables.rows);
     
-    // Check trigger
-    const trigger = await client.query(`
-      SELECT trigger_name, event_object_table 
-      FROM information_schema.triggers 
-      WHERE trigger_name = 'trigger_update_votes'
+    // Check counts
+    const counts = await client.query(`
+      SELECT 'banks' as tbl, COUNT(*)::int as cnt FROM banks
+      UNION ALL SELECT 'cards', COUNT(*)::int FROM cards
+      UNION ALL SELECT 'categories', COUNT(*)::int FROM categories
+      UNION ALL SELECT 'merchants', COUNT(*)::int FROM merchants
+      UNION ALL SELECT 'reward_rules', COUNT(*)::int FROM reward_rules
     `);
-    console.log('\n📋 Trigger created:');
-    console.table(trigger.rows);
+    console.log('\n📋 Record counts:');
+    console.table(counts.rows);
     
     client.release();
     await pool.end();

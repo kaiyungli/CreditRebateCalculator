@@ -1,318 +1,233 @@
-// API: Calculate best rebate combo for multiple items
-// Features: beam search, merchant override, caps, miles/points valuation
-import { getActiveCards, getActiveRulesAndMerchants } from '../../../lib/db'
-import { getActiveOffers, calculateOfferValue, getApplicableOffers } from '../../../lib/offers'
-
-const BEAM_WIDTH = 80
-
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, error: 'POST only' })
-  }
-
-  try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
-    const items = Array.isArray(body.items) ? body.items : []
-
-    if (items.length === 0) {
-      return res.status(400).json({ ok: false, error: 'items is required' })
-    }
-
-    // miles/points 轉 HKD 比較（可由前端覆寫）
-    const valuation = {
-      MILES: Number(body.valuation?.MILES ?? 0.05),
-      POINTS: Number(body.valuation?.POINTS ?? 0.01),
-    }
-
-    // Get cards (supports fallback mode)
-    let cards = await getActiveCards()
-    
-    // Filter cards by user selection if card_ids provided
-    if (body.card_ids && Array.isArray(body.card_ids) && body.card_ids.length > 0) {
-      const userCardIds = body.card_ids.map(Number)
-      cards = cards.filter(card => userCardIds.includes(card.id))
-    }
-
-    const { merchantKeyToId, rules } = await getActiveRulesAndMerchants()
-
-    // rules by card for faster lookup
-    const rulesByCard = new Map()
-    for (const r of rules) {
-      if (!rulesByCard.has(r.card_id)) rulesByCard.set(r.card_id, [])
-      rulesByCard.get(r.card_id).push(r)
-    }
-
-    // normalize items: merchant_key -> merchant_id
-    const normalizedItems = items.map((it, idx) => {
-      const amount = Number(it.amount ?? 0)
-      if (!Number.isFinite(amount) || amount <= 0) {
-        throw new Error(`item[${idx}].amount invalid`)
-      }
-      const merchant_id = it.merchant_id ?? (it.merchant_key ? merchantKeyToId[it.merchant_key] : null)
-      const category_id = it.category_id ?? null
-      return {
-        idx,
-        amount,
-        merchant_id: merchant_id ?? null,
-        category_id,
-        merchant_key: it.merchant_key ?? null,
-        note: it.note ?? null,
-      }
-    })
-
-    // Fetch offers for all unique merchants
-    const merchantIds = [...new Set(normalizedItems.filter(it => it.merchant_id).map(it => it.merchant_id))]
-    const offersByMerchant = {}
-    for (const mid of merchantIds) {
-      offersByMerchant[mid] = await getActiveOffers({ merchantId: mid }) || []
-    }
-
-    // Beam search state
-    let states = [{
-      totalHKD: 0,
-      totalOfferValue: 0,
-      totalSpent: 0,
-      totalBreakdown: { cashback: 0, miles: 0, points: 0 },
-      capUsed: {},
-      plan: [],
-    }]
-
-    for (const item of normalizedItems) {
-      const next = []
-      for (const st of states) {
-        for (const card of cards) {
-          const rule = pickBestRule(rulesByCard.get(card.id), item)
-          if (!rule) continue
-
-          // min spend (per txn) - Phase 1
-          if (rule.min_spend != null && item.amount < Number(rule.min_spend)) {
-            continue
-          }
-
-          const rawReward = calcReward(item.amount, rule)
-          const { appliedReward, capNote, capUsedNext, capInfo, capSpendHint, } = applyCap(rawReward, rule, st.capUsed)
-          const hkd = rewardToHKD(appliedReward, rule, valuation)
-          const breakdown = { ...st.totalBreakdown }
-
-          if (rule.reward_kind === 'CASHBACK') breakdown.cashback += appliedReward
-          if (rule.reward_kind === 'MILES') breakdown.miles += appliedReward
-          if (rule.reward_kind === 'POINTS') breakdown.points += appliedReward
-
-          next.push({
-            totalHKD: st.totalHKD + hkd,
-            totalBreakdown: breakdown,
-            capUsed: capUsedNext,
-            plan: st.plan.concat([{
-              item,
-              card: {
-                id: card.id,
-                name: card.name,
-                bank_name: card.bank_name || '',
-                reward_program: card.reward_program,
-              },
-              rule: {
-                id: rule.id,
-                reward_kind: rule.reward_kind,
-                rate_unit: rule.rate_unit,
-                rate_value: Number(rule.rate_value),
-                per_amount: rule.per_amount == null ? null : Number(rule.per_amount),
-                cap_value: rule.cap_value == null ? null : Number(rule.cap_value),
-                cap_period: rule.cap_period ?? 'MONTHLY',
-                priority: rule.priority ?? 100,
-              },
-              reward: appliedReward,
-              rewardHKD: hkd,
-              capInfo,
-              capSpendHint,
-              note: capNote,
-            }]),
-          })
-        }
-      }
-
-      // keep best N
-      next.sort((a, b) => b.totalHKD - a.totalHKD)
-      states = dedupeAndTrim(next, BEAM_WIDTH)
-
-      if (states.length === 0) break
-    }
-
-    // Handle case where no rules match any item
-    if (states.length === 0) {
-      return res.status(200).json({
-        ok: true,
-        totalHKD: 0,
-        breakdown: { cashback: 0, miles: 0, points: 0 },
-        plan: [],
-        assumptions: {
-          capTracking: 'not-tracked',
-          valuation,
-          note: 'No matching rules for provided items',
-        },
-      })
-    }
-
-    const best = states[0]
-
-    return res.status(200).json({
-      ok: true,
-      // New response format with offer breakdown
-      spentAmount: round2(best.totalSpent || normalizedItems.reduce((sum, it) => sum + it.amount, 0)),
-      baseRebate: round2(best.totalHKD),
-      offerValue: round2(best.totalOfferValue || 0),
-      totalValue: round2(best.totalHKD + (best.totalOfferValue || 0)),
-      effectiveRebatePercent: round2(((best.totalHKD + (best.totalOfferValue || 0)) / (best.totalSpent || 1)) * 100),
-      breakdown: {
-        cashback: round2(best.totalBreakdown.cashback),
-        miles: Math.floor(best.totalBreakdown.miles),
-        points: Math.floor(best.totalBreakdown.points),
-        promoDiscount: round2(best.totalOfferValue || 0),
-      },
-      plan: best.plan,
-      assumptions: {
-        capTracking: 'not-tracked', // 無登入：唔知道本月已用 cap
-        valuation,
-        offersStackable: true,
-      },
-    })
-
-  } catch (e) {
-    console.error('calculate error:', e)
-    return res.status(500).json({ ok: false, error: e.message })
-  }
-}
+// API: Calculate best card for a single transaction
+// Uses new schema: reward_rules, merchant_offers
+import { getActiveCards, getCardsByIds, getRewardRules, getMerchantOffers, saveCalculation } from '../../../lib/db'
 
 /**
- * Rule priority:
- * 1) merchant match
- * 2) category match
- * pick lowest priority number
+ * Choose the best reward rule for a card
+ * Priority: MERCHANT > CATEGORY > GENERAL
  */
-function pickBestRule(rules, item) {
-  if (!rules || rules.length === 0) return null
+function chooseBestRule(rules, cardId) {
+  const cardRules = rules.filter(r => r.card_id === cardId)
+  if (!cardRules || cardRules.length === 0) return null
 
-  const merchantMatches = item.merchant_id
-    ? rules.filter(r => r.merchant_id === item.merchant_id)
-    : []
+  // Find merchant-specific rule (highest priority)
+  const merchantRule = cardRules.find(r => r.merchant_id != null)
+  if (merchantRule) return { ...merchantRule, scope_type: 'MERCHANT' }
 
-  if (merchantMatches.length > 0) {
-    merchantMatches.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100))
-    return merchantMatches[0]
-  }
+  // Find category-specific rule
+  const categoryRule = cardRules.find(r => r.category_id != null && r.merchant_id == null)
+  if (categoryRule) return { ...categoryRule, scope_type: 'CATEGORY' }
 
-  const categoryMatches = item.category_id
-    ? rules.filter(r => r.category_id === item.category_id && r.merchant_id == null)
-    : []
-
-  if (categoryMatches.length > 0) {
-    categoryMatches.sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100))
-    return categoryMatches[0]
-  }
+  // Fall back to general rule
+  const generalRule = cardRules.find(r => r.merchant_id == null && r.category_id == null)
+  if (generalRule) return { ...generalRule, scope_type: 'GENERAL' }
 
   return null
 }
 
-function calcReward(amount, rule) {
-  const unit = String(rule.rate_unit || '').toUpperCase()
+/**
+ * Calculate reward based on rule type
+ */
+function calculateReward(rule, amount) {
+  if (!rule) return { rewardAmount: 0, rewardKind: null, effectiveRate: null }
 
-  if (unit === 'PERCENT') {
-    return amount * Number(rule.rate_value)
+  const rateValue = Number(rule.rate_value)
+  let rewardAmount = 0
+
+  if (rule.rate_unit === 'PERCENT') {
+    rewardAmount = (amount * rateValue) / 100
+  } else if (rule.rate_unit === 'PER_AMOUNT') {
+    const perAmount = Number(rule.per_amount) || 1
+    rewardAmount = Math.floor(amount / perAmount) * rateValue
+  } else if (rule.rate_unit === 'FIXED') {
+    rewardAmount = rateValue
   }
 
-  if (unit === 'PER_AMOUNT') {
-    const per = Number(rule.per_amount)
-    if (!Number.isFinite(per) || per <= 0) return 0
-    const units = Math.floor(amount / per)
-    return units * Number(rule.rate_value) // 通常 rate_value=1
+  // Apply cap if exists
+  if (rule.cap_value && rule.cap_value > 0) {
+    rewardAmount = Math.min(rewardAmount, Number(rule.cap_value))
   }
 
-  return 0
+  const rewardKind = rule.reward_kind || 'CASHBACK'
+  const effectiveRate = rule.rate_unit === 'PERCENT' ? rateValue : null
+
+  return {
+    rewardAmount: Math.round(rewardAmount * 100) / 100,
+    rewardKind,
+    effectiveRate
+  }
 }
 
 /**
- * Phase 1 cap: cap_value is cap on reward value (cash/miles/points)
- * We share cap within the SAME rule id (good enough for MVP).
+ * Estimate offer value for a given amount
  */
-function applyCap(rawReward, rule, capUsed) {
-  const cap = rule.cap_value == null ? null : Number(rule.cap_value)
+function estimateOfferValue(offer, amount) {
+  if (!offer) return 0
 
-  // No cap
-  if (!cap || cap <= 0) {
-    return {
-      appliedReward: rawReward,
-      capNote: null,
-      capUsedNext: capUsed,
-      capInfo: null,
-      capSpendHint: null,
-    }
+  // Check min_spend
+  if (offer.min_spend && amount < Number(offer.min_spend)) {
+    return 0
   }
 
-  const key = `rule:${rule.id}`
-  const usedBefore = Number(capUsed[key] ?? 0)
-  const remainingBefore = Math.max(0, cap - usedBefore)
-  const appliedReward = Math.max(0, Math.min(rawReward, remainingBefore))
-  const usedAfter = usedBefore + appliedReward
-  const remainingAfter = Math.max(0, cap - usedAfter)
-  const capUsedNext = { ...capUsed, [key]: usedAfter }
+  const value = Number(offer.value) || 0
 
-  const capInfo = {
-    cap,
-    usedBefore,
-    usedAfter,
-    remainingAfter,
+  if (offer.value_type === 'FIXED') {
+    return Math.min(value, Number(offer.max_discount) || value)
   }
 
-  // Spend hint: only meaningful for percent rules
-  let capSpendHint = null
-  if (String(rule.rate_unit).toUpperCase() === 'PERCENT' && Number(rule.rate_value) > 0) {
-    capSpendHint = cap / Number(rule.rate_value) // e.g. 30 / 0.06 = 500
+  if (offer.value_type === 'PERCENT') {
+    let calculated = (amount * value) / 100
+    return Math.min(calculated, Number(offer.max_discount) || calculated)
   }
-
-  const capNote = rawReward > appliedReward
-    ? `cap reached (${round2(cap)})`
-    : `cap remaining ${round2(remainingAfter)}`
-
-  return {
-    appliedReward,
-    capNote,
-    capUsedNext,
-    capInfo,
-    capSpendHint,
-  }
-}
-
-function rewardToHKD(reward, rule, valuation) {
-  const kind = String(rule.reward_kind || '').toUpperCase()
-
-  if (kind === 'CASHBACK') return reward
-  if (kind === 'MILES') return reward * valuation.MILES
-  if (kind === 'POINTS') return reward * valuation.POINTS
 
   return 0
 }
 
-function dedupeAndTrim(states, maxN) {
-  // 去重：同一個分配 pattern + capUsed key (粗略) -> 取最高
-  const map = new Map()
-
-  for (const st of states) {
-    const sig = signature(st)
-    const prev = map.get(sig)
-    if (!prev || st.totalHKD > prev.totalHKD) map.set(sig, st)
-    if (map.size > maxN * 5) break
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'POST only' })
   }
 
-  return Array.from(map.values())
-    .sort((a, b) => b.totalHKD - a.totalHKD)
-    .slice(0, maxN)
-}
+  try {
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+    const { merchant_id, category_id, amount, card_ids, user_id } = body
 
-function signature(st) {
-  const cards = st.plan.map(p => p.card.id).join(',')
-  const capKeys = Object.keys(st.capUsed).sort().map(k => `${k}:${Math.floor(st.capUsed[k] * 1000)}`).join('|')
-  return `${cards}__${capKeys}`
-}
+    // Validation
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Invalid amount' })
+    }
 
-function round2(n) {
-  return Math.round(Number(n) * 100) / 100
+    if (!merchant_id && !category_id) {
+      return res.status(400).json({ success: false, error: 'merchant_id or category_id required' })
+    }
+
+    // Get cards: use card_ids if provided, otherwise get all active
+    let cards
+    if (card_ids && Array.isArray(card_ids) && card_ids.length > 0) {
+      cards = await getCardsByIds(card_ids.map(Number))
+    } else {
+      cards = await getActiveCards()
+    }
+
+    if (!cards || cards.length === 0) {
+      return res.status(404).json({ success: false, error: 'No cards found' })
+    }
+
+    // Get card IDs and bank IDs for queries
+    const cardIds = cards.map(c => c.id || c.card_id)
+    const bankIds = [...new Set(cards.map(c => c.bank_id).filter(Boolean))]
+
+    // Load reward rules
+    const rules = await getRewardRules({
+      cardIds,
+      merchantId: merchant_id ? Number(merchant_id) : undefined,
+      categoryId: category_id ? Number(category_id) : undefined
+    })
+
+    // Load offers
+    const offers = await getMerchantOffers({
+      merchantId: merchant_id ? Number(merchant_id) : undefined,
+      cardIds,
+      bankIds
+    })
+
+    // Calculate for each card
+    const results = cards.map(card => {
+      const cardId = card.id || card.card_id
+      const cardBankId = card.bank_id
+
+      // Get best rule for this card
+      const rule = chooseBestRule(rules, cardId)
+
+      // Check min_spend
+      if (rule && rule.min_spend && amount < Number(rule.min_spend)) {
+        return {
+          card_id: cardId,
+          card_name: card.card_name || card.name,
+          bank_name: card.bank_name,
+          reward_rule: null,
+          base_reward: { amount: 0, reward_kind: null, effective_rate: null },
+          offers: [],
+          offer_value: 0,
+          total_value: 0
+        }
+      }
+
+      // Calculate base reward
+      const rewardCalc = calculateReward(rule, amount)
+
+      // Find matching offers for this card
+      const matchingOffers = offers
+        .filter(offer => {
+          // Check card_id: null = all cards, or match specific card
+          if (offer.card_id && offer.card_id !== cardId) return false
+          // Check bank_id: null = all banks, or match specific bank
+          if (offer.bank_id && offer.bank_id !== cardBankId) return false
+          return true
+        })
+        .map(offer => ({
+          id: offer.id,
+          title: offer.title,
+          offer_type: offer.offer_type,
+          value_type: offer.value_type,
+          value: offer.value,
+          estimated_value: estimateOfferValue(offer, amount)
+        }))
+        .filter(o => o.estimated_value > 0)
+
+      const offerValue = matchingOffers.reduce((sum, o) => sum + o.estimated_value, 0)
+      const totalValue = rewardCalc.rewardAmount + offerValue
+
+      return {
+        card_id: cardId,
+        card_name: card.card_name || card.name,
+        bank_name: card.bank_name,
+        reward_rule: rule ? {
+          id: rule.id,
+          scope_type: rule.scope_type,
+          reward_kind: rule.reward_kind,
+          rate_unit: rule.rate_unit,
+          rate_value: Number(rule.rate_value)
+        } : null,
+        base_reward: {
+          amount: rewardCalc.rewardAmount,
+          reward_kind: rewardCalc.rewardKind,
+          effective_rate: rewardCalc.effectiveRate
+        },
+        offers: matchingOffers,
+        offer_value: offerValue,
+        total_value: Math.round(totalValue * 100) / 100
+      }
+    })
+
+    // Sort results: total_value desc, then base_reward.amount desc
+    results.sort((a, b) => {
+      if (b.total_value !== a.total_value) return b.total_value - a.total_value
+      return b.base_reward.amount - a.base_reward.amount
+    })
+
+    const bestCard = results[0] || null
+
+    // Save calculation history
+    try {
+      await saveCalculation({
+        user_id: user_id ? Number(user_id) : null,
+        input_json: { merchant_id, category_id, amount, card_ids },
+        result_json: { results, best_card: bestCard }
+      })
+    } catch (saveErr) {
+      console.warn('Failed to save calculation:', saveErr.message)
+    }
+
+    return res.status(200).json({
+      success: true,
+      input: { merchant_id, category_id, amount },
+      results,
+      best_card: bestCard
+    })
+
+  } catch (error) {
+    console.error('Calculate API error:', error)
+    return res.status(500).json({ success: false, error: error.message })
+  }
 }
