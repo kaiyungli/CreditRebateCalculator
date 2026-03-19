@@ -1,4 +1,5 @@
 // API: Get merchants with rebate rates from Supabase
+// Uses new schema: merchants, reward_rules, merchant_offers
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -15,59 +16,100 @@ export default async function handler(req, res) {
   try {
     const { search, category } = req.query
     
-    // Get merchant rates from Supabase
-    let query = supabase
-      .from('merchant_rates')
-      .select('*, cards(name, bank_id, banks(name))')
+    // Get merchants from Supabase
+    let merchantsQuery = supabase
+      .from('merchants')
+      .select('*')
       .eq('status', 'ACTIVE')
     
     if (category) {
-      query = query.eq('category_id', parseInt(category))
+      merchantsQuery = merchantsQuery.eq('default_category_id', parseInt(category))
     }
     
-    const { data: rates, error } = await query
+    const { data: merchants, error: merchError } = await merchantsQuery
     
-    if (error) throw error
+    if (merchError) throw merchError
     
-    // Group by merchant
-    const merchantMap = {}
-    for (const rate of (rates || [])) {
-      if (!merchantMap[rate.merchant_name]) {
-        merchantMap[rate.merchant_name] = {
-          name: rate.merchant_name,
-          category_id: rate.category_id,
-          rates: []
+    // Get reward rules
+    const { data: rules, error: rulesError } = await supabase
+      .from('reward_rules')
+      .select('*, cards(name, bank_id, banks(name))')
+      .eq('status', 'ACTIVE')
+    
+    if (rulesError) throw rulesError
+    
+    // Build merchant -> rates mapping
+    const rulesByMerchant = {}
+    const rulesByCategory = {}
+    
+    for (const rule of (rules || [])) {
+      if (rule.merchant_id) {
+        if (!rulesByMerchant[rule.merchant_id]) rulesByMerchant[rule.merchant_id] = []
+        rulesByMerchant[rule.merchant_id].push({
+          card_id: rule.card_id,
+          card_name: rule.cards?.name || 'Unknown',
+          bank: rule.cards?.banks?.name || 'Unknown',
+          rate: rule.rate_value,
+          rate_type: rule.reward_kind,
+          rate_unit: rule.rate_unit
+        })
+      }
+      if (rule.category_id) {
+        if (!rulesByCategory[rule.category_id]) rulesByCategory[rule.category_id] = []
+        rulesByCategory[rule.category_id].push({
+          card_id: rule.card_id,
+          card_name: rule.cards?.name || 'Unknown',
+          bank: rule.cards?.banks?.name || 'Unknown',
+          rate: rule.rate_value,
+          rate_type: rule.reward_kind,
+          rate_unit: rule.rate_unit
+        })
+      }
+    }
+    
+    // Build response
+    const result = (merchants || []).map(m => {
+      const merchantRules = rulesByMerchant[m.id] || []
+      const categoryRules = rulesByCategory[m.default_category_id] || []
+      const allRates = [...merchantRules, ...categoryRules]
+      
+      // Dedupe by card
+      const uniqueRates = []
+      const seenCards = new Set()
+      for (const r of allRates) {
+        if (!seenCards.has(r.card_id)) {
+          seenCards.add(r.card_id)
+          uniqueRates.push(r)
         }
       }
-      merchantMap[rate.merchant_name].rates.push({
-        card_id: rate.card_id,
-        card_name: rate.cards?.name || 'Unknown',
-        bank: rate.cards?.banks?.name || 'Unknown',
-        rate: rate.rebate_rate,
-        rate_type: rate.rebate_type,
-        conditions: rate.conditions
-      })
-    }
-    
-    let merchants = Object.values(merchantMap)
+      
+      return {
+        id: m.id,
+        name: m.name,
+        merchant_key: m.merchant_key,
+        category_id: m.default_category_id,
+        rates: uniqueRates
+      }
+    })
     
     // Filter by search
+    let filtered = result
     if (search) {
-      merchants = merchants.filter(m => 
+      filtered = result.filter(m => 
         m.name.toLowerCase().includes(search.toLowerCase())
       )
     }
     
-    // Sort by max rate (high to low)
-    merchants.sort((a, b) => {
+    // Sort by max rate
+    filtered.sort((a, b) => {
       const maxRateA = Math.max(...a.rates.map(r => parseFloat(r.rate || 0)))
       const maxRateB = Math.max(...b.rates.map(r => parseFloat(r.rate || 0)))
       return maxRateB - maxRateA
     })
     
     res.status(200).json({ 
-      merchants,
-      count: merchants.length,
+      merchants: filtered,
+      count: filtered.length,
       source: 'supabase'
     })
   } catch (error) {
