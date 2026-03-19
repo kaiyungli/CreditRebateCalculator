@@ -1,19 +1,34 @@
-// Debug endpoint to check environment variables
+// Debug endpoint - show which key is actually being used
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 export default async function handler(req, res) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  // Test which key works
+  let serviceResult = { error: 'not tested' }
+  let anonResult = { error: 'not tested' }
   
-  // Check which key is actually being used
-  const activeKey = serviceKey || anonKey
+  // Test with service key
+  if (serviceKey) {
+    const serviceClient = createClient(supabaseUrl, serviceKey)
+    const test = await serviceClient.from('banks').select('count', { count: 'exact', head: true })
+    serviceResult = test.error ? { error: test.error.message } : { success: true }
+  }
+  
+  // Test with anon key
+  if (anonKey) {
+    const anonClient = createClient(supabaseUrl, anonKey)
+    const test = await anonClient.from('banks').select('count', { count: 'exact', head: true })
+    anonResult = test.error ? { error: test.error.message } : { success: true }
+  }
   
   res.status(200).json({
-    NEXT_PUBLIC_SUPABASE_URL: supabaseUrl || 'NOT_SET',
-    HAS_SERVICE_ROLE_KEY: !!serviceKey,
-    HAS_ANON_KEY: !!anonKey,
-    ACTUAL_KEY_USED: activeKey ? activeKey.substring(0, 50) + '...' : 'NOT_SET',
-    IS_USING_SERVICE_KEY: !!serviceKey,
-    IS_USING_ANON_KEY: !serviceKey && !!anonKey,
-    NODE_ENV: process.env.NODE_ENV,
+    supabaseUrl,
+    hasServiceKey: !!serviceKey,
+    hasAnonKey: !!anonKey,
+    serviceKeyWorks: serviceResult,
+    anonKeyWorks: anonResult,
   })
 }
