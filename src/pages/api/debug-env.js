@@ -7,17 +7,21 @@ const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 export default async function handler(req, res) {
   // Test which key works
-  let serviceResult = { error: 'not tested', count: 0 }
-  let anonResult = { error: 'not tested', count: 0 }
+  let serviceResult = { success: false, error: null, count: null }
+  let anonResult = { success: false, error: null, count: null }
   
   // Test with service key
   if (serviceKey) {
     try {
       const serviceClient = createClient(supabaseUrl, serviceKey)
-      const test = await serviceClient.from('banks').select('*', { count: 'exact', head: true })
-      serviceResult = test.error ? { error: test.error.message } : { success: true, count: test.count }
+      const test = await serviceClient.from('cards').select('*', { count: 'exact', head: true })
+      serviceResult = {
+        success: !test.error,
+        error: test.error ? test.error.message : null,
+        count: test.count
+      }
     } catch (e) {
-      serviceResult = { error: e.message }
+      serviceResult = { success: false, error: e.message, count: null }
     }
   }
   
@@ -25,10 +29,14 @@ export default async function handler(req, res) {
   if (anonKey) {
     try {
       const anonClient = createClient(supabaseUrl, anonKey)
-      const test = await anonClient.from('banks').select('*', { count: 'exact', head: true })
-      anonResult = test.error ? { error: test.error.message } : { success: true, count: test.count }
+      const test = await anonClient.from('cards').select('*', { count: 'exact', head: true })
+      anonResult = {
+        success: !test.error,
+        error: test.error ? test.error.message : null,
+        count: test.count
+      }
     } catch (e) {
-      anonResult = { error: e.message }
+      anonResult = { success: false, error: e.message, count: null }
     }
   }
   
