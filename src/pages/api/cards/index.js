@@ -16,6 +16,9 @@ export default async function handler(req, res) {
     return res.status(200).json({ cards, count: cards.length })
   } catch (error) {
     console.error('Error fetching cards:', error)
-    return res.status(500).json({ error: error.message })
+    return res.status(500).json({ 
+      error: error.message,
+      hint: 'Check if SUPABASE_SERVICE_ROLE_KEY is set in Vercel env vars'
+    })
   }
 }

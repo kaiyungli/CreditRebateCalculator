@@ -1,23 +1,28 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+function getSupabase() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (!supabaseUrl || !supabaseKey) return null
+  if (supabaseUrl.includes('YOUR_') || supabaseUrl.includes('example')) return null
+  
+  return createClient(supabaseUrl, supabaseKey)
+}
 
-const supabase = (supabaseUrl && supabaseKey && !supabaseUrl.includes('YOUR_') && !supabaseUrl.includes('example'))
-  ? createClient(supabaseUrl, supabaseKey)
-  : null
-
-export default supabase
+export default {}
 
 // ============ Banks ============
 
 export async function getBanks() {
+  const supabase = getSupabase()
   const { data, error } = await supabase.from('banks').select('*').eq('status', 'ACTIVE').order('name')
   if (error) throw new Error(`Database query failed: ${error.message}`)
   return data || []
 }
 
 export async function getBankById(id) {
+  const supabase = getSupabase()
   const { data, error } = await supabase.from('banks').select('*').eq('id', id).single()
   if (error) throw new Error(`Database query failed: ${error.message}`)
   return data
@@ -26,6 +31,7 @@ export async function getBankById(id) {
 // ============ Cards ============
 
 export async function getActiveCards() {
+  const supabase = getSupabase()
   const { data, error } = await supabase
     .from('cards')
     .select(`id, bank_id, name, name_en, reward_program, annual_fee, image_url, apply_url, banks!inner(name)`)
@@ -47,6 +53,7 @@ export async function getActiveCards() {
 }
 
 export async function getCardsByIds(cardIds) {
+  const supabase = getSupabase()
   if (!cardIds || cardIds.length === 0) return []
   
   const { data, error } = await supabase
@@ -66,6 +73,7 @@ export async function getCardsByIds(cardIds) {
 }
 
 export async function getCardById(id) {
+  const supabase = getSupabase()
   const { data, error } = await supabase
     .from('cards')
     .select(`*, banks!inner(name)`)
@@ -77,6 +85,7 @@ export async function getCardById(id) {
 // ============ Categories ============
 
 export async function getCategories() {
+  const supabase = getSupabase()
   const { data, error } = await supabase
     .from('categories')
     .select('*')
@@ -87,6 +96,7 @@ export async function getCategories() {
 }
 
 export async function getCategoryById(id) {
+  const supabase = getSupabase()
   const { data, error } = await supabase.from('categories').select('*').eq('id', id).single()
   if (error) throw new Error(`Database query failed: ${error.message}`)
   return data
@@ -95,6 +105,7 @@ export async function getCategoryById(id) {
 // ============ Merchants ============
 
 export async function getMerchantById(id) {
+  const supabase = getSupabase()
   const { data, error } = await supabase
     .from('merchants')
     .select('*, categories!inner(name)')
@@ -104,6 +115,7 @@ export async function getMerchantById(id) {
 }
 
 export async function searchMerchants(query) {
+  const supabase = getSupabase()
   const { data, error } = await supabase
     .from('merchants')
     .select('*')
@@ -116,6 +128,7 @@ export async function searchMerchants(query) {
 }
 
 export async function getMerchantByKey(merchantKey) {
+  const supabase = getSupabase()
   const { data, error } = await supabase
     .from('merchants')
     .select('*')
@@ -128,6 +141,7 @@ export async function getMerchantByKey(merchantKey) {
 // ============ Reward Rules ============
 
 export async function getRewardRules({ cardIds, merchantId, categoryId } = {}) {
+  const supabase = getSupabase()
   const today = new Date().toISOString().split('T')[0]
   
   let query = supabase
@@ -174,9 +188,9 @@ export async function getRewardRules({ cardIds, merchantId, categoryId } = {}) {
 // ============ Merchant Offers ============
 
 export async function getMerchantOffers({ merchantId, cardIds, bankIds } = {}) {
+  const supabase = getSupabase()
   const today = new Date().toISOString().split('T')[0]
   
-  // Base query: merchant_id and status
   let query = supabase
     .from('merchant_offers')
     .select('*')
@@ -185,13 +199,11 @@ export async function getMerchantOffers({ merchantId, cardIds, bankIds } = {}) {
     .lte('valid_from', today)
     .gte('valid_to', today)
   
-  // Optional: filter by card_ids
   if (cardIds?.length > 0) {
     const cardFilter = cardIds.map(id => `card_id.eq.${id}`).join(',')
     query = query.or(`card_id.is.null,${cardFilter}`)
   }
   
-  // Optional: filter by bank_ids
   if (bankIds?.length > 0) {
     const bankFilter = bankIds.map(id => `bank_id.eq.${id}`).join(',')
     query = query.or(`bank_id.is.null,${bankFilter}`)
@@ -202,109 +214,12 @@ export async function getMerchantOffers({ merchantId, cardIds, bankIds } = {}) {
   return data || []
 }
 
-// ============ Users & User Cards ============
-
-export async function getOrCreateUser(telegramId) {
-  let { data: user, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('telegram_id', String(telegramId))
-    .single()
-  
-  if (error && error.code !== 'PGRST116') {
-    throw new Error(`Database query failed: ${error.message}`)
-  }
-  
-  if (!user) {
-    const { data: newUser, error: createError } = await supabase
-      .from('users')
-      .insert({ telegram_id: String(telegramId) })
-      .select()
-      .single()
-    
-    if (createError) throw new Error(`Database query failed: ${createError.message}`)
-    user = newUser
-  }
-  
-  return user
-}
-
-export async function getUserCards(userId) {
-  const { data, error } = await supabase
-    .from('user_cards')
-    .select(`card_id, is_active, cards(id, name, reward_program, banks!inner(name))`)
-    .eq('user_id', userId)
-    .eq('is_active', true)
-  
-  if (error) throw new Error(`Database query failed: ${error.message}`)
-  
-  return (data || []).map(uc => ({
-    card_id: uc.card_id,
-    is_active: uc.is_active,
-    card_name: uc.cards?.name,
-    bank_name: uc.cards?.banks?.name,
-    reward_program: uc.cards?.reward_program,
-  }))
-}
-
-export async function addUserCard(userId, cardId) {
-  const { data, error } = await supabase
-    .from('user_cards')
-    .upsert({ user_id: userId, card_id: cardId, is_active: true })
-    .select()
-    .single()
-  
-  if (error) throw new Error(`Database query failed: ${error.message}`)
-  return data
-}
-
-export async function removeUserCard(userId, cardId) {
-  const { error } = await supabase
-    .from('user_cards')
-    .update({ is_active: false })
-    .eq('user_id', userId)
-    .eq('card_id', cardId)
-  
-  if (error) throw new Error(`Database query failed: ${error.message}`)
-  return { user_id: userId, card_id: cardId }
-}
-
-// ============ Calculations ============
-
-export async function saveCalculation(input) {
-  const { user_id, input_json, result_json } = input
-  
-  const { data, error } = await supabase
-    .from('calculations')
-    .insert({
-      user_id,
-      input_json: input_json || {},
-      result_json: result_json || {},
-    })
-    .select()
-    .single()
-  
-  if (error) throw new Error(`Database query failed: ${error.message}`)
-  return data
-}
-
-export async function getUserCalculations(userId, limit = 10) {
-  const { data, error } = await supabase
-    .from('calculations')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(limit)
-  
-  if (error) throw new Error(`Database query failed: ${error.message}`)
-  return data || []
-}
-
 // ============ Legacy/Compatibility ============
 
 export async function getActiveRulesAndMerchants() {
   const rules = await getRewardRules()
   
+  const supabase = getSupabase()
   const { data: merchantsData, error: merchError } = await supabase
     .from('merchants')
     .select('id, merchant_key')
