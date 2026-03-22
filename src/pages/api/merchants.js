@@ -3,10 +3,15 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-const supabase = (supabaseUrl && supabaseKey && !supabaseUrl.includes('YOUR_')) 
-  ? createClient(supabaseUrl, supabaseKey) 
-  : null
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !serviceKey) {
+  throw new Error('Supabase not configured for server')
+}
+
+const supabase = createClient(supabaseUrl, serviceKey, {
+  auth: { persistSession: false, autoRefreshToken: false }
+})
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
