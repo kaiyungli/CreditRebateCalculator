@@ -41,7 +41,7 @@ export async function getActiveCards() {
   const supabase = getSupabase()
   const { data, error } = await supabase
     .from('cards')
-    .select(`id, bank_id, name, name_en, reward_program, annual_fee, image_url, apply_url, banks!inner(name)`)
+    .select(`*, banks!inner(name)`)
     .eq('status', 'ACTIVE')
     .order('name')
   if (error) throw new Error(`Database query failed: ${error.message}`)
@@ -49,6 +49,7 @@ export async function getActiveCards() {
     id: card.id,
     card_id: card.id,
     card_name: card.name,
+    bank_id: card.bank_id,
     bank_name: card.banks?.name,
     reward_currency: card.reward_program,
     reward_program: card.reward_program,
@@ -65,7 +66,7 @@ export async function getCardsByIds(cardIds) {
   
   const { data, error } = await supabase
     .from('cards')
-    .select(`id, bank_id, name, name_en, reward_program, banks!inner(name)`)
+    .select(`*, banks!inner(name)`)
     .in('id', cardIds)
     .eq('status', 'ACTIVE')
   if (error) throw new Error(`Database query failed: ${error.message}`)
