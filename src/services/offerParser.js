@@ -5,10 +5,10 @@
  * Output: parsed structured offer object
  */
 
-import OpenAI from 'openai'
+import axios from 'axios'
 
 /**
- * Parse raw offer text into structured data using OpenAI
+ * Parse raw offer text into structured data using Minimax
  * @param {string} text - Raw offer text (title + description)
  * @returns {Promise<Object>} Parsed offer object
  */
@@ -18,9 +18,11 @@ export async function parseOffer(text) {
     return null
   }
 
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  })
+  const apiKey = process.env.MINIMAX_API_KEY || process.env.OPENAI_API_KEY
+  if (!apiKey) {
+    console.log('⚠️ No API key configured')
+    return null
+  }
 
   const prompt = `Parse this credit card offer and extract structured data.
 
@@ -75,20 +77,30 @@ STRICT EXTRACTION RULES:
   console.log('📝 Parsing offer:', text.substring(0, 100))
 
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4.1-mini',
-      messages: [
-        { role: 'system', content: 'You are a credit card offer parser. Return only valid JSON.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0,
-      max_tokens: 500
-    })
+    // Use Minimax API
+    const response = await axios.post(
+      'https://api.minimax.chat/v1/text/chatcompletion_pro',
+      {
+        model: 'MiniMax-Text-01',
+        messages: [
+          { role: 'system', content: 'You are a credit card offer parser. Return only valid JSON.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0,
+        max_tokens: 500
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
 
-    const content = response.choices[0]?.message?.content
+    const content = response.data?.choices?.[0]?.message?.content
 
     if (!content) {
-      console.log('⚠️ No response from OpenAI')
+      console.log('⚠️ No response from API')
       return null
     }
 
@@ -131,7 +143,7 @@ STRICT EXTRACTION RULES:
     return result
 
   } catch (error) {
-    console.error('❌ OpenAI error:', error.message)
+    console.error('❌ API error:', error.response?.data || error.message)
     return null
   }
 }
@@ -142,29 +154,24 @@ STRICT EXTRACTION RULES:
 function validateParsedOffer(parsed) {
   if (!parsed) return false
 
-  // Skip validation if we don't have clear reward info
   if (!parsed.reward_type || !parsed.reward_value) {
-    // Allow if we have neither - means unclear offer
     return true
   }
 
   const rewardValue = Number(parsed.reward_value)
   
   if (parsed.reward_type === 'PERCENT') {
-    // Percentage should be between 0.1% and 50%
     if (rewardValue < 0.1 || rewardValue > 50) {
       console.log('⚠️ Unrealistic percentage:', rewardValue)
       return false
     }
   } else if (parsed.reward_type === 'FIXED') {
-    // Fixed amount should be between HK$1 and HK$5000
     if (rewardValue < 1 || rewardValue > 5000) {
       console.log('⚠️ Unrealistic fixed amount:', rewardValue)
       return false
     }
   }
 
-  // Validate min_spend if present
   if (parsed.min_spend) {
     const minSpend = Number(parsed.min_spend)
     if (minSpend < 1 || minSpend > 100000) {
@@ -173,7 +180,6 @@ function validateParsedOffer(parsed) {
     }
   }
 
-  // Validate cap_amount if present
   if (parsed.cap_amount) {
     const capAmount = Number(parsed.cap_amount)
     if (capAmount < 1 || capAmount > 100000) {
@@ -183,34 +189,6 @@ function validateParsedOffer(parsed) {
   }
 
   return true
-}
-
-/**
- * Detect offer type from text (legacy helper)
- */
-function detectOfferType(text) {
-  return 'COUPON'
-}
-
-/**
- * Extract monetary values from text (legacy helper)
- */
-function extractMoney(text) {
-  return null
-}
-
-/**
- * Extract percentage values from text (legacy helper)
- */
-function extractPercentage(text) {
-  return null
-}
-
-/**
- * Extract date ranges from text (legacy helper)
- */
-function extractDates(text) {
-  return { from: null, to: null }
 }
 
 export default { parseOffer }
