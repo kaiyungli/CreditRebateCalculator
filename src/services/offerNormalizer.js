@@ -22,94 +22,197 @@ const supabase = createClient(supabaseUrl, serviceKey, {
  * Normalize parsed offer and insert into database
  * @param {Object} parsed - Parsed offer from offerParser
  * @param {number} rawOfferId - Original raw offer ID (if exists)
- * @returns {Promise<Object>} Normalized offer with DB IDs
+ * @returns {Promise<Object|null>} Normalized offer with DB IDs or null
  */
 export async function normalizeAndInsert(parsed, rawOfferId = null) {
-  // TODO: Implement normalization logic
-  // 1. Find matching merchant by name (fuzzy match)
-  // 2. Find matching card by bank/card name
-  // 3. Find matching category
-  // 4. Validate and transform data
-  // 5. Insert into merchant_offers table
+  // Step 1: Validate parsed
+  console.log('📥 normalizeAndInsert called with:', JSON.stringify(parsed))
   
-  const normalized = {
-    merchant_id: null,
-    card_id: parsed.card_id || null,
-    bank_id: parsed.bank_id || null,
-    category_id: parsed.category_id || null,
-    title: parsed.title,
-    description: parsed.description,
-    offer_type: parsed.offer_type,
-    value_type: parsed.value_type,
-    value: parsed.value,
-    min_spend: parsed.min_spend,
-    max_discount: parsed.max_discount,
-    valid_from: parsed.valid_from,
-    valid_to: parsed.valid_to,
-    source: parsed.source || 'manual',
-    is_verified: parsed.is_verified || false,
+  if (!parsed) {
+    console.log('⚠️ No parsed data')
+    return null
+  }
+
+  if (!parsed.reward_type || !parsed.reward_value) {
+    console.log('⚠️ Missing reward_type or reward_value')
+    return null
+  }
+
+  // Step 2: Match bank
+  let bankId = null
+  if (parsed.bank) {
+    const { data: banks } = await supabase
+      .from('banks')
+      .select('id, name')
+      .ilike('name', `%${parsed.bank}%`)
+      .limit(1)
+    
+    bankId = banks?.[0]?.id || null
+    console.log(`🏦 Bank match: "${parsed.bank}" → id: ${bankId}`)
+  }
+
+  // Step 3: Match merchant
+  let merchantId = null
+  if (parsed.merchant_name) {
+    const { data: merchants } = await supabase
+      .from('merchants')
+      .select('id, name')
+      .ilike('name', `%${parsed.merchant_name}%`)
+      .limit(1)
+    
+    merchantId = merchants?.[0]?.id || null
+    console.log(`🏪 Merchant match: "${parsed.merchant_name}" → id: ${merchantId}`)
+  }
+
+  // Step 4: Match category
+  let categoryId = null
+  if (parsed.category) {
+    const { data: categories } = await supabase
+      .from('categories')
+      .select('id, name')
+      .ilike('name', `%${parsed.category}%`)
+      .limit(1)
+    
+    categoryId = categories?.[0]?.id || null
+    console.log(`📂 Category match: "${parsed.category}" → id: ${categoryId}`)
+  }
+
+  // Step 5: Match card
+  let cardId = null
+  if (parsed.card) {
+    const { data: cards } = await supabase
+      .from('cards')
+      .select('id, name, bank_id')
+      .ilike('name', `%${parsed.card}%`)
+      .limit(1)
+    
+    cardId = cards?.[0]?.id || null
+    
+    // Use bank from card if not matched
+    if (!bankId && cards?.[0]?.bank_id) {
+      bankId = cards[0].bank_id
+    }
+    console.log(`💳 Card match: "${parsed.card}" → id: ${cardId}`)
+  }
+
+  // Step 6: Build payload
+  const payload = {
+    merchant_id: merchantId,
+    bank_id: bankId,
+    card_id: cardId,
+    category_id: categoryId,
+    title: parsed.merchant_name || parsed.category || 'Unknown Offer',
+    description: null,
+    offer_type: parsed.reward_type === 'PERCENT' ? 'EXTRA_CASHBACK' : 'COUPON',
+    value_type: parsed.reward_type,
+    value: parsed.reward_value,
+    min_spend: parsed.min_spend || null,
+    max_discount: parsed.cap_amount || null,
+    valid_from: null,
+    valid_to: null,
+    source: 'ai_parsed',
+    is_verified: false,
     status: 'ACTIVE'
   }
-  
-  // Insert into DB
-  const { data, error } = await supabase
-    .from('merchant_offers')
-    .insert(normalized)
-    .select()
-    .single()
-  
-  if (error) {
-    throw new Error(`Failed to insert offer: ${error.message}`)
+
+  console.log('📦 Payload:', JSON.stringify(payload))
+
+  // Step 7: Upsert into merchant_offers
+  try {
+    const { data, error } = await supabase
+      .from('merchant_offers')
+      .upsert({
+        merchant_id: payload.merchant_id,
+        bank_id: payload.bank_id,
+        card_id: payload.card_id,
+        title: payload.title,
+        offer_type: payload.offer_type,
+        value_type: payload.value_type,
+        value: payload.value,
+        min_spend: payload.min_spend,
+        max_discount: payload.max_discount,
+        source: payload.source,
+        status: payload.status
+      }, {
+        onConflict: 'merchant_id,bank_id,card_id,value_type,value'
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ Upsert failed:', error.message)
+      return null
+    }
+
+    console.log('✅ Inserted offer:', data.id)
+    return data
+
+  } catch (error) {
+    console.error('❌ Error inserting offer:', error.message)
+    return null
   }
-  
-  return data
 }
 
 /**
  * Find merchant by name (fuzzy match)
  */
 async function findMerchantByName(merchantName) {
-  // TODO: Implement
-  // - Exact match first
-  // - Then fuzzy match on aliases
-  // - Return merchant ID or null
+  if (!merchantName) return null
   
-  return null
+  const { data } = await supabase
+    .from('merchants')
+    .select('id, name')
+    .ilike('name', `%${merchantName}%`)
+    .limit(1)
+  
+  return data?.[0]?.id || null
 }
 
 /**
  * Find card by name or bank name
  */
 async function findCardByName(cardName) {
-  // TODO: Implement
-  // - Search cards table by name
-  // - Search banks table by name
-  // - Return card_id and bank_id
+  if (!cardName) return { card_id: null, bank_id: null }
   
-  return { card_id: null, bank_id: null }
+  const { data } = await supabase
+    .from('cards')
+    .select('id, bank_id, name')
+    .ilike('name', `%${cardName}%`)
+    .limit(1)
+  
+  return {
+    card_id: data?.[0]?.id || null,
+    bank_id: data?.[0]?.bank_id || null
+  }
 }
 
 /**
  * Find category by keywords
  */
 async function findCategoryByKeywords(text) {
-  // TODO: Implement
-  // - Match against category keywords
-  // - Return category_id or null
+  if (!text) return null
   
-  return null
+  const { data } = await supabase
+    .from('categories')
+    .select('id, name')
+    .ilike('name', `%${text}%`)
+    .limit(1)
+  
+  return data?.[0]?.id || null
 }
 
 /**
  * Validate parsed offer data
  */
 function validateParsedOffer(parsed) {
-  // TODO: Implement validation
-  // - Required fields
-  // - Value ranges
-  // - Date logic
+  if (!parsed) return { valid: false, errors: ['No parsed data'] }
   
-  return { valid: true, errors: [] }
+  const errors = []
+  
+  if (!parsed.reward_type) errors.push('Missing reward_type')
+  if (!parsed.reward_value) errors.push('Missing reward_value')
+  
+  return { valid: errors.length === 0, errors }
 }
 
 export default { normalizeAndInsert }

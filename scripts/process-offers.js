@@ -6,14 +6,27 @@
  * Usage: node scripts/process-offers.js
  * 
  * This script:
- * 1. Fetches raw offers from sources (manual input for now)
- * 2. Parses each offer text
+ * 1. Fetches raw_offers where status = 'new'
+ * 2. Parses each offer text using AI
  * 3. Normalizes and links to merchant/card
- * 4. Inserts into merchant_offers table
+ * 4. Updates status in raw_offers
  */
 
+import { createClient } from '@supabase/supabase-js'
 import { parseOffer } from '../src/services/offerParser.js'
 import { normalizeAndInsert } from '../src/services/offerNormalizer.js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !serviceKey) {
+  console.error('❌ Supabase not configured')
+  process.exit(1)
+}
+
+const supabase = createClient(supabaseUrl, serviceKey, {
+  auth: { persistSession: false }
+})
 
 /**
  * Main processing function
@@ -21,37 +34,85 @@ import { normalizeAndInsert } from '../src/services/offerNormalizer.js'
 async function main() {
   console.log('🚀 Starting offer processing...')
   
-  // TODO: Fetch raw offers from sources
-  // For now, just process sample data
-  const sampleOffers = [
-    {
-      text: 'HSBC信用卡 - 壽司郎消費滿HK$500即減HK$50',
-      source: 'manual'
-    },
-    {
-      text: '中銀信用卡 - 超市消費2%回贈',
-      source: 'manual'
-    }
-  ]
+  // Step 1: Fetch raw_offers where status = 'new'
+  const { data: rawOffers, error: fetchError } = await supabase
+    .from('raw_offers')
+    .select('*')
+    .eq('status', 'new')
+    .limit(10)
+  
+  if (fetchError) {
+    console.error('❌ Failed to fetch raw_offers:', fetchError.message)
+    process.exit(1)
+  }
+  
+  console.log(`📥 Found ${rawOffers?.length || 0} new offers to process`)
+  
+  if (!rawOffers || rawOffers.length === 0) {
+    console.log('✨ No offers to process')
+    return
+  }
   
   let processed = 0
   let failed = 0
   
-  for (const offer of sampleOffers) {
+  for (const offer of rawOffers) {
+    console.log(`\n📝 Processing offer #${offer.id}: ${offer.title?.substring(0, 50)}...`)
+    
     try {
-      console.log(`\n📝 Processing: ${offer.text}`)
+      // Step 2: Combine text
+      const text = [offer.title, offer.description]
+        .filter(Boolean)
+        .join('\n')
       
-      // Step 1: Parse
-      const parsed = await parseOffer(offer.text)
-      console.log('   ✅ Parsed:', parsed.title || parsed.merchant_name)
+      console.log('📄 Text:', text.substring(0, 100))
       
-      // Step 2: Normalize and insert
-      const normalized = await normalizeAndInsert(parsed)
-      console.log('   ✅ Inserted:', normalized.id)
+      // Step 3: Parse with AI
+      const parsed = await parseOffer(text)
       
+      if (!parsed) {
+        console.log('⚠️ Parse failed - marking as failed')
+        await supabase
+          .from('raw_offers')
+          .update({ status: 'failed' })
+          .eq('id', offer.id)
+        failed++
+        continue
+      }
+      
+      console.log('✅ Parsed:', JSON.stringify(parsed))
+      
+      // Step 4: Normalize and insert
+      const normalized = await normalizeAndInsert(parsed, offer.id)
+      
+      if (!normalized) {
+        console.log('⚠️ Normalize failed - marking as failed')
+        await supabase
+          .from('raw_offers')
+          .update({ status: 'failed' })
+          .eq('id', offer.id)
+        failed++
+        continue
+      }
+      
+      // Step 5: Update status to 'parsed'
+      await supabase
+        .from('raw_offers')
+        .update({ status: 'parsed' })
+        .eq('id', offer.id)
+      
+      console.log('✅ Completed offer #', offer.id)
       processed++
+      
     } catch (error) {
-      console.error(`   ❌ Failed: ${error.message}`)
+      console.error('❌ Error processing offer:', error.message)
+      
+      // Mark as failed
+      await supabase
+        .from('raw_offers')
+        .update({ status: 'failed' })
+        .eq('id', offer.id)
+      
       failed++
     }
   }
