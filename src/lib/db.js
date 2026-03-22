@@ -151,30 +151,38 @@ export async function getRewardRules({ cardIds, merchantId, categoryId } = {}) {
   const supabase = getSupabase()
   const today = new Date().toISOString().split('T')[0]
   
+  // Get all active rules - date filter handled in code for NULL dates
   let query = supabase
     .from('reward_rules')
     .select(`*, cards!inner(name, bank_id, banks!inner(name))`)
     .eq('status', 'ACTIVE')
-    .lte('valid_from', today)
-    .gte('valid_to', today)
     .order('priority', { ascending: true })
   
   if (cardIds?.length > 0) {
     query = query.in('card_id', cardIds)
   }
   
-  if (merchantId) {
-    query = query.or(`merchant_id.eq.${merchantId},merchant_id.is.null`)
-  }
-  
-  if (categoryId) {
-    query = query.or(`category_id.eq.${categoryId},category_id.is.null`)
-  }
-  
   const { data, error } = await query
   if (error) throw new Error(`Database query failed: ${error.message}`)
   
-  return (data || []).map(rule => ({
+  // Filter by date and scope in JavaScript (handle NULL dates as always valid)
+  let filtered = (data || []).filter(rule => {
+    // Date check: NULL means always valid
+    if (rule.valid_from && rule.valid_from > today) return false
+    if (rule.valid_to && rule.valid_to < today) return false
+    return true
+  })
+  
+  // Filter by merchant/category if provided
+  if (merchantId) {
+    filtered = filtered.filter(r => r.merchant_id === merchantId || r.merchant_id === null)
+  }
+  
+  if (categoryId) {
+    filtered = filtered.filter(r => r.category_id === categoryId || r.category_id === null)
+  }
+  
+  return filtered.map(rule => ({
     id: rule.id,
     card_id: rule.card_id,
     merchant_id: rule.merchant_id,
@@ -201,24 +209,36 @@ export async function getMerchantOffers({ merchantId, cardIds, bankIds } = {}) {
   let query = supabase
     .from('merchant_offers')
     .select('*')
-    .eq('merchant_id', merchantId)
     .eq('status', 'ACTIVE')
-    .lte('valid_from', today)
-    .gte('valid_to', today)
   
-  if (cardIds?.length > 0) {
-    const cardFilter = cardIds.map(id => `card_id.eq.${id}`).join(',')
-    query = query.or(`card_id.is.null,${cardFilter}`)
-  }
-  
-  if (bankIds?.length > 0) {
-    const bankFilter = bankIds.map(id => `bank_id.eq.${id}`).join(',')
-    query = query.or(`bank_id.is.null,${bankFilter}`)
+  if (merchantId) {
+    query = query.eq('merchant_id', merchantId)
   }
   
   const { data, error } = await query
   if (error) throw new Error(`Database query failed: ${error.message}`)
-  return data || []
+  
+  // Filter by date in JS (NULL = always valid)
+  let filtered = (data || []).filter(offer => {
+    if (offer.valid_from && offer.valid_from > today) return false
+    if (offer.valid_to && offer.valid_to < today) return false
+    return true
+  })
+  
+  // Filter by card/bank
+  if (cardIds?.length > 0) {
+    filtered = filtered.filter(offer => 
+      !offer.card_id || cardIds.includes(offer.card_id)
+    )
+  }
+  
+  if (bankIds?.length > 0) {
+    filtered = filtered.filter(offer => 
+      !offer.bank_id || bankIds.includes(offer.bank_id)
+    )
+  }
+  
+  return filtered
 }
 
 // ============ Legacy/Compatibility ============
