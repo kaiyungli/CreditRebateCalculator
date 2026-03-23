@@ -1,14 +1,14 @@
 /**
- * Offer Parser - Extract structured data from raw offer text using AI
+ * Offer Parser - Extract structured data from raw offer text using Google Gemini
  * 
  * Input: raw offer text from scraping/sources
  * Output: parsed structured offer object
  */
 
-import axios from 'axios'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 /**
- * Parse raw offer text into structured data using Minimax
+ * Parse raw offer text into structured data using Gemini
  * @param {string} text - Raw offer text (title + description)
  * @returns {Promise<Object>} Parsed offer object
  */
@@ -18,95 +18,59 @@ export async function parseOffer(text) {
     return null
   }
 
-  const apiKey = process.env.MINIMAX_API_KEY || process.env.OPENAI_API_KEY
+  const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
-    console.log('⚠️ No API key configured')
+    console.log('⚠️ GEMINI_API_KEY not configured')
     return null
   }
 
-  const prompt = `Parse this credit card offer and extract structured data.
+  const genAI = new GoogleGenerativeAI(apiKey)
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+
+  const prompt = `You are a system that extracts structured data from credit card offers.
+
+Return ONLY valid JSON. No explanation, no markdown.
+
+{
+  "merchant": "...",
+  "category": "...",
+  "bank": "...",
+  "card": "...",
+  "min_spend": number,
+  "reward_type": "PERCENT" | "FIXED" | null,
+  "reward_value": number,
+  "cap_amount": number | null
+}
+
+Rules:
+- "$50" or "HK$50 coupon" or "現金券" or "優惠券" → reward_type = "FIXED", reward_value = 50
+- "5% cashback" or "5%回贈" → reward_type = "PERCENT", reward_value = 5
+- If both exist → prefer FIXED
+- If unclear → return null for reward_type and reward_value
+
+Extract min_spend from phrases like "滿HK$500", "消費滿$500"
+Extract cap_amount from phrases like "最高HK$100", "上限HK$200"
 
 Offer text:
 """
 ${text}
-"""
-
-Return ONLY valid JSON (no markdown, no explanation):
-{
-  "merchant": "merchant name or null",
-  "category": "category name (e.g. dining, supermarket, online) or null",
-  "bank": "bank name or null",
-  "card": "card name or null",
-  "min_spend": number or null,
-  "reward_type": "PERCENT" or "FIXED" or null,
-  "reward_value": number or null,
-  "cap_amount": number or null
-}
-
-STRICT EXTRACTION RULES:
-
-1. FIXED (coupon/reward):
-   - If text contains: "$" + number AND ("券" OR "優惠券" OR "現金券" OR "rebate" OR "cash rebate" OR "回贈")
-   - Then reward_type = "FIXED"
-   - reward_value = that dollar amount (e.g., "HK$50" → 50)
-
-2. PERCENT (percentage cashback):
-   - If text contains: "%" AND ("回贈" OR "cashback" OR "現金回贈" OR "%回贈")
-   - Then reward_type = "PERCENT"
-   - reward_value = that percentage (e.g., "5%" → 5)
-
-3. If BOTH exist:
-   - Prefer FIXED (coupon is more explicit)
-
-4. If CANNOT determine clearly:
-   - Return null for reward_type and reward_value (do NOT guess)
-
-5. REALISTIC VALUES validation:
-   - reward_value for PERCENT should be between 0.1 and 50
-   - reward_value for FIXED should be between 1 and 5000
-   - If outside range → return null
-
-6. min_spend:
-   - Extract from phrases like "滿HK$500", "消費滿$500", "單一消費HK$300"
-   - If not clearly stated → null
-
-7. cap_amount:
-   - Extract from phrases like "最高HK$100", "上限HK$200"
-   - If not clearly stated → null`
+"""`
 
   console.log('📝 Parsing offer:', text.substring(0, 100))
 
   try {
-    // Use Minimax API
-    const response = await axios.post(
-      'https://api.minimax.chat/v1/text/chatcompletion_pro',
-      {
-        model: 'MiniMax-Text-01',
-        messages: [
-          { role: 'system', content: 'You are a credit card offer parser. Return only valid JSON.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0,
-        max_tokens: 500
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-
-    const content = response.data?.choices?.[0]?.message?.content
+    const result = await model.generateContent(prompt)
+    const content = result.response.text()
 
     if (!content) {
-      console.log('⚠️ No response from API')
+      console.log('⚠️ No response from Gemini')
       return null
     }
 
-    // Try to parse JSON
+    // Try to parse JSON from response
     let parsed
     try {
+      // Try direct parse first
       parsed = JSON.parse(content)
     } catch (parseError) {
       // Try to extract JSON from response
@@ -129,7 +93,7 @@ STRICT EXTRACTION RULES:
     console.log('✅ Parsed result:', JSON.stringify(parsed))
 
     // Map to our schema
-    const result = {
+    const resultMapped = {
       merchant_name: parsed.merchant || null,
       category: parsed.category || null,
       bank: parsed.bank || null,
@@ -140,10 +104,10 @@ STRICT EXTRACTION RULES:
       cap_amount: parsed.cap_amount ?? null
     }
 
-    return result
+    return resultMapped
 
   } catch (error) {
-    console.error('❌ API error:', error.response?.data || error.message)
+    console.error('❌ Gemini error:', error.message)
     return null
   }
 }
