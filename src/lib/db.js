@@ -207,6 +207,11 @@ export async function getMerchantOffers({ merchantId, cardIds, bankIds } = {}) {
   const supabase = getSupabase()
   const today = new Date().toISOString().split('T')[0]
   
+  // Filter for currently valid offers:
+  // - status = 'ACTIVE' 
+  // - is_active = true (if field exists)
+  // - start_date is null or <= today
+  // - end_date is null or >= today
   let query = supabase
     .from('merchant_offers')
     .select('*')
@@ -219,10 +224,14 @@ export async function getMerchantOffers({ merchantId, cardIds, bankIds } = {}) {
   const { data, error } = await query
   if (error) throw new Error(`Database query failed: ${error.message}`)
   
-  // Filter by date in JS (NULL = always valid)
+  // Filter by is_active and date validity in JS (handle both old rows without is_active and new rows with it)
   let filtered = (data || []).filter(offer => {
-    if (offer.valid_from && offer.valid_from > today) return false
-    if (offer.valid_to && offer.valid_to < today) return false
+    // Skip inactive offers
+    if (offer.is_active === false) return false
+    // Skip if not started yet
+    if (offer.start_date && offer.start_date > today) return false
+    // Skip if already expired
+    if (offer.end_date && offer.end_date < today) return false
     return true
   })
   

@@ -145,8 +145,9 @@ export async function normalizeAndInsert(parsed, rawOfferId = null) {
     value: parsed.reward_value,
     min_spend: parsed.min_spend || null,
     max_discount: parsed.cap_amount || null,
-    valid_from: null,
-    valid_to: null,
+    start_date: null,
+    end_date: null,
+    is_active: true,
     source: 'ai_parsed',
     is_verified: false,
     status: 'ACTIVE'
