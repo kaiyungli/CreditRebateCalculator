@@ -122,12 +122,13 @@ export async function normalizeAndInsert(parsed, rawOfferId = null) {
   }
 
   // Step 6: Build payload with fingerprint for dedup
+  // Must match DB backfill formula exactly: COALESCE(merchant_id::text, 'X') || '_' || bank_id || '_' || COALESCE(category_id::text, 'X') || '_' || value_type || '_' || ROUND(value, 2) || '_' || COALESCE(min_spend::text, '0')
   const fingerprint = [
     merchantId || 'X',
     bankId,
     categoryId || 'X',
     parsed.reward_type,
-    parsed.reward_value,
+    Math.round(parsed.reward_value * 100) / 100,  // Round to 2 decimal places
     parsed.min_spend || 0
   ].join('_')
   

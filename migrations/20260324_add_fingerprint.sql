@@ -1,7 +1,7 @@
 -- Migration: Add fingerprint-based duplicate protection for merchant_offers
--- This migration is idempotent and handles existing data safely
+-- This migration is SAFE and handles existing data correctly
 
--- Step 1: Add fingerprint column if not exists
+-- Step 1: Add fingerprint column if missing
 ALTER TABLE merchant_offers ADD COLUMN IF NOT EXISTS fingerprint VARCHAR(100);
 
 -- Step 2: Backfill fingerprint for all existing rows
@@ -15,50 +15,35 @@ SET fingerprint = COALESCE(merchant_id::text, 'X') || '_' ||
                 COALESCE(min_spend::text, '0')
 WHERE fingerprint IS NULL;
 
--- Step 3: Identify and remove duplicates (keep lowest ID)
--- Create temp table with IDs to keep
-CREATE TEMP TABLE duplicates_to_keep AS
+-- Step 3: Remove duplicates SAFELY
+-- Keep only the row with the LOWEST ID for each fingerprint
+-- This is SAFE because it only deletes rows that share a fingerprint with another row
+-- and keeps the one with smallest id
+
+-- First, identify which IDs to keep (one per fingerprint)
+CREATE TEMP TABLE ids_to_keep AS
 SELECT MIN(id) as keep_id
 FROM merchant_offers
-GROUP BY fingerprint
-HAVING COUNT(*) > 1;
+GROUP BY fingerprint;
 
--- Delete duplicates (keep only the one with lowest ID)
+-- Then delete all rows NOT in that keep list (only duplicates will be deleted)
 DELETE FROM merchant_offers 
-WHERE id NOT IN (SELECT keep_id FROM duplicates_to_keep)
-AND fingerprint IN (
-  SELECT fingerprint 
-  FROM merchant_offers 
-  GROUP BY fingerprint 
-  HAVING COUNT(*) > 1
-);
+WHERE id NOT IN (SELECT keep_id FROM ids_to_keep);
 
-DROP TABLE duplicates_to_keep;
+DROP TABLE ids_to_keep;
 
 -- Step 4: Add unique index on fingerprint
--- Uses WHERE to allow multiple NULL fingerprints (though we no longer have NULL after Step 2)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_merchant_offers_fingerprint 
 ON merchant_offers(fingerprint) 
 WHERE fingerprint IS NOT NULL;
 
--- Step 5: Make fingerprint NOT NULL for future inserts
--- (optional - uncomment if you want to enforce fingerprint on all new rows)
--- ALTER TABLE merchant_offers ALTER COLUMN fingerprint SET NOT NULL;
-
--- Verify migration
+-- Verification
 SELECT 
-  'fingerprint column' as check_item,
-  COUNT(*) as result
-FROM information_schema.columns 
-WHERE table_name = 'merchant_offers' AND column_name = 'fingerprint'
+  'Total offers' as metric,
+  COUNT(*)::text as value
+FROM merchant_offers
 UNION ALL
 SELECT 
-  'unique index' as check_item,
-  COUNT(*) as result
-FROM pg_indexes 
-WHERE tablename = 'merchant_offers' AND indexname = 'idx_merchant_offers_fingerprint'
-UNION ALL
-SELECT 
-  'total offers' as check_item,
-  COUNT(*) as result
+  'Unique fingerprints' as metric, 
+  COUNT(DISTINCT fingerprint)::text
 FROM merchant_offers;
