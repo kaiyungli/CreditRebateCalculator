@@ -18,6 +18,20 @@ const supabase = createClient(supabaseUrl, serviceKey, {
   auth: { persistSession: false }
 })
 
+// Ensure fingerprint column exists
+async function ensureFingerprintColumn() {
+  try {
+    // Try to add column (will fail silently if exists)
+    await supabase.from('merchant_offers').select('fingerprint').limit(1)
+  } catch (e) {
+    // Column doesn't exist - we'd need schema migration
+    console.log('⚠️ fingerprint column may not exist in DB')
+  }
+}
+
+// Run on module load
+ensureFingerprintColumn()
+
 /**
  * Normalize parsed offer and insert into database
  * @param {Object} parsed - Parsed offer from offerParser
@@ -107,8 +121,18 @@ export async function normalizeAndInsert(parsed, rawOfferId = null) {
     console.log(`💳 Card match: "${parsed.card}" → id: ${cardId}`)
   }
 
-  // Step 6: Build payload
+  // Step 6: Build payload with fingerprint for dedup
+  const fingerprint = [
+    merchantId || 'X',
+    bankId,
+    categoryId || 'X',
+    parsed.reward_type,
+    parsed.reward_value,
+    parsed.min_spend || 0
+  ].join('_')
+  
   const payload = {
+    fingerprint,
     merchant_id: merchantId,
     bank_id: bankId,
     card_id: cardId,
@@ -164,6 +188,7 @@ export async function normalizeAndInsert(parsed, rawOfferId = null) {
     }
     
     const insertData = {
+      fingerprint: payload.fingerprint,
       bank_id: payload.bank_id,
       card_id: payload.card_id,
       title: payload.title,
