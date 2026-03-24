@@ -219,7 +219,12 @@ export async function normalizeAndInsert(parsed, rawOfferId = null) {
       .single()
 
     if (error) {
-      console.error('❌ Upsert failed:', error.message)
+      // Handle DB constraint violation gracefully
+      if (error.code === '23505' || error.message?.includes('duplicate')) {
+        console.log('⏭️ Duplicate blocked by DB constraint, skipped')
+        return { id: null, duplicate: true }
+      }
+      console.error('❌ Insert failed:', error.message)
       return null
     }
 
