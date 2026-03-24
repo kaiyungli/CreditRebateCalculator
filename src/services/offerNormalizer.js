@@ -67,14 +67,26 @@ export async function normalizeAndInsert(parsed, rawOfferId = null) {
   // Step 4: Match category
   let categoryId = null
   if (parsed.category) {
+    // Map English category names to Chinese
+    const categoryMap = {
+      'dining': '餐飲',
+      'supermarket': '超市', 
+      'online': '網購',
+      'entertainment': '娛樂',
+      'travel': '旅行',
+      'fuel': '油站',
+      'transport': '交通'
+    }
+    const chineseName = categoryMap[parsed.category.toLowerCase()] || parsed.category
+    
     const { data: categories } = await supabase
       .from('categories')
       .select('id, name')
-      .ilike('name', `%${parsed.category}%`)
+      .ilike('name', `%${chineseName}%`)
       .limit(1)
     
     categoryId = categories?.[0]?.id || null
-    console.log(`📂 Category match: "${parsed.category}" → id: ${categoryId}`)
+    console.log(`📂 Category match: "${parsed.category}" (${chineseName}) → id: ${categoryId}`)
   }
 
   // Step 5: Match card
@@ -117,25 +129,67 @@ export async function normalizeAndInsert(parsed, rawOfferId = null) {
 
   console.log('📦 Payload:', JSON.stringify(payload))
 
-  // Step 7: Upsert into merchant_offers
+  // Step 7: Upsert into merchant_offers with duplicate protection
+  // Use unique constraint on: merchant_id, bank_id, category_id, value_type, value, min_spend
   try {
+    // Build unique key fields (exclude null values for consistency)
+    const merchantKey = payload.merchant_id || 'NULL'
+    const categoryKey = payload.category_id || 'NULL'
+    const uniqueKey = `${merchantKey}-${payload.bank_id}-${categoryKey}-${payload.value_type}-${payload.value}-${payload.min_spend || 0}`
+    
+    // Check if offer already exists
+    const { data: existing } = await supabase
+      .from('merchant_offers')
+      .select('id, status')
+      .eq('merchant_id', payload.merchant_id || null)
+      .eq('bank_id', payload.bank_id)
+      .eq('category_id', payload.category_id || null)
+      .eq('value_type', payload.value_type)
+      .eq('value', payload.value)
+      .eq('min_spend', payload.min_spend || null)
+      .limit(1)
+    
+    if (existing && existing.length > 0) {
+      // Offer exists - update status to ACTIVE if it was inactive
+      if (existing[0].status !== 'ACTIVE') {
+        await supabase
+          .from('merchant_offers')
+          .update({ status: 'ACTIVE', updated_at: new Date().toISOString() })
+          .eq('id', existing[0].id)
+        console.log('✅ Reactivated existing offer:', existing[0].id)
+      } else {
+        console.log('⏭️ Duplicate offer skipped:', existing[0].id)
+      }
+      return { id: existing[0].id, duplicate: true }
+    }
+    
+    const insertData = {
+      bank_id: payload.bank_id,
+      card_id: payload.card_id,
+      title: payload.title,
+      offer_type: payload.offer_type,
+      value_type: payload.value_type,
+      value: payload.value,
+      min_spend: payload.min_spend || null,
+      max_reward: payload.max_discount,
+      source: payload.source,
+      status: payload.status,
+      valid_from: payload.valid_from,
+      valid_to: payload.valid_to
+    }
+    
+    // Only include merchant_id if not null
+    if (payload.merchant_id) {
+      insertData.merchant_id = payload.merchant_id
+    }
+    // Only include category_id if not null
+    if (payload.category_id) {
+      insertData.category_id = payload.category_id
+    }
+    
     const { data, error } = await supabase
       .from('merchant_offers')
-      .upsert({
-        merchant_id: payload.merchant_id,
-        bank_id: payload.bank_id,
-        card_id: payload.card_id,
-        title: payload.title,
-        offer_type: payload.offer_type,
-        value_type: payload.value_type,
-        value: payload.value,
-        min_spend: payload.min_spend,
-        max_discount: payload.max_discount,
-        source: payload.source,
-        status: payload.status
-      }, {
-        onConflict: 'merchant_id,bank_id,card_id,value_type,value'
-      })
+      .insert(insertData)
       .select()
       .single()
 
