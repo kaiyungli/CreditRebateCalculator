@@ -201,3 +201,23 @@ This document provides an up-to-date snapshot of the database schema as currentl
 - **Migration needed**: YES (12 fields)
 
 Current engine is functioning fully but ingestion pipeline expects fields that don't exist in current schema. A migration must run before production scaling.
+
+---
+
+## Migration Status
+
+### Required Migration File
+
+- **migrations/001_required_pipeline_fields.sql**
+  - Adds 12 required fields to merchant_offers
+  - Creates raw_offers table with status tracking
+  - Adds status columns to raw_offers
+  - Ready to run now
+
+### Optional Migration File
+
+- **migrations/002_optional_indexes_performance.sql**
+  - Performance indexes for queries
+  - Can run after production scales
+
+---
