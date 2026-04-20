@@ -221,3 +221,36 @@ CREATE INDEX idx_offer_source ON merchant_offers(source_name);
 2. **Migration first**: Add fingerprint column
 3. **Then**: Source tracking fields
 4. **Later**: Review/confidence flags
+
+---
+
+## Canonicalization and Fingerprint Rules
+
+### Canonicalization Rules
+
+1. **Object keys**: Sorted alphabetically
+2. **String values**: Lowercase + trim
+3. **Arrays**: Sorted alphabetically then joined with comma
+4. **Nested objects**: Recursively canonicalized
+5. **Null/undefined**: Converted to empty string
+
+### Fingerprint Fields (Identity Only)
+
+Excluded from fingerprint (not identity):
+- valid_from / valid_to (changes over time)
+- source_url / source_name (metadata)
+- raw_offer_id (link not identity)
+- is_verified / confidence (review flags)
+- id (auto-assigned)
+
+### Fingerprint Algorithm
+
+```
+fingerprint = "merchant_id|bank_id|card_id|category_id|offer_type|value_type|value|min_spend|max_reward|stackable|threshold_type|canonicalized_conditions"
+```
+
+### Example
+
+Input A: `{ channel: "ONLINE", wallet: "Apple" }`
+Input B: `{ wallet: "apple", channel: "online" }`
+→ Same canonicalization → Same fingerprint ✅
