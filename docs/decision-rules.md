@@ -367,3 +367,26 @@ Even with malformed data, API always returns:
   bestCard: null // or null
 }
 ```
+
+---
+
+## Input Resolution
+
+### merchant-first Precedence
+
+| Scenario | Behavior | Assumption |
+|----------|-----------|-------------|
+| merchant_id only | Use merchant | `merchantOverwritesCategory` |
+| category_id only | Use category | `categoryOnly` |
+| merchant + category | Merchant wins | `merchantOverwritesCategory` |
+| Neither | Invalid request | `missing` |
+
+### Category Derivation
+If merchant exists but categoryId is missing:
+- Try to derive category from merchant
+- Record: `derivedCategoryFromMerchant`
+
+### Conflict Handling
+- Merchant always takes precedence
+- Category value is NOT ignored - but merchant wins
+- Assumption recorded for debugging
