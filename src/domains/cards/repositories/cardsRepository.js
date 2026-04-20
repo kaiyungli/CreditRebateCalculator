@@ -1,44 +1,58 @@
 /**
  * Cards Domain - Cards Repository
- * Normalized access to cards
+ * Robust runtime handling
  */
 
 import { getActiveCards as getRawCards, getCardsByIds as getRawCardsByIds } from '../../../lib/db'
 
 /**
- * Normalize raw card to camelCase
+ * Safely normalize card
  */
 function normalizeCard(card) {
   if (!card) return null
+  
   return {
-    id: card.id,
-    cardId: card.card_id || card.id,
-    cardName: card.card_name || card.name,
-    bankId: card.bank_id,
-    bankName: card.bank_name,
-    rewardProgram: card.reward_program,
+    id: card.id || 0,
+    cardId: card.cardId || card.id || 0,
+    cardName: card.cardName || card.name || 'Unknown Card',
+    bankId: card.bankId || card.bank_id || 0,
+    bankName: card.bankName || card.bank_name || 'Unknown Bank',
+    rewardProgram: card.rewardProgram || card.reward_program || null,
     network: card.network || 'VISA',
-    annualFee: card.annual_fee,
-    imageUrl: card.image_url,
-    applyUrl: card.apply_url
+    annualFee: card.annualFee || card.annual_fee || 0,
+    imageUrl: card.imageUrl || card.image_url || null,
+    applyUrl: card.applyUrl || card.apply_url || null
   }
 }
 
 /**
- * Get all active cards
+ * Get all active cards - safe
  */
 export async function findAllCards() {
-  const rawCards = await getRawCards()
-  return rawCards.map(normalizeCard)
+  try {
+    const rawCards = await getRawCards()
+    if (!rawCards || !Array.isArray(rawCards)) return []
+    return rawCards.map(normalizeCard).filter(Boolean)
+  } catch (e) {
+    console.error('Error fetching cards:', e.message)
+    return []
+  }
 }
 
 /**
- * Get specific cards by IDs
+ * Get cards by IDs - safe
  */
 export async function findCardsByIds(cardIds) {
-  if (!cardIds || cardIds.length === 0) return []
-  const rawCards = await getRawCardsByIds(cardIds)
-  return rawCards.map(normalizeCard)
+  if (!cardIds || !Array.isArray(cardIds) || cardIds.length === 0) return []
+  
+  try {
+    const rawCards = await getRawCardsByIds(cardIds)
+    if (!rawCards || !Array.isArray(rawCards)) return []
+    return rawCards.map(normalizeCard).filter(Boolean)
+  } catch (e) {
+    console.error('Error fetching cards by IDs:', e.message)
+    return []
+  }
 }
 
 export default { findAllCards, findCardsByIds }

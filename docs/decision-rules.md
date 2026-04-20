@@ -339,3 +339,31 @@ Each card result includes:
 - **appliedOfferSummaries**: Human-readable offer explanation with conditions
 - **skippedOfferDetails**: Why offers were skipped
 - **assumptions**: Debug information for unsupported features
+
+---
+
+## Production-Safe Fallback Behavior
+
+### Invalid Data Handling
+
+| Invalid Type | Behavior | Traceable Reason |
+|------------|----------|------------------|
+| null offer | Skip | `invalidOffer:null` |
+| offer missing id | Skip | `invalidOffer:missingId` |
+| invalid valueType | Skip | `invalidOffer:valueType` |
+| invalid rateValue | Skip | `invalidRule:rateValue` |
+| invalid conditions_json | Skip | `invalidConditionJson` |
+| minSpend not met | Skip | `minSpend:not_met` |
+| threshold_type unsupported | Skip | `threshold_type:XXX` |
+| empty card list | Safe empty | Returns [] |
+| no eligible results | Safe zero | Returns 0 |
+
+### API Response Guarantees
+Even with malformed data, API always returns:
+```js
+{
+  success: boolean,
+  results: [],   // Array (may be empty)
+  bestCard: null // or null
+}
+```
