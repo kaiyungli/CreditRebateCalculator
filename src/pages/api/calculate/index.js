@@ -4,18 +4,18 @@ import { calculateBestCardForExpenses } from '../../../domains/calculator/servic
 import { validateCalculationRequest } from '../../../shared/schemas/calculation'
 
 /**
- * Format successful response
+ * Format successful response (camelCase)
  */
 function formatResponse(input, result) {
   return {
     success: true,
     input: {
-      merchant_id: input.merchant_id,
-      category_id: input.category_id,
+      merchantId: input.merchant_id,
+      categoryId: input.category_id,
       amount: input.amount
     },
     results: result.results,
-    best_card: result.best_card
+    bestCard: result.bestCard
   }
 }
 
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
       return res.status(400).json(formatError(new Error(result.error)))
     }
     
-    // Return formatted response
+    // Return formatted response (camelCase)
     return res.status(200).json(formatResponse(input, result))
 
   } catch (error) {

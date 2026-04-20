@@ -211,3 +211,21 @@ export async function getActiveRulesAndMerchants() {
   
   return { merchantKeyToId, rules }
 }
+
+// ============ Calculations ============
+
+export async function saveCalculation({ user_id, input_json, result_json }) {
+  const supabase = getSupabase()
+  const { data, error } = await supabase
+    .from('calculations')
+    .insert({
+      user_id,
+      input_json,
+      result_json
+    })
+    .select()
+    .single()
+  
+  if (error) throw new Error(`Failed to save calculation: ${error.message}`)
+  return data
+}

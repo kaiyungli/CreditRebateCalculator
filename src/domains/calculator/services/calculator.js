@@ -17,7 +17,7 @@ import { saveCalculation } from '../../../lib/db'
 export async function calculateBestCardForExpenses(input) {
   const { merchant_id, category_id, amount, card_ids, user_id } = input
 
-  // Layer 1: Get Cards
+  // Layer 1: Get Cards (normalized: cardId, cardName, bankId)
   let cards
   if (card_ids && Array.isArray(card_ids) && card_ids.length > 0) {
     cards = await findCardsByIds(card_ids)
@@ -26,12 +26,12 @@ export async function calculateBestCardForExpenses(input) {
   }
 
   if (!cards || cards.length === 0) {
-    return { results: [], best_card: null, error: 'No cards found' }
+    return { results: [], bestCard: null, error: 'No cards found' }
   }
 
   // Build IDs from normalized card objects
-  const cardIds = cards.map(c => c.id || c.card_id)
-  const bankIds = [...new Set(cards.map(c => c.bank_id).filter(Boolean))]
+  const cardIds = cards.map(c => c.cardId)
+  const bankIds = [...new Set(cards.map(c => c.bankId).filter(Boolean))]
 
   // Layer 2: Get normalized data from repositories
   const rules = await findRules({
@@ -48,8 +48,8 @@ export async function calculateBestCardForExpenses(input) {
 
   // Layer 3: Evaluators (using camelCase)
   const results = cards.map(card => {
-    const cardId = card.id || card.card_id
-    const cardBankId = card.bank_id
+    const cardId = card.cardId
+    const cardBankId = card.bankId
 
     const rule = chooseBestRule(rules, cardId)
     if (rule && !meetsMinSpend(rule, amount)) {
@@ -77,12 +77,12 @@ export async function calculateBestCardForExpenses(input) {
   const sortedResults = sortResults(results)
   const bestCard = sortedResults[0] || null
 
-  // Save history
+  // Save history (using normalized input)
   try {
     await saveCalculation({
       user_id,
       input_json: { merchant_id, category_id, amount, card_ids },
-      result_json: { results: sortedResults, best_card: bestCard }
+      result_json: { results: sortedResults, bestCard }
     })
   } catch (saveErr) {
     console.warn('Failed to save calculation:', saveErr.message)
