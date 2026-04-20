@@ -390,3 +390,31 @@ If merchant exists but categoryId is missing:
 - Merchant always takes precedence
 - Category value is NOT ignored - but merchant wins
 - Assumption recorded for debugging
+
+---
+
+## Unknown/Partial Input Handling
+
+### Cases
+
+| Input | Behavior | Assumption |
+|-------|----------|-------------|
+| Unknown merchant + valid category | Use category | `unknownMerchant`, `usingCategoryAsFallback` |
+| Known merchant + no category | Merchant-only | `merchantHasNoCategory` |
+| Known merchant + derives category | Use derived | `categoryDerivedFromMerchant` |
+| Unknown merchant + no category | Error | `missingMerchantAndCategory` |
+| Category only | Use category | `categoryOnly` |
+| Both invalid | Error | `missingMerchantAndCategory` |
+
+### Fallback Rules
+- merchant invalid + category valid → use category
+- merchant valid, no category → try derive, else merchant-only
+- both invalid → error with assumption
+
+### Available Assumptions
+- `input:unknownMerchant` - Merchant ID not found
+- `input:unknownCategory` - Category ID not found  
+- `input:categoryDerivedFromMerchant` - Category from merchant
+- `input:merchantHasNoCategory` - Merchant exists but no category
+- `input:usingCategoryAsFallback` - Using category as fallback
+- `input:missingMerchantAndCategory` - Neither provided

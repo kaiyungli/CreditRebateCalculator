@@ -1,73 +1,82 @@
 /**
- * Calculator Domain - Input Resolution
- * merchant-first precedence with category fallback
+ * Calculator Domain - Robust Input Resolution
+ * Handles unknown/partial merchant/category cases
  */
 
 import { findAllCards, findCardsByIds } from '../../cards/repositories/cardsRepository'
 import { findRules } from '../../rewards/repositories/rulesRepository'
 import { findOffers } from '../../offers/repositories/offersRepository'
-import { findMerchantCategory } from '../../offers/repositories/merchantsRepository'
+import { findMerchantWithCategory } from '../../offers/repositories/merchantsRepository'
 import { chooseBestRule, calculateReward, meetsMinSpend } from '../../rewards/evaluators/ruleEvaluator'
-import { estimateOfferValue, filterOffersForCard, getApplicableOffersWithDetails, calculateTotalOfferValue, validateOffer } from '../../offers/evaluators/offerEvaluator'
+import { estimateOfferValue, filterOffersForCard, getApplicableOffersWithDetails, calculateTotalOfferValue } from '../../offers/evaluators/offerEvaluator'
 import { formatCardResult, sortResults, formatCalculationResponse } from '../formatters/resultFormatter'
 import { saveCalculation } from '../../../lib/db'
 
 /**
- * Normalize input:
- * - merchant takes precedence
- * - if merchant exists but category missing, try to use merchant's category
- * - track assumptions for resolution
- */
-function normalizeInput(input) {
-  const { merchant_id, category_id } = input
-  
-  let effectiveMerchantId = merchant_id ? Number(merchant_id) : null
-  let effectiveCategoryId = category_id ? Number(category_id) : null
-  const assumptions = []
-  
-  // Rule 1: merchant takes precedence
-  if (effectiveMerchantId) {
-    // Check if category also provided
-    if (category_id && effectiveCategoryId) {
-      // Both provided - will use merchant but note the potential conflict
-      assumptions.push('input:merchantOverwritesCategory')
-    }
-    // merchant alone is fine - category can be derived if needed
-  } else if (effectiveCategoryId) {
-    // Category only - this is fine
-    assumptions.push('input:categoryOnly')
-  } else {
-    // Neither provided - this shouldn't happen (validated upstream)
-    assumptions.push('input:missing')
-  }
-  
-  return {
-    effectiveMerchantId,
-    effectiveCategoryId,
-    assumptions
-  }
-}
-
-/**
- * Get effective IDs using merchant category derivation
+ * Resolve input with unknown/partial handling
  */
 async function resolveEffectiveIds(input) {
-  const normalized = normalizeInput(input)
+  const { merchant_id, category_id } = input
   
-  let { effectiveMerchantId, effectiveCategoryId, assumptions } = normalized
+  let effectiveMerchantId = null
+  let effectiveCategoryId = null
+  let assumptions = []
   
-  // If merchant exists, try to derive category from merchant
-  if (effectiveMerchantId && !effectiveCategoryId) {
+  // Normalize to numbers first
+  const inputMerchantId = merchant_id ? Number(merchant_id) : null
+  const inputCategoryId = category_id ? Number(category_id) : null
+  
+  // Case 1: merchant provided
+  if (inputMerchantId) {
     try {
-      const merchant = await findMerchantCategory(effectiveMerchantId)
-      if (merchant && merchant.categoryId) {
-        effectiveCategoryId = merchant.categoryId
-        assumptions.push('input:derivedCategoryFromMerchant')
+      // Try to find merchant with its category
+      const merchant = await findMerchantWithCategory(inputMerchantId)
+      
+      if (merchant && merchant.exists) {
+        // Known merchant
+        effectiveMerchantId = inputMerchantId
+        
+        // If category also provided, validate both
+        if (inputCategoryId) {
+          effectiveCategoryId = inputCategoryId
+          if (merchant.categoryId && merchant.categoryId !== inputCategoryId) {
+            assumptions.push('input:categoryMayOverride')
+          }
+        } else if (merchant.categoryId) {
+          // Derive category from merchant
+          effectiveCategoryId = merchant.categoryId
+          assumptions.push('input:categoryDerivedFromMerchant')
+        } else {
+          // Merchant has no category - need explicit category
+          assumptions.push('input:merchantHasNoCategory')
+        }
+      } else {
+        // Unknown merchant - but if category is provided, use it
+        assumptions.push('input:unknownMerchant')
+        if (inputCategoryId) {
+          effectiveCategoryId = inputCategoryId
+          assumptions.push('input:usingCategoryAsFallback')
+        } else {
+          assumptions.push('input:missingMerchantAndCategory')
+        }
       }
     } catch (e) {
-      // Merchant lookup failed - continue without derived category
-      assumptions.push('input:merchantDerivationFailed')
+      // Merchant lookup failed - try category if provided
+      assumptions.push('input:merchantLookupFailed')
+      if (inputCategoryId) {
+        effectiveCategoryId = inputCategoryId
+        assumptions.push('input:usingCategoryAsFallback')
+      }
     }
+  } 
+  // Case 2: category only
+  else if (inputCategoryId) {
+    effectiveCategoryId = inputCategoryId
+    assumptions.push('input:categoryOnly')
+  } 
+  // Case 3: neither provided
+  else {
+    assumptions.push('input:missingMerchantAndCategory')
   }
   
   return {
@@ -78,13 +87,23 @@ async function resolveEffectiveIds(input) {
 }
 
 /**
- * Calculate best card for expenses
+ * Calculate best card
  */
 export async function calculateBestCardForExpenses(input) {
   const { amount, card_ids, user_id, channel, wallet, weekday } = input
   
-  // Resolve effective merchant/category IDs
+  // Resolve effective IDs with robust unknown handling
   const { effectiveMerchantId, effectiveCategoryId, inputAssumptions } = await resolveEffectiveIds(input)
+  
+  // Check if we have valid input
+  if (!effectiveMerchantId && !effectiveCategoryId) {
+    return { 
+      results: [], 
+      bestCard: null, 
+      error: 'merchant_id or category_id required',
+      inputMetadata: { effectiveMerchantId: null, effectiveCategoryId: null, inputAssumptions }
+    }
+  }
   
   let cards
   if (card_ids && Array.isArray(card_ids) && card_ids.length > 0) {
@@ -143,7 +162,6 @@ export async function calculateBestCardForExpenses(input) {
   const sortedResults = sortResults(results)
   const bestCard = sortedResults[0] || null
 
-  // Save with input metadata
   try {
     await saveCalculation({
       user_id,
@@ -164,7 +182,6 @@ export async function calculateBestCardForExpenses(input) {
     console.warn('Failed to save calculation:', saveErr.message)
   }
 
-  // Add input metadata to response
   const response = formatCalculationResponse(sortedResults, bestCard)
   response.inputMetadata = { effectiveMerchantId, effectiveCategoryId, inputAssumptions }
   

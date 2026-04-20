@@ -1,28 +1,27 @@
 /**
- * Offers Domain - Merchants Repository
- * For category derivation from merchant
+ * Merchants Repository - Robust handling
  */
 
 import { getMerchantById } from '../../../lib/db'
 
 /**
- * Find merchant's category
+ * Find merchant with category info
  */
-export async function findMerchantCategory(merchantId) {
+export async function findMerchantWithCategory(merchantId) {
   try {
     const merchant = await getMerchantById(merchantId)
-    if (!merchant) return null
+    if (!merchant) return { exists: false }
     
     return {
+      exists: true,
       id: merchant.id,
       merchantKey: merchant.merchant_key,
       categoryId: merchant.category_id || null,
       name: merchant.name
     }
   } catch (e) {
-    console.warn('Failed to find merchant category:', e.message)
-    return null
+    return { exists: false, error: e.message }
   }
 }
 
-export default { findMerchantCategory }
+export default { findMerchantWithCategory }
