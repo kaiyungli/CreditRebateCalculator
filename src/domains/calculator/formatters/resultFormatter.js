@@ -1,49 +1,132 @@
 /**
  * Calculator Domain - Result Formatter
- * Output includes explanation-ready fields and skipped reason tracking
+ * Output includes explainability fields
  */
 
 /**
- * Format a single card result
+ * Format rule summary - human-readable
+ */
+function formatRuleSummary(rule) {
+  if (!rule) return null
+  
+  const scopeLabel = {
+    'MERCHANT': 'merchant',
+    'CATEGORY': 'category',
+    'GENERAL': 'base'
+  }[rule.scopeType] || 'rule'
+  
+  const rateLabel = rule.rateUnit === 'PERCENT' 
+    ? `${rule.rateValue}%` 
+    : rule.rateUnit === 'FIXED'
+      ? `HK$${rule.rateValue} fixed`
+      : `${rule.rateValue} points per HK$100`
+  
+  const rewardLabel = rule.rewardKind === 'CASHBACK' 
+    ? 'cashback' 
+    : rule.rewardKind === 'POINTS'
+      ? 'points'
+      : rule.rewardKind || 'reward'
+  
+  return {
+    ruleId: rule.id,
+    scope: scopeLabel,
+    reward: `${rateLabel} ${rewardLabel}`,
+    effectiveRate: rule.effectiveRate ? `${rule.effectiveRate}%` : null
+  }
+}
+
+/**
+ * Format offer summary - human-readable
+ */
+function formatOfferSummary(offer) {
+  if (!offer) return null
+  
+  let summary = ''
+  
+  if (offer.valueType === 'FIXED') {
+    summary = `HK$${offer.value} fixed rebate`
+  } else if (offer.valueType === 'PERCENT') {
+    summary = `${offer.value}% extra ${offer.rewardKind || 'cashback'}`
+    if (offer.maxReward) {
+      summary += ` (capped at HK$${offer.maxReward})`
+    }
+  }
+  
+  const conditions = []
+  if (offer.channel) conditions.push(`channel:${offer.channel}`)
+  if (offer.wallet) conditions.push(`wallet:${offer.wallet}`)
+  if (offer.weekday) conditions.push(`${offer.weekday}`)
+  
+  if (conditions.length > 0) {
+    summary += ` [${conditions.join(', ')}]`
+  }
+  
+  return {
+    offerId: offer.id,
+    title: offer.title,
+    summary,
+    value: offer.estimatedValue
+  }
+}
+
+/**
+ * Format a single card result with full explainability
  */
 export function formatCardResult(card, rule, rewardCalc, offers, offerValue, offerDetails = [], skippedOffers = []) {
   const cardId = card.cardId
+
+  // Applied rule
+  const appliedRuleSummary = rule ? formatRuleSummary(rule) : null
+  
+  // Applied offers
+  const appliedOffers = offers
+    .filter(o => o.estimatedValue > 0)
+    .map(o => formatOfferSummary({
+      ...o,
+      rewardKind: o.valueType === 'PERCENT' ? 'cashback' : 'rebate'
+    }))
+  
+  // Skipped offers
+  const skippedOfferDetails = []
+  const skippedIds = []
+  
+  offerDetails.forEach(o => {
+    if (o.skippedReason) {
+      skippedIds.push(o.id)
+      skippedOfferDetails.push({
+        offerId: o.id,
+        title: o.title,
+        reason: o.skippedReason
+      })
+    }
+  })
+
+  // Assumptions from skipped offers
+  const assumptions = skippedOfferDetails.map(s => s.reason)
 
   return {
     cardId,
     cardName: card.cardName,
     bankName: card.bankName,
-    rewardRule: rule ? {
-      id: rule.id,
-      scopeType: rule.scopeType,
-      rewardKind: rule.rewardKind,
-      rateUnit: rule.rateUnit,
-      rateValue: Number(rule.rateValue)
-    } : null,
+    // Base reward explanation
+    appliedRuleId: rule ? rule.id : null,
+    appliedRuleSummary,
     baseReward: {
       amount: rewardCalc.rewardAmount,
       rewardKind: rewardCalc.rewardKind,
       effectiveRate: rewardCalc.effectiveRate
     },
-    // Applied offers
-    appliedOfferIds: offers.map(o => o.id),
-    offers: offers.map(o => ({
-      id: o.id,
-      title: o.title,
-      offerType: o.offerType,
-      valueType: o.valueType,
-      value: o.value,
-      stackable: o.stackable,
-      thresholdType: o.thresholdType,
-      estimatedValue: o.estimatedValue
-    })),
+    // Offers explanation
+    appliedOfferIds: appliedOffers.map(o => o.offerId),
+    appliedOfferSummaries: appliedOffers,
+    // Skipped offers
+    skippedOfferIds: skippedIds,
+    skippedOfferDetails,
+    // Total
     offerValue,
     totalValue: Math.round((rewardCalc.rewardAmount + offerValue) * 100) / 100,
-    // Skipped offers for debugging
-    assumptions: [
-      ...skippedOffers.map(s => `offerSkipped:${s}`),
-      rule?.thresholdType ? `ruleThresholdType:${rule.thresholdType}` : null
-    ].filter(Boolean)
+    // Assumptions for debugging
+    assumptions
   }
 }
 
@@ -71,5 +154,7 @@ export function formatCalculationResponse(results, bestCard) {
 export default {
   formatCardResult,
   sortResults,
-  formatCalculationResponse
+  formatCalculationResponse,
+  formatRuleSummary,
+  formatOfferSummary
 }

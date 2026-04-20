@@ -294,3 +294,48 @@ Do NOT mix stackable + non-stackable offers in v1
 | weekday | ✅ Supported | v1 |
 | mcc | ❌ Ignored | Unknown key |
 | card_type | ❌ Ignored | Unknown key |
+
+---
+
+## Explainability v1
+
+### Card Result Fields
+
+Each card result includes:
+
+```js
+{
+  cardId,
+  cardName,
+  bankName,
+  // Base reward explanation
+  appliedRuleId: 1,
+  appliedRuleSummary: {
+    ruleId: 1,
+    scope: 'merchant',  // merchant | category | base
+    reward: '5% cashback',
+    effectiveRate: '5%'
+  },
+  baseReward: { amount: 50, ... },
+  // Offer explanation
+  appliedOfferIds: [12, 19],
+  appliedOfferSummaries: [
+    { offerId: 12, title: 'Offer', summary: 'HK$50 fixed rebate', value: 50 },
+    { offerId: 19, title: '5% Extra', summary: '5% extra cashback (capped at HK$100)', value: 100 }
+  ],
+  // Skipped offers
+  skippedOfferIds: [15, 20],
+  skippedOfferDetails: [
+    { offerId: 15, title: 'Weekend Only', reason: 'condition:weekday' }
+  ],
+  // Debug assumptions
+  assumptions: ['condition:wallet', 'threshold_type:MONTHLY_ACCUMULATED']
+}
+```
+
+### Summary Format
+
+- **appliedRuleSummary**: Human-readable rule explanation
+- **appliedOfferSummaries**: Human-readable offer explanation with conditions
+- **skippedOfferDetails**: Why offers were skipped
+- **assumptions**: Debug information for unsupported features

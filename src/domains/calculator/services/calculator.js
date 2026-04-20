@@ -1,13 +1,13 @@
 /**
  * Calculator Domain - Orchestration Only
- * Uses conditions_json v1
+ * Uses explainability fields
  */
 
 import { findAllCards, findCardsByIds } from '../../cards/repositories/cardsRepository'
 import { findRules } from '../../rewards/repositories/rulesRepository'
 import { findOffers } from '../../offers/repositories/offersRepository'
 import { chooseBestRule, calculateReward, meetsMinSpend } from '../../rewards/evaluators/ruleEvaluator'
-import { estimateOfferValue, filterOffersForCard, getApplicableOffersWithDetails, calculateTotalOfferValue, isThresholdTypeSupported, evaluateConditions } from '../../offers/evaluators/offerEvaluator'
+import { estimateOfferValue, filterOffersForCard, getApplicableOffersWithDetails, calculateTotalOfferValue, evaluateConditions } from '../../offers/evaluators/offerEvaluator'
 import { formatCardResult, sortResults, formatCalculationResponse } from '../formatters/resultFormatter'
 import { saveCalculation } from '../../../lib/db'
 
@@ -43,7 +43,6 @@ export async function calculateBestCardForExpenses(input) {
     bankIds
   })
 
-  // Condition input for evaluation
   const conditionInput = { channel, wallet, weekday }
 
   const results = cards.map(card => {
@@ -60,11 +59,11 @@ export async function calculateBestCardForExpenses(input) {
     const cardOffers = filterOffersForCard(offers, cardId, cardBankId)
     const allOfferDetails = getApplicableOffersWithDetails(cardOffers, amount, conditionInput)
     const appliedOffers = allOfferDetails.filter(o => o.estimatedValue > 0)
-    const skippedOffers = allOfferDetails.filter(o => o.skippedReason).map(o => o.skippedReason)
+    const skippedOffers = allOfferDetails.filter(o => o.skippedReason)
     
     const offerValue = calculateTotalOfferValue(cardOffers, amount, conditionInput)
 
-    return formatCardResult(card, rule, rewardCalc, appliedOffers, offerValue, appliedOffers, skippedOffers)
+    return formatCardResult(card, rule, rewardCalc, appliedOffers, offerValue, allOfferDetails, skippedOffers)
   })
 
   const sortedResults = sortResults(results)
