@@ -164,3 +164,41 @@ Missing indexes:
 - Raw DB queries stay in lib/db.js (infrastructure layer)
 - Repositories may transform but should be consistent
 - This document tracks DB ↔ domain alignment for future migrations
+
+---
+
+## Field Naming: max_reward → maxReward
+
+**DB Field:** `merchant_offers.max_reward`  
+**Domain Field:** `maxReward`  
+**Mapping:** `offer.max_reward` → `maxReward`
+
+**Usage:**
+- `normalizeOffer()`: maps `max_reward` → `maxReward`
+- `offerEvaluator`: uses `maxReward` (NOT maxDiscount)
+
+---
+
+## saveCalculation Schema Alignment
+
+**DB Table:** `calculations`  
+**Schema:**
+```sql
+id SERIAL PRIMARY KEY,
+user_id INTEGER REFERENCES users(id),
+input_json JSONB NOT NULL,
+result_json JSONB NOT NULL,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+```
+
+**Payload (matches schema):**
+```js
+{
+  user_id,        // number
+  input_json: { merchant_id, category_id, amount, card_ids },
+  result_json: { results, bestCard }
+}
+```
+
+**Validation:** ✅ Payload aligns with actual table schema
+

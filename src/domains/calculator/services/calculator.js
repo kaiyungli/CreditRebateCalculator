@@ -77,12 +77,20 @@ export async function calculateBestCardForExpenses(input) {
   const sortedResults = sortResults(results)
   const bestCard = sortedResults[0] || null
 
-  // Save history (using normalized input)
+  // Save history - align with DB schema: user_id, input_json, result_json
   try {
     await saveCalculation({
       user_id,
-      input_json: { merchant_id, category_id, amount, card_ids },
-      result_json: { results: sortedResults, bestCard }
+      input_json: { 
+        merchant_id, 
+        category_id, 
+        amount, 
+        card_ids 
+      },
+      result_json: { 
+        results: sortedResults, 
+        bestCard 
+      }
     })
   } catch (saveErr) {
     console.warn('Failed to save calculation:', saveErr.message)

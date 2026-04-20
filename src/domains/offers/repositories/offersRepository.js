@@ -25,7 +25,7 @@ function normalizeOffer(offer) {
     valueType: offer.value_type,
     value: Number(offer.value) || 0,
     minSpend: offer.min_spend ? Number(offer.min_spend) : null,
-    maxDiscount: offer.max_discount ? Number(offer.max_discount) : null,
+    maxReward: offer.max_reward ? Number(offer.max_reward) : null,
     startDate: offer.start_date || null,
     endDate: offer.end_date || null,
     isActive: offer.is_active !== false,
@@ -37,8 +37,6 @@ function normalizeOffer(offer) {
 
 /**
  * Normalize array of offers
- * @param {Array} offers - Raw DB rows
- * @returns {Array} Normalized offers
  */
 function normalizeOffers(offers) {
   if (!offers || offers.length === 0) return []
@@ -47,8 +45,6 @@ function normalizeOffers(offers) {
 
 /**
  * Check if offer is currently valid
- * @param {Object} normalized offer
- * @returns {boolean}
  */
 function isValidOffer(offer) {
   if (!offer) return false
@@ -67,18 +63,12 @@ function isValidOffer(offer) {
 
 /**
  * Filter offers by card or bank ID
- * @param {Array} offers - Normalized offers
- * @param {number[]} cardIds
- * @param {number[]} bankIds
- * @returns {Array} Filtered offers
  */
 function filterByCardOrBank(offers, cardIds, bankIds) {
   if (!offers || offers.length === 0) return []
   
   return offers.filter(offer => {
-    // Null card_id = all cards, match specific
     if (offer.cardId && cardIds?.length > 0 && !cardIds.includes(offer.cardId)) return false
-    // Null bank_id = all banks, match specific  
     if (offer.bankId && bankIds?.length > 0 && !bankIds.includes(offer.bankId)) return false
     return true
   })
@@ -86,29 +76,18 @@ function filterByCardOrBank(offers, cardIds, bankIds) {
 
 /**
  * Find valid offers for a transaction
- * @param {number} [merchantId]
- * @param {number[]} [cardIds]
- * @param {number[]} [bankIds]
- * @returns {Promise<Array>} Normalized offers
  */
 export async function findOffers({ merchantId, cardIds, bankIds } = {}) {
-  // Get raw offers from DB
   const rawOffers = await getMerchantOffers({ merchantId })
   
-  // Normalize to camelCase domain objects
   const normalized = normalizeOffers(rawOffers)
-  
-  // Filter for validity (date, is_active)
   const validOffers = normalized.filter(isValidOffer)
   
-  // Filter by card/bank
   return filterByCardOrBank(validOffers, cardIds, bankIds)
 }
 
 /**
  * Find offers for a specific merchant (all valid)
- * @param {number} merchantId
- * @returns {Promise<Array>}
  */
 export async function findOffersForMerchant(merchantId) {
   const rawOffers = await getMerchantOffers({ merchantId })

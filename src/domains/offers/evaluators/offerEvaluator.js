@@ -1,11 +1,12 @@
 /**
  * Offers Domain - Offer Evaluator
  * Pure offer value calculation using normalized (camelCase) objects
+ * Domain field: maxReward (NOT maxDiscount)
  */
 
 /**
  * Estimate offer value for a given amount
- * Uses camelCase: minSpend, valueType, maxDiscount, value
+ * Uses camelCase: minSpend, valueType, maxReward, value
  */
 export function estimateOfferValue(offer, amount) {
   if (!offer) return 0
@@ -18,12 +19,12 @@ export function estimateOfferValue(offer, amount) {
   const value = Number(offer.value) || 0
 
   if (offer.valueType === 'FIXED') {
-    return Math.min(value, Number(offer.maxDiscount) || value)
+    return Math.min(value, Number(offer.maxReward) || value)
   }
 
   if (offer.valueType === 'PERCENT') {
     let calculated = (amount * value) / 100
-    return Math.min(calculated, Number(offer.maxDiscount) || calculated)
+    return Math.min(calculated, Number(offer.maxReward) || calculated)
   }
 
   return 0
@@ -48,9 +49,7 @@ export function filterOffersForCard(offers, cardId, bankId) {
   if (!offers) return []
   
   return offers.filter(offer => {
-    // Null cardId = all cards, or match specific
     if (offer.cardId && offer.cardId !== cardId) return false
-    // Null bankId = all banks, or match specific
     if (offer.bankId && offer.bankId !== bankId) return false
     return true
   })
