@@ -418,3 +418,42 @@ If merchant exists but categoryId is missing:
 - `input:merchantHasNoCategory` - Merchant exists but no category
 - `input:usingCategoryAsFallback` - Using category as fallback
 - `input:missingMerchantAndCategory` - Neither provided
+
+---
+
+## Decision Trace
+
+### Structure
+
+```js
+{
+  appliedRule: { id, scope, reward },
+  appliedOffers: [{ id, title, summary, value }],
+  skippedOffers: [{ id, title, reason }],
+  steps: [
+    { step: 'base', action: 'base rule selected', detail: '...', value: 20 },
+    { step: 'offer', action: 'offer applied', detail: '#18: HK$50 fixed', value: 50 },
+    { step: 'offer', action: 'offer skipped', detail: '#21: condition:weekday', value: 0 },
+    { step: 'resolution', action: 'non-stackable wins', detail: '...' },
+    { step: 'total', action: 'total value', detail: 'base + offers', value: 70 }
+  ]
+}
+```
+
+### Trace Steps
+
+| Step | Action | Description |
+|------|--------|--------------|
+| input | resolve IDs | Merchant/category resolution |
+| base | base rule selected | Which rule applied |
+| offer | offer applied | Applied offer |
+| offer | offer skipped | Skipped reason |
+| resolution | non-stackable wins | Non-stackable selection |
+| total | total value | Final total |
+
+### Use Cases
+
+- **Winning card**: Shows applied rule + offers
+- **Losing card**: Shows what was skipped and why
+- **Mixed**: Shows applied + skipped + reasoning
+- **Category derivation**: Shows input resolution step
