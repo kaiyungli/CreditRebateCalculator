@@ -1,6 +1,6 @@
 /**
  * Offers Domain - Offer Evaluator
- * Pure offer value calculation with threshold_type v1 support
+ * Pure offer value calculation with conditions_json v1 support
  */
 
 const THRESHOLD_TYPES = {
@@ -8,6 +8,8 @@ const THRESHOLD_TYPES = {
   MONTHLY_ACCUMULATED: 'MONTHLY_ACCUMULATED',
   CAMPAIGN_ACCUMULATED: 'CAMPAIGN_ACCUMULATED'
 }
+
+const SUPPORTED_CONDITIONS = ['channel', 'wallet', 'weekday']
 
 /**
  * Check if threshold_type is supported in v1
@@ -17,15 +19,71 @@ export function isThresholdTypeSupported(offer) {
 }
 
 /**
- * Estimate offer value for a given amount
- * v1: Only PER_TXN is supported
+ * Check if conditions_json is satisfied
+ * v1: supports channel, wallet, weekday
+ * 
+ * @param {Object} conditions - conditions_json from offer
+ * @param {Object} input - transaction input { channel, wallet, weekday }
+ * @returns {{ satisfied: boolean, reason?: string }}
  */
-export function estimateOfferValue(offer, amount) {
+export function evaluateConditions(conditions, input = {}) {
+  if (!conditions || typeof conditions !== 'object') {
+    return { satisfied: true }
+  }
+  
+  const unsupportedKeys = Object.keys(conditions).filter(k => !SUPPORTED_CONDITIONS.includes(k))
+  if (unsupportedKeys.length > 0) {
+    // Unknown keys are ignored in v1, but we record assumption
+    return { satisfied: true, assumption: `unsupportedConditionKey:${unsupportedKeys.join(',')}` }
+  }
+  
+  // Check channel
+  if (conditions.channel && conditions.channel !== 'all') {
+    const inputChannel = input.channel || 'all'
+    if (conditions.channel !== inputChannel) {
+      return { satisfied: false, reason: 'channel' }
+    }
+  }
+  
+  // Check wallet
+  if (conditions.wallet && conditions.wallet !== 'all') {
+    const inputWallet = input.wallet || 'all'
+    if (conditions.wallet !== inputWallet) {
+      return { satisfied: false, reason: 'wallet' }
+    }
+  }
+  
+  // Check weekday
+  if (conditions.weekday && conditions.weekday !== 'all') {
+    const inputWeekday = input.weekday || null
+    if (!inputWeekday) {
+      return { satisfied: false, reason: 'weekday:missing_input' }
+    }
+    if (conditions.weekday !== inputWeekday) {
+      return { satisfied: false, reason: 'weekday' }
+    }
+  }
+  
+  return { satisfied: true }
+}
+
+/**
+ * Estimate offer value for a given amount
+ */
+export function estimateOfferValue(offer, amount, input = {}) {
   if (!offer) return 0
 
-  // Check threshold_type - v1 only supports PER_TXN
+  // Check threshold_type
   if (!isThresholdTypeSupported(offer)) {
-    return 0  // Unsupported threshold type returns 0 in v1
+    return 0
+  }
+
+  // Check conditions_json
+  if (offer.conditions) {
+    const conditionResult = evaluateConditions(offer.conditions, input)
+    if (!conditionResult.satisfied) {
+      return 0
+    }
   }
 
   if (offer.minSpend && amount < Number(offer.minSpend)) {
@@ -47,12 +105,16 @@ export function estimateOfferValue(offer, amount) {
 }
 
 /**
- * Get offer details with skip reason for unsupported threshold_type
+ * Get offer details with skip reason
  */
-export function getApplicableOffersWithDetails(offers, amount) {
+export function getApplicableOffersWithDetails(offers, amount, input = {}) {
   if (!offers || offers.length === 0) return []
 
   return offers.map(offer => {
+    let skipReason = null
+    let assumption = null
+    
+    // Check threshold_type
     if (!isThresholdTypeSupported(offer)) {
       return {
         id: offer.id,
@@ -60,8 +122,6 @@ export function getApplicableOffersWithDetails(offers, amount) {
         offerType: offer.offerType,
         valueType: offer.valueType,
         value: offer.value,
-        minSpend: offer.minSpend,
-        maxReward: offer.maxReward,
         stackable: offer.stackable,
         thresholdType: offer.thresholdType,
         estimatedValue: 0,
@@ -69,6 +129,23 @@ export function getApplicableOffersWithDetails(offers, amount) {
       }
     }
     
+    // Check conditions
+    if (offer.conditions) {
+      const conditionResult = evaluateConditions(offer.conditions, input)
+      if (!conditionResult.satisfied) {
+        return {
+          id: offer.id,
+          title: offer.title,
+          estimatedValue: 0,
+          skippedReason: `condition:${conditionResult.reason}`
+        }
+      }
+      if (conditionResult.assumption) {
+        assumption = conditionResult.assumption
+      }
+    }
+    
+    // Check minSpend
     if (offer.minSpend && amount < Number(offer.minSpend)) {
       return {
         id: offer.id,
@@ -78,7 +155,7 @@ export function getApplicableOffersWithDetails(offers, amount) {
       }
     }
     
-    const estimatedValue = estimateOfferValue(offer, amount)
+    const estimatedValue = estimateOfferValue(offer, amount, input)
     
     return {
       id: offer.id,
@@ -90,28 +167,29 @@ export function getApplicableOffersWithDetails(offers, amount) {
       maxReward: offer.maxReward,
       stackable: offer.stackable,
       thresholdType: offer.thresholdType,
-      estimatedValue
+      conditions: offer.conditions,
+      estimatedValue,
+      assumption
     }
-  }).filter(o => o.estimatedValue > 0 || o.skippedReason)
+  }).filter(o => o.estimatedValue > 0 || o.skippedReason || o.assumption)
 }
 
 /**
- * Calculate total value with stackable v1 and threshold_type v1
+ * Calculate total value
  */
-export function calculateTotalOfferValue(offers, amount) {
+export function calculateTotalOfferValue(offers, amount, input = {}) {
   if (!offers || offers.length === 0) return 0
 
-  // Separate by stackable
-  const stackable = offers.filter(o => o.stackable === true && isThresholdTypeSupported(o))
-  const nonStackable = offers.filter(o => o.stackable !== true && isThresholdTypeSupported(o))
+  const stackable = offers.filter(o => o.stackable === true && isThresholdTypeSupported(o) && evaluateConditions(o.conditions, input).satisfied)
+  const nonStackable = offers.filter(o => o.stackable !== true && isThresholdTypeSupported(o) && evaluateConditions(o.conditions, input).satisfied)
 
   const stackableValue = stackable.reduce((sum, offer) => {
-    return sum + estimateOfferValue(offer, amount)
+    return sum + estimateOfferValue(offer, amount, input)
   }, 0)
 
   const nonStackableValues = nonStackable.map(offer => ({
     offer,
-    value: estimateOfferValue(offer, amount)
+    value: estimateOfferValue(offer, amount, input)
   }))
 
   if (nonStackable.length > 0) {
@@ -121,9 +199,6 @@ export function calculateTotalOfferValue(offers, amount) {
   return stackableValue
 }
 
-/**
- * Filter offers for specific card/bank
- */
 export function filterOffersForCard(offers, cardId, bankId) {
   if (!offers) return []
   
@@ -134,4 +209,4 @@ export function filterOffersForCard(offers, cardId, bankId) {
   })
 }
 
-export { THRESHOLD_TYPES }
+export { THRESHOLD_TYPES, SUPPORTED_CONDITIONS }

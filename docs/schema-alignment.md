@@ -210,3 +210,12 @@ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 | Field | Used | Notes |
 |-------|------|-------|
 | stackable | ✅ v1 | 2024-04 implementation |
+
+---
+
+## Field Usage - reward_rules
+
+| Field | Used | Notes |
+|-------|------|-------|
+| conditions_json | ✅ Partial | channel/wallet/weekday only |
+| threshold_type | ✅ Partial | PER_TXN only |

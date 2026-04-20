@@ -1,13 +1,13 @@
 /**
  * Calculator Domain - Orchestration Only
- * Uses threshold_type v1 and stackable v1
+ * Uses conditions_json v1
  */
 
 import { findAllCards, findCardsByIds } from '../../cards/repositories/cardsRepository'
 import { findRules } from '../../rewards/repositories/rulesRepository'
 import { findOffers } from '../../offers/repositories/offersRepository'
 import { chooseBestRule, calculateReward, meetsMinSpend } from '../../rewards/evaluators/ruleEvaluator'
-import { estimateOfferValue, filterOffersForCard, getApplicableOffersWithDetails, calculateTotalOfferValue, isThresholdTypeSupported } from '../../offers/evaluators/offerEvaluator'
+import { estimateOfferValue, filterOffersForCard, getApplicableOffersWithDetails, calculateTotalOfferValue, isThresholdTypeSupported, evaluateConditions } from '../../offers/evaluators/offerEvaluator'
 import { formatCardResult, sortResults, formatCalculationResponse } from '../formatters/resultFormatter'
 import { saveCalculation } from '../../../lib/db'
 
@@ -15,7 +15,7 @@ import { saveCalculation } from '../../../lib/db'
  * Calculate best card for expenses
  */
 export async function calculateBestCardForExpenses(input) {
-  const { merchant_id, category_id, amount, card_ids, user_id } = input
+  const { merchant_id, category_id, amount, card_ids, user_id, channel, wallet, weekday } = input
 
   let cards
   if (card_ids && Array.isArray(card_ids) && card_ids.length > 0) {
@@ -43,6 +43,9 @@ export async function calculateBestCardForExpenses(input) {
     bankIds
   })
 
+  // Condition input for evaluation
+  const conditionInput = { channel, wallet, weekday }
+
   const results = cards.map(card => {
     const cardId = card.cardId
     const cardBankId = card.bankId
@@ -55,11 +58,11 @@ export async function calculateBestCardForExpenses(input) {
     const rewardCalc = calculateReward(rule, amount)
 
     const cardOffers = filterOffersForCard(offers, cardId, cardBankId)
-    const allOfferDetails = getApplicableOffersWithDetails(cardOffers, amount)
+    const allOfferDetails = getApplicableOffersWithDetails(cardOffers, amount, conditionInput)
     const appliedOffers = allOfferDetails.filter(o => o.estimatedValue > 0)
     const skippedOffers = allOfferDetails.filter(o => o.skippedReason).map(o => o.skippedReason)
     
-    const offerValue = calculateTotalOfferValue(cardOffers, amount)
+    const offerValue = calculateTotalOfferValue(cardOffers, amount, conditionInput)
 
     return formatCardResult(card, rule, rewardCalc, appliedOffers, offerValue, appliedOffers, skippedOffers)
   })
@@ -70,7 +73,7 @@ export async function calculateBestCardForExpenses(input) {
   try {
     await saveCalculation({
       user_id,
-      input_json: { merchant_id, category_id, amount, card_ids },
+      input_json: { merchant_id, category_id, amount, card_ids, channel, wallet, weekday },
       result_json: { results: sortedResults, bestCard }
     })
   } catch (saveErr) {

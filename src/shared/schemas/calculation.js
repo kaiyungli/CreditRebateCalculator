@@ -28,6 +28,30 @@ const CARD_SELECTION = {
 }
 
 /**
+ * Condition inputs for conditions_json v1
+ */
+const CONDITION_INPUT = {
+  channel: {
+    type: 'string',
+    required: false,
+    values: ['online', 'in_store', 'app', 'all'],
+    message: 'channel must be online, in_store, app, or all'
+  },
+  wallet: {
+    type: 'string',
+    required: false,
+    values: ['apple_pay', 'google_pay', 'samsung_pay', 'visa_pay', 'all'],
+    message: 'wallet must be a valid wallet type'
+  },
+  weekday: {
+    type: 'string',
+    required: false,
+    values: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+    message: 'weekday must be a day of week'
+  }
+}
+
+/**
  * Location identification validation rules
  */
 const LOCATION_IDENTIFICATION = {
@@ -44,13 +68,12 @@ const CALCULATION_REQUEST = {
   ...EXPENSE_INPUT,
   ...CARD_SELECTION,
   ...LOCATION_IDENTIFICATION,
+  ...CONDITION_INPUT,
   user_id: { type: 'number', required: false }
 }
 
 /**
  * Validate calculation request
- * @param {Object} data - Raw request data
- * @returns {{ valid: boolean, errors: string[], data: Object }}
  */
 function validateCalculationRequest(data) {
   const errors = []
@@ -84,7 +107,11 @@ function validateCalculationRequest(data) {
       category_id: data.category_id ? Number(data.category_id) : undefined,
       amount: Number(data.amount),
       card_ids: data.card_ids ? data.card_ids.map(Number) : undefined,
-      user_id: data.user_id ? Number(data.user_id) : undefined
+      user_id: data.user_id ? Number(data.user_id) : undefined,
+      // Condition inputs
+      channel: data.channel,
+      wallet: data.wallet,
+      weekday: data.weekday
     }
   }
 }
@@ -117,6 +144,7 @@ module.exports = {
   EXPENSE_INPUT,
   CARD_SELECTION,
   LOCATION_IDENTIFICATION,
+  CONDITION_INPUT,
   CALCULATION_REQUEST,
   validateCalculationRequest,
   CALCULATION_RESPONSE,

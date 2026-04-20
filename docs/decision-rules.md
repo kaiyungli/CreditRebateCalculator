@@ -255,3 +255,42 @@ Do NOT mix stackable + non-stackable offers in v1
 | threshold_type=PER_TXN | ✅ Supported | v1 implemented |
 | threshold_type=MONTHLY_ACCUMULATED | ❌ Skipped | Needs monthly tracking |
 | threshold_type=CAMPAIGN_ACCUMULATED | ❌ Skipped | Needs campaign tracking |
+
+---
+
+## conditions_json v1 Behavior (Whitelist)
+
+### Supported Keys
+- **channel**: 'online', 'in_store', 'app', 'all'
+- **wallet**: 'apple_pay', 'google_pay', 'samsung_pay', 'visa_pay', 'all'
+- **weekday**: 'monday'..'sunday', 'all'
+
+### Evaluation
+- Condition satisfied → apply offer
+- Condition not met → offer returns 0, add reason
+- Missing required input → offer returns 0, add assumption
+- Unknown key → ignore + record assumption
+
+### Assumptions
+- `condition:channel` - channel mismatch
+- `condition:wallet` - wallet mismatch
+- `condition:weekday` - weekday mismatch
+- `condition:weekday:missing_input` - no weekday provided
+- `unsupportedConditionKey:mcc` - unknown key ignored
+
+### v1 Boundaries
+- Unknown keys are NOT errors - they're ignored with assumption
+- Future: could add more keys to whitelist
+- Not implementing full condition engine in v1
+
+---
+
+## conditions_json Status
+
+| Key | Status | Notes |
+|-----|--------|-------|
+| channel | ✅ Supported | v1 |
+| wallet | ✅ Supported | v1 |
+| weekday | ✅ Supported | v1 |
+| mcc | ❌ Ignored | Unknown key |
+| card_type | ❌ Ignored | Unknown key |

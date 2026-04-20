@@ -24,7 +24,8 @@ function normalizeOffer(offer) {
     value: Number(offer.value) || 0,
     minSpend: offer.min_spend ? Number(offer.min_spend) : null,
     maxReward: offer.max_reward ? Number(offer.max_reward) : null,
-    thresholdType: offer.threshold_type || 'PER_TXN',  // Default: PER_TXN
+    thresholdType: offer.threshold_type || 'PER_TXN',
+    conditions: offer.conditions_json || null,
     startDate: offer.start_date || null,
     endDate: offer.end_date || null,
     isActive: offer.is_active !== false,
