@@ -1,58 +1,58 @@
 /**
- * Calculator Domain - Rule Evaluator
- * Evaluates reward rules for a transaction
+ * Rewards Domain - Rule Evaluator
+ * Pure reward calculation using normalized (camelCase) objects
  */
-
-import { getRewardRules } from '../../../lib/db'
 
 /**
  * Choose the best reward rule for a card
  * Priority: MERCHANT > CATEGORY > GENERAL
+ * Uses camelCase: cardId, merchantId, categoryId
  */
 export function chooseBestRule(rules, cardId) {
-  const cardRules = rules.filter(r => r.card_id === cardId)
+  const cardRules = rules.filter(r => r.cardId === cardId)
   if (!cardRules || cardRules.length === 0) return null
 
-  // Find merchant-specific rule (highest priority)
-  const merchantRule = cardRules.find(r => r.merchant_id != null)
-  if (merchantRule) return { ...merchantRule, scope_type: 'MERCHANT' }
+  // Merchant-specific (highest priority)
+  const merchantRule = cardRules.find(r => r.merchantId != null)
+  if (merchantRule) return { ...merchantRule, scopeType: 'MERCHANT' }
 
-  // Find category-specific rule
-  const categoryRule = cardRules.find(r => r.category_id != null && r.merchant_id == null)
-  if (categoryRule) return { ...categoryRule, scope_type: 'CATEGORY' }
+  // Category-specific
+  const categoryRule = cardRules.find(r => r.categoryId != null && r.merchantId == null)
+  if (categoryRule) return { ...categoryRule, scopeType: 'CATEGORY' }
 
-  // Fall back to general rule
-  const generalRule = cardRules.find(r => r.merchant_id == null && r.category_id == null)
-  if (generalRule) return { ...generalRule, scope_type: 'GENERAL' }
+  // General (fallback)
+  const generalRule = cardRules.find(r => r.merchantId == null && r.categoryId == null)
+  if (generalRule) return { ...generalRule, scopeType: 'GENERAL' }
 
   return null
 }
 
 /**
  * Calculate reward based on rule type
+ * Uses camelCase: rateUnit, rateValue, perAmount, capValue, minSpend
  */
 export function calculateReward(rule, amount) {
   if (!rule) return { rewardAmount: 0, rewardKind: null, effectiveRate: null }
 
-  const rateValue = Number(rule.rate_value)
+  const rateValue = Number(rule.rateValue)
   let rewardAmount = 0
 
-  if (rule.rate_unit === 'PERCENT') {
+  if (rule.rateUnit === 'PERCENT') {
     rewardAmount = (amount * rateValue) / 100
-  } else if (rule.rate_unit === 'PER_AMOUNT') {
-    const perAmount = Number(rule.per_amount) || 1
+  } else if (rule.rateUnit === 'PER_AMOUNT') {
+    const perAmount = Number(rule.perAmount) || 1
     rewardAmount = Math.floor(amount / perAmount) * rateValue
-  } else if (rule.rate_unit === 'FIXED') {
+  } else if (rule.rateUnit === 'FIXED') {
     rewardAmount = rateValue
   }
 
-  // Apply cap if exists
-  if (rule.cap_value && rule.cap_value > 0) {
-    rewardAmount = Math.min(rewardAmount, Number(rule.cap_value))
+  // Apply cap
+  if (rule.capValue && rule.capValue > 0) {
+    rewardAmount = Math.min(rewardAmount, Number(rule.capValue))
   }
 
-  const rewardKind = rule.reward_kind || 'CASHBACK'
-  const effectiveRate = rule.rate_unit === 'PERCENT' ? rateValue : null
+  const rewardKind = rule.rewardKind || 'CASHBACK'
+  const effectiveRate = rule.rateUnit === 'PERCENT' ? rateValue : null
 
   return {
     rewardAmount: Math.round(rewardAmount * 100) / 100,
@@ -62,9 +62,9 @@ export function calculateReward(rule, amount) {
 }
 
 /**
- * Check if rule meets min_spend requirement
+ * Check if rule meets minSpend requirement
  */
 export function meetsMinSpend(rule, amount) {
-  if (!rule || !rule.min_spend) return true
-  return amount >= Number(rule.min_spend)
+  if (!rule || !rule.minSpend) return true
+  return amount >= Number(rule.minSpend)
 }

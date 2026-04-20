@@ -150,9 +150,8 @@ export async function getMerchantByKey(merchantKey) {
 
 export async function getRewardRules({ cardIds, merchantId, categoryId } = {}) {
   const supabase = getSupabase()
-  const today = new Date().toISOString().split('T')[0]
   
-  // Get all active rules - date filter handled in code for NULL dates
+  // Returns raw DB rows - normalization done in repository
   let query = supabase
     .from('reward_rules')
     .select(`*, cards!inner(name, bank_id, banks!inner(name))`)
@@ -166,52 +165,15 @@ export async function getRewardRules({ cardIds, merchantId, categoryId } = {}) {
   const { data, error } = await query
   if (error) throw new Error(`Database query failed: ${error.message}`)
   
-  // Filter by date and scope in JavaScript (handle NULL dates as always valid)
-  let filtered = (data || []).filter(rule => {
-    // Date check: NULL means always valid
-    if (rule.valid_from && rule.valid_from > today) return false
-    if (rule.valid_to && rule.valid_to < today) return false
-    return true
-  })
-  
-  // Filter by merchant/category if provided
-  if (merchantId) {
-    filtered = filtered.filter(r => r.merchant_id === merchantId || r.merchant_id === null)
-  }
-  
-  if (categoryId) {
-    filtered = filtered.filter(r => r.category_id === categoryId || r.category_id === null)
-  }
-  
-  return filtered.map(rule => ({
-    id: rule.id,
-    card_id: rule.card_id,
-    merchant_id: rule.merchant_id,
-    category_id: rule.category_id,
-    reward_kind: rule.reward_kind,
-    rate_unit: rule.rate_unit,
-    rate_value: Number(rule.rate_value),
-    per_amount: rule.per_amount ? Number(rule.per_amount) : null,
-    cap_value: rule.cap_value ? Number(rule.cap_value) : null,
-    cap_period: rule.cap_period || 'MONTHLY',
-    min_spend: rule.min_spend ? Number(rule.min_spend) : null,
-    priority: rule.priority || 100,
-    card_name: rule.cards?.name,
-    bank_name: rule.cards?.banks?.name,
-  }))
+  return data || []
 }
 
 // ============ Merchant Offers ============
 
-export async function getMerchantOffers({ merchantId, cardIds, bankIds } = {}) {
+export async function getMerchantOffers({ merchantId } = {}) {
   const supabase = getSupabase()
-  const today = new Date().toISOString().split('T')[0]
   
-  // Filter for currently valid offers:
-  // - status = 'ACTIVE' 
-  // - is_active = true (if field exists)
-  // - start_date is null or <= today
-  // - end_date is null or >= today
+  // Returns raw DB rows - filtering done in repository layer
   let query = supabase
     .from('merchant_offers')
     .select('*')
@@ -224,31 +186,7 @@ export async function getMerchantOffers({ merchantId, cardIds, bankIds } = {}) {
   const { data, error } = await query
   if (error) throw new Error(`Database query failed: ${error.message}`)
   
-  // Filter by is_active and date validity in JS (handle both old rows without is_active and new rows with it)
-  let filtered = (data || []).filter(offer => {
-    // Skip inactive offers
-    if (offer.is_active === false) return false
-    // Skip if not started yet
-    if (offer.start_date && offer.start_date > today) return false
-    // Skip if already expired
-    if (offer.end_date && offer.end_date < today) return false
-    return true
-  })
-  
-  // Filter by card/bank
-  if (cardIds?.length > 0) {
-    filtered = filtered.filter(offer => 
-      !offer.card_id || cardIds.includes(offer.card_id)
-    )
-  }
-  
-  if (bankIds?.length > 0) {
-    filtered = filtered.filter(offer => 
-      !offer.bank_id || bankIds.includes(offer.bank_id)
-    )
-  }
-  
-  return filtered
+  return data || []
 }
 
 // ============ Legacy/Compatibility ============

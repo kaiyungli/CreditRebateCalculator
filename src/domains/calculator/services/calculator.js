@@ -1,6 +1,6 @@
 /**
  * Calculator Domain - Orchestration Only
- * Uses shared schemas for validation
+ * Uses normalized domain objects (camelCase)
  */
 
 import { findAllCards, findCardsByIds } from '../../cards/repositories/cardsRepository'
@@ -13,8 +13,6 @@ import { saveCalculation } from '../../../lib/db'
 
 /**
  * Calculate best card for expenses
- * @param {Object} input - CalculationRequest from schema
- * @returns {Promise<{results: Array, best_card: Object}>}
  */
 export async function calculateBestCardForExpenses(input) {
   const { merchant_id, category_id, amount, card_ids, user_id } = input
@@ -31,10 +29,11 @@ export async function calculateBestCardForExpenses(input) {
     return { results: [], best_card: null, error: 'No cards found' }
   }
 
-  // Layer 2: Get Data from Repositories
+  // Build IDs from normalized card objects
   const cardIds = cards.map(c => c.id || c.card_id)
   const bankIds = [...new Set(cards.map(c => c.bank_id).filter(Boolean))]
 
+  // Layer 2: Get normalized data from repositories
   const rules = await findRules({
     cardIds,
     merchantId: merchant_id,
@@ -47,7 +46,7 @@ export async function calculateBestCardForExpenses(input) {
     bankIds
   })
 
-  // Layer 3: Call Evaluators
+  // Layer 3: Evaluators (using camelCase)
   const results = cards.map(card => {
     const cardId = card.id || card.card_id
     const cardBankId = card.bank_id
@@ -63,13 +62,13 @@ export async function calculateBestCardForExpenses(input) {
     const matchingOffers = cardOffers.map(offer => ({
       id: offer.id,
       title: offer.title,
-      offer_type: offer.offer_type,
-      value_type: offer.value_type,
+      offerType: offer.offerType,
+      valueType: offer.valueType,
       value: offer.value,
-      estimated_value: estimateOfferValue(offer, amount)
-    })).filter(o => o.estimated_value > 0)
+      estimatedValue: estimateOfferValue(offer, amount)
+    })).filter(o => o.estimatedValue > 0)
 
-    const offerValue = matchingOffers.reduce((sum, o) => sum + o.estimated_value, 0)
+    const offerValue = matchingOffers.reduce((sum, o) => sum + o.estimatedValue, 0)
 
     return formatCardResult(card, rule, rewardCalc, matchingOffers, offerValue)
   })
