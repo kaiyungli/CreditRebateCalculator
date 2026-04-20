@@ -7,8 +7,6 @@ import { getMerchantOffers } from '../../../lib/db'
 
 /**
  * Normalize raw DB row into camelCase domain object
- * @param {Object} offer - Raw DB row (snake_case)
- * @returns {Object} Normalized offer
  */
 function normalizeOffer(offer) {
   if (!offer) return null
@@ -29,41 +27,30 @@ function normalizeOffer(offer) {
     startDate: offer.start_date || null,
     endDate: offer.end_date || null,
     isActive: offer.is_active !== false,
+    stackable: offer.stackable === true,  // v1: explicit boolean
     source: offer.source || null,
     isVerified: offer.is_verified === true,
     status: offer.status
   }
 }
 
-/**
- * Normalize array of offers
- */
 function normalizeOffers(offers) {
   if (!offers || offers.length === 0) return []
   return offers.map(normalizeOffer).filter(Boolean)
 }
 
-/**
- * Check if offer is currently valid
- */
 function isValidOffer(offer) {
   if (!offer) return false
   if (!offer.isActive) return false
   
   const today = new Date().toISOString().split('T')[0]
   
-  // Not started yet
   if (offer.startDate && offer.startDate > today) return false
-  
-  // Expired
   if (offer.endDate && offer.endDate < today) return false
   
   return true
 }
 
-/**
- * Filter offers by card or bank ID
- */
 function filterByCardOrBank(offers, cardIds, bankIds) {
   if (!offers || offers.length === 0) return []
   
@@ -74,9 +61,6 @@ function filterByCardOrBank(offers, cardIds, bankIds) {
   })
 }
 
-/**
- * Find valid offers for a transaction
- */
 export async function findOffers({ merchantId, cardIds, bankIds } = {}) {
   const rawOffers = await getMerchantOffers({ merchantId })
   
@@ -86,9 +70,6 @@ export async function findOffers({ merchantId, cardIds, bankIds } = {}) {
   return filterByCardOrBank(validOffers, cardIds, bankIds)
 }
 
-/**
- * Find offers for a specific merchant (all valid)
- */
 export async function findOffersForMerchant(merchantId) {
   const rawOffers = await getMerchantOffers({ merchantId })
   const normalized = normalizeOffers(rawOffers)

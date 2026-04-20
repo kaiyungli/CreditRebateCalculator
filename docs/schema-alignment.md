@@ -202,3 +202,11 @@ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 **Validation:** ✅ Payload aligns with actual table schema
 
+
+---
+
+## Field Usage - merchant_offers
+
+| Field | Used | Notes |
+|-------|------|-------|
+| stackable | ✅ v1 | 2024-04 implementation |

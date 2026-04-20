@@ -1,20 +1,18 @@
 /**
  * Calculator Domain - Result Formatter
- * Outputs normalized camelCase response
+ * Output includes explanation-ready fields
  */
 
 /**
- * Format a single card result
- * Input: normalized domain objects (camelCase)
- * Output: normalized response (camelCase)
+ * Format a single card result with placeholders for explanation
  */
-export function formatCardResult(card, rule, rewardCalc, offers, offerValue) {
-  const cardId = card.id || card.card_id
+export function formatCardResult(card, rule, rewardCalc, offers, offerValue, offerDetails = []) {
+  const cardId = card.cardId
 
   return {
     cardId,
-    cardName: card.card_name || card.name,
-    bankName: card.bank_name,
+    cardName: card.cardName,
+    bankName: card.bankName,
     rewardRule: rule ? {
       id: rule.id,
       scopeType: rule.scopeType,
@@ -27,14 +25,28 @@ export function formatCardResult(card, rule, rewardCalc, offers, offerValue) {
       rewardKind: rewardCalc.rewardKind,
       effectiveRate: rewardCalc.effectiveRate
     },
-    offers: offers,
+    // Applied offers with details (for debugging/explanation)
+    appliedOfferIds: offerDetails.map(o => o.id),
+    offers: offerDetails.map(o => ({
+      id: o.id,
+      title: o.title,
+      offerType: o.offerType,
+      valueType: o.valueType,
+      value: o.value,
+      stackable: o.stackable,
+      estimatedValue: o.estimatedValue
+    })),
     offerValue,
-    totalValue: Math.round((rewardCalc.rewardAmount + offerValue) * 100) / 100
+    totalValue: Math.round((rewardCalc.rewardAmount + offerValue) * 100) / 100,
+    // Placeholder for assumptions/explanation
+    assumptions: [
+      // Can add reasoning later
+    ]
   }
 }
 
 /**
- * Sort by total value desc, then base reward desc
+ * Sort by total value desc, then by base reward desc
  */
 export function sortResults(results) {
   return [...results].sort((a, b) => {
@@ -44,7 +56,7 @@ export function sortResults(results) {
 }
 
 /**
- * Format full response
+ * Format full calculation response
  */
 export function formatCalculationResponse(results, bestCard) {
   return {

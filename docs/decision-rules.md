@@ -191,3 +191,36 @@ if (amount < minSpend) value = 0
 | Offer Selection | 6 |
 | Combined Decision | 3 |
 | Total | 15+ |
+
+---
+
+## Stackable v1 Behavior
+
+### Logic
+```
+If ALL applicable offers are stackable=true → sum them
+If ANY non-stackable offer exists → pick highest-value non-stackable only
+Do NOT mix stackable + non-stackable offers in v1
+```
+
+### Implementation
+- `offersRepository`: maps `stackable` field from DB
+- `offerEvaluator.calculateTotalOfferValue()`: implements v1 logic
+- `resultFormatter`: includes `appliedOfferIds`, `offers[].stackable`, `assumptions[]`
+
+### Tests
+- Multiple stackable → sum: ✅
+- Single non-stackable → apply: ✅
+- Two non-stackable → highest: ✅
+- Mixed → non-stackable only: ✅
+- No offers → zero: ✅
+
+---
+
+## Stackable Status
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| stackable | ✅ Support | v1 implemented |
+| threshold_type | ❌ NOT USED | Exists in schema |
+| conditions_json | ❌ NOT USED | Exists in schema |

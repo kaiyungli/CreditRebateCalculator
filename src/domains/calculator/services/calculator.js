@@ -1,13 +1,13 @@
 /**
  * Calculator Domain - Orchestration Only
- * Uses normalized domain objects (camelCase)
+ * Uses stackable v1 offer logic
  */
 
 import { findAllCards, findCardsByIds } from '../../cards/repositories/cardsRepository'
 import { findRules } from '../../rewards/repositories/rulesRepository'
 import { findOffers } from '../../offers/repositories/offersRepository'
 import { chooseBestRule, calculateReward, meetsMinSpend } from '../../rewards/evaluators/ruleEvaluator'
-import { estimateOfferValue, filterOffersForCard } from '../../offers/evaluators/offerEvaluator'
+import { estimateOfferValue, filterOffersForCard, getApplicableOffersWithDetails, calculateTotalOfferValue } from '../../offers/evaluators/offerEvaluator'
 import { formatCardResult, sortResults, formatCalculationResponse } from '../formatters/resultFormatter'
 import { saveCalculation } from '../../../lib/db'
 
@@ -17,7 +17,7 @@ import { saveCalculation } from '../../../lib/db'
 export async function calculateBestCardForExpenses(input) {
   const { merchant_id, category_id, amount, card_ids, user_id } = input
 
-  // Layer 1: Get Cards (normalized: cardId, cardName, bankId)
+  // Layer 1: Get Cards
   let cards
   if (card_ids && Array.isArray(card_ids) && card_ids.length > 0) {
     cards = await findCardsByIds(card_ids)
@@ -29,11 +29,10 @@ export async function calculateBestCardForExpenses(input) {
     return { results: [], bestCard: null, error: 'No cards found' }
   }
 
-  // Build IDs from normalized card objects
   const cardIds = cards.map(c => c.cardId)
   const bankIds = [...new Set(cards.map(c => c.bankId).filter(Boolean))]
 
-  // Layer 2: Get normalized data from repositories
+  // Layer 2: Get normalized data
   const rules = await findRules({
     cardIds,
     merchantId: merchant_id,
@@ -46,7 +45,7 @@ export async function calculateBestCardForExpenses(input) {
     bankIds
   })
 
-  // Layer 3: Evaluators (using camelCase)
+  // Layer 3: Evaluators with stackable logic
   const results = cards.map(card => {
     const cardId = card.cardId
     const cardBankId = card.bankId
@@ -58,39 +57,28 @@ export async function calculateBestCardForExpenses(input) {
 
     const rewardCalc = calculateReward(rule, amount)
 
+    // Filter offers for this card
     const cardOffers = filterOffersForCard(offers, cardId, cardBankId)
-    const matchingOffers = cardOffers.map(offer => ({
-      id: offer.id,
-      title: offer.title,
-      offerType: offer.offerType,
-      valueType: offer.valueType,
-      value: offer.value,
-      estimatedValue: estimateOfferValue(offer, amount)
-    })).filter(o => o.estimatedValue > 0)
+    
+    // Get offer details with stackable info
+    const offerDetails = getApplicableOffersWithDetails(cardOffers, amount)
+    
+    // Calculate total using stackable v1 logic
+    const offerValue = calculateTotalOfferValue(cardOffers, amount)
 
-    const offerValue = matchingOffers.reduce((sum, o) => sum + o.estimatedValue, 0)
-
-    return formatCardResult(card, rule, rewardCalc, matchingOffers, offerValue)
+    return formatCardResult(card, rule, rewardCalc, offerDetails, offerValue, offerDetails)
   })
 
   // Layer 4: Formatter
   const sortedResults = sortResults(results)
   const bestCard = sortedResults[0] || null
 
-  // Save history - align with DB schema: user_id, input_json, result_json
+  // Save history
   try {
     await saveCalculation({
       user_id,
-      input_json: { 
-        merchant_id, 
-        category_id, 
-        amount, 
-        card_ids 
-      },
-      result_json: { 
-        results: sortedResults, 
-        bestCard 
-      }
+      input_json: { merchant_id, category_id, amount, card_ids },
+      result_json: { results: sortedResults, bestCard }
     })
   } catch (saveErr) {
     console.warn('Failed to save calculation:', saveErr.message)
