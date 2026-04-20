@@ -1,21 +1,19 @@
 /**
  * Calculator Domain - Result Formatter
- * Builds final result and breakdown output
+ * Builds final result using shared types
  */
 
 /**
- * Format a single card result for output
- * @param {Object} card - Card data from DB
+ * Format a single card result
+ * @param {Object} card - Card from DB
  * @param {Object} rule - Selected reward rule
  * @param {Object} rewardCalc - Calculated reward
  * @param {Array} offers - Matching offers
  * @param {number} offerValue - Total offer value
- * @param {number} amount - Transaction amount
  * @returns {Object} Formatted card result
  */
-export function formatCardResult(card, rule, rewardCalc, offers, offerValue, amount) {
+export function formatCardResult(card, rule, rewardCalc, offers, offerValue) {
   const cardId = card.id || card.card_id
-  const cardBankId = card.bank_id
 
   return {
     card_id: cardId,
@@ -41,8 +39,6 @@ export function formatCardResult(card, rule, rewardCalc, offers, offerValue, amo
 
 /**
  * Sort results by total value (desc), then base reward (desc)
- * @param {Array} results 
- * @returns {Array} Sorted results
  */
 export function sortResults(results) {
   return [...results].sort((a, b) => {
@@ -53,22 +49,29 @@ export function sortResults(results) {
 
 /**
  * Format full calculation response
- * @param {Array} results - Card results
- * @param {Object} bestCard - Best card
- * @returns {Object} Formatted response
+ * Matches CALCULATION_RESPONSE schema
  */
 export function formatCalculationResponse(results, bestCard) {
   return {
     success: true,
-    results,
+    results: results,
     best_card: bestCard
   }
 }
 
 /**
- * Calculate total value from card result
- * @param {Object} cardResult 
- * @returns {number}
+ * Format input for response
+ */
+export function formatInput(merchant_id, category_id, amount) {
+  return {
+    merchant_id,
+    category_id,
+    amount
+  }
+}
+
+/**
+ * Get total value from card result
  */
 export function getTotalValue(cardResult) {
   return cardResult.total_value || 0
@@ -78,5 +81,6 @@ export default {
   formatCardResult,
   sortResults,
   formatCalculationResponse,
+  formatInput,
   getTotalValue
 }
