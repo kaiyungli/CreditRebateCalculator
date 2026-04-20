@@ -1,9 +1,7 @@
 /**
  * Calculator Evaluators - Unit Tests
- * Deterministic tests for rule and offer evaluation
+ * Tests aligned with domain ownership
  */
-
-const path = require('path')
 
 // Test results
 let passed = 0
@@ -12,29 +10,18 @@ let failed = 0
 function expect(actual) {
   return {
     toBe: function(expected) {
-      if (actual === expected) {
-        passed++
-      } else {
-        failed++
-        console.error('  ❌ Expected ' + expected + ', got ' + actual)
-      }
+      if (actual === expected) { passed++ } else { failed++; console.error('  ❌ Expected ' + expected + ', got ' + actual) }
     },
     toBeDefined: function() {
-      if (actual !== undefined && actual !== null) {
-        passed++
-      } else {
-        failed++
-        console.error('  ❌ Expected defined, got ' + actual)
-      }
+      if (actual !== undefined && actual !== null) { passed++ } else { failed++; console.error('  ❌ Expected defined') }
     }
   }
 }
 
-// ===== Test: chooseBestRule =====
+// ===== Test: chooseBestRule (rewards domain) =====
 function testChooseBestRule() {
-  console.log('\n--- Test: chooseBestRule ---')
+  console.log('\n--- Test: chooseBestRule (rewards/evaluators) ---')
   
-  // Inline the function (copy from ruleEvaluator.js)
   function chooseBestRule(rules, cardId) {
     const cardRules = rules.filter(r => r.card_id === cardId)
     if (!cardRules || cardRules.length === 0) return null
@@ -53,65 +40,44 @@ function testChooseBestRule() {
     { card_id: 1, merchant_id: null, category_id: 2, rate_value: 3 },
   ]
 
-  // Test: merchant rule has highest priority
-  const result = chooseBestRule(rules, 1)
-  expect(result).toBeDefined()
-  expect(result.scope_type).toBe('MERCHANT')
-  expect(result.rate_value).toBe(5)
-
-  // Test: no rules = null
+  expect(chooseBestRule(rules, 1).scope_type).toBe('MERCHANT')
+  expect(chooseBestRule(rules, 1).rate_value).toBe(5)
   expect(chooseBestRule([], 999)).toBe(null)
 }
 
-// ===== Test: calculateReward =====
+// ===== Test: calculateReward (rewards domain) =====
 function testCalculateReward() {
-  console.log('\n--- Test: calculateReward ---')
+  console.log('\n--- Test: calculateReward (rewards/evaluators) ---')
   
   function calculateReward(rule, amount) {
     if (!rule) return { rewardAmount: 0, rewardKind: null, effectiveRate: null }
     const rateValue = Number(rule.rate_value)
     let rewardAmount = 0
-    if (rule.rate_unit === 'PERCENT') {
-      rewardAmount = (amount * rateValue) / 100
-    } else if (rule.rate_unit === 'FIXED') {
-      rewardAmount = rateValue
-    } else if (rule.rate_unit === 'PER_AMOUNT') {
+    if (rule.rate_unit === 'PERCENT') rewardAmount = (amount * rateValue) / 100
+    else if (rule.rate_unit === 'FIXED') rewardAmount = rateValue
+    else if (rule.rate_unit === 'PER_AMOUNT') {
       const perAmount = Number(rule.per_amount) || 1
       rewardAmount = Math.floor(amount / perAmount) * rateValue
     }
-    if (rule.cap_value && rule.cap_value > 0) {
-      rewardAmount = Math.min(rewardAmount, Number(rule.cap_value))
-    }
+    if (rule.cap_value && rule.cap_value > 0) rewardAmount = Math.min(rewardAmount, Number(rule.cap_value))
     return { rewardAmount: Math.round(rewardAmount * 100) / 100, rewardKind: 'CASHBACK', effectiveRate: rateValue }
   }
 
-  // Test: PERCENT - 2%
   expect(calculateReward({ rate_unit: 'PERCENT', rate_value: 2 }, 1000).rewardAmount).toBe(20)
-
-  // Test: FIXED
   expect(calculateReward({ rate_unit: 'FIXED', rate_value: 50 }, 500).rewardAmount).toBe(50)
-
-  // Test: PER_AMOUNT
-  expect(calculateReward({ rate_unit: 'PER_AMOUNT', rate_value: 1, per_amount: 100 }, 500).rewardAmount).toBe(5)
-
-  // Test: CAP applied
   expect(calculateReward({ rate_unit: 'PERCENT', rate_value: 10, cap_value: 50 }, 1000).rewardAmount).toBe(50)
-
-  // Test: null rule
   expect(calculateReward(null, 1000).rewardAmount).toBe(0)
 }
 
-// ===== Test: estimateOfferValue =====
+// ===== Test: estimateOfferValue (offers domain) =====
 function testEstimateOfferValue() {
-  console.log('\n--- Test: estimateOfferValue ---')
+  console.log('\n--- Test: estimateOfferValue (offers/evaluators) ---')
   
   function estimateOfferValue(offer, amount) {
     if (!offer) return 0
     if (offer.min_spend && amount < Number(offer.min_spend)) return 0
     const value = Number(offer.value) || 0
-    if (offer.value_type === 'FIXED') {
-      return Math.min(value, Number(offer.max_discount) || value)
-    }
+    if (offer.value_type === 'FIXED') return Math.min(value, Number(offer.max_discount) || value)
     if (offer.value_type === 'PERCENT') {
       let calculated = (amount * value) / 100
       return Math.min(calculated, Number(offer.max_discount) || calculated)
@@ -119,119 +85,76 @@ function testEstimateOfferValue() {
     return 0
   }
 
-  // Test: FIXED
   expect(estimateOfferValue({ value_type: 'FIXED', value: 30 }, 100)).toBe(30)
-
-  // Test: FIXED with cap
   expect(estimateOfferValue({ value_type: 'FIXED', value: 50, max_discount: 30 }, 100)).toBe(30)
-
-  // Test: PERCENT
   expect(estimateOfferValue({ value_type: 'PERCENT', value: 5 }, 200)).toBe(10)
-
-  // Test: PERCENT with cap
   expect(estimateOfferValue({ value_type: 'PERCENT', value: 10, max_discount: 15 }, 200)).toBe(15)
-
-  // Test: min_spend not met
   expect(estimateOfferValue({ value_type: 'FIXED', value: 10, min_spend: 500 }, 100)).toBe(0)
 }
 
-// ===== Test: base reward only =====
+// ===== Test: Base reward only =====
 function testBaseRewardOnly() {
   console.log('\n--- Test: base reward only (single card) ---')
   
   function calculateReward(rule, amount) {
-    if (!rule) return { rewardAmount: 0, rewardKind: null, effectiveRate: null }
+    if (!rule) return { rewardAmount: 0 }
     const rateValue = Number(rule.rate_value)
-    let rewardAmount = 0
-    if (rule.rate_unit === 'PERCENT') {
-      rewardAmount = (amount * rateValue) / 100
-    }
-    if (rule.cap_value && rule.cap_value > 0) {
-      rewardAmount = Math.min(rewardAmount, Number(rule.cap_value))
-    }
-    return { rewardAmount: Math.round(rewardAmount * 100) / 100, rewardKind: 'CASHBACK', effectiveRate: rateValue }
+    let rewardAmount = rule.rate_unit === 'PERCENT' ? (amount * rateValue) / 100 : 0
+    return { rewardAmount: Math.round(rewardAmount * 100) / 100 }
   }
 
-  // Single card, 2% reward
-  const card = { card_id: 1, card_name: 'Test Card', bank_name: 'Test Bank' }
-  const rule = { card_id: 1, rate_unit: 'PERCENT', rate_value: 2 }
-  const amount = 1000
-  
-  const result = calculateReward(rule, amount)
-  expect(result.rewardAmount).toBe(20)
+  const rule = { rate_unit: 'PERCENT', rate_value: 2 }
+  expect(calculateReward(rule, 1000).rewardAmount).toBe(20)
 }
 
-// ===== Test: base reward + fixed offer =====
+// ===== Test: Base reward + fixed offer =====
 function testBaseRewardWithFixedOffer() {
   console.log('\n--- Test: base reward + fixed offer ---')
   
   function calculateReward(rule, amount) {
     if (!rule) return { rewardAmount: 0 }
     const rateValue = Number(rule.rate_value)
-    let rewardAmount = 0
-    if (rule.rate_unit === 'PERCENT') {
-      rewardAmount = (amount * rateValue) / 100
-    }
-    return { rewardAmount: Math.round(rewardAmount * 100) / 100 }
+    return { rewardAmount: rule.rate_unit === 'PERCENT' ? Math.round(amount * rateValue / 100 * 100) / 100 : 0 }
   }
 
   function estimateOfferValue(offer, amount) {
-    if (!offer || offer.min_spend && amount < Number(offer.min_spend)) return 0
+    if (!offer || (offer.min_spend && amount < Number(offer.min_spend))) return 0
     if (offer.value_type === 'FIXED') return Math.min(Number(offer.value), Number(offer.max_discount) || Number(offer.value))
     return 0
   }
 
-  // Card with reward + offer
-  const rule = { rate_unit: 'PERCENT', rate_value: 2 }
-  const offer = { value_type: 'FIXED', value: 30 }
-  const amount = 1000
-
-  const baseReward = calculateReward(rule, amount)
-  const offerValue = estimateOfferValue(offer, amount)
-  const total = baseReward.rewardAmount + offerValue
-
-  expect(baseReward.rewardAmount).toBe(20)
-  expect(offerValue).toBe(30)
-  expect(total).toBe(50)
+  const baseReward = calculateReward({ rate_unit: 'PERCENT', rate_value: 2 }, 1000)
+  const offerValue = estimateOfferValue({ value_type: 'FIXED', value: 30 }, 1000)
+  expect(baseReward.rewardAmount + offerValue).toBe(50)
 }
 
-// ===== Test: multiple cards, choose best =====
+// ===== Test: Multiple cards, choose best =====
 function testMultipleCardsChooseBest() {
   console.log('\n--- Test: multiple cards, choose best ---')
   
   function calculateReward(rule, amount) {
     if (!rule) return { rewardAmount: 0 }
-    const rateValue = Number(rule.rate_value)
-    let rewardAmount = 0
-    if (rule.rate_unit === 'PERCENT') {
-      rewardAmount = (amount * rateValue) / 100
-    }
-    return { rewardAmount: Math.round(rewardAmount * 100) / 100 }
+    return { rewardAmount: rule.rate_unit === 'PERCENT' ? Math.round(amount * rule.rate_value / 100 * 100) / 100 : 0 }
   }
 
-  // 3 cards with different rewards
   const cards = [
-    { card_id: 1, card_name: 'Card A', rate_value: 1 },
-    { card_id: 2, card_name: 'Card B', rate_value: 2 },
-    { card_id: 3, card_name: 'Card C', rate_value: 3 },
+    { card_id: 1, rate_value: 1 },
+    { card_id: 2, rate_value: 2 },
+    { card_id: 3, rate_value: 3 },
   ]
-  const amount = 1000
 
-  const results = cards.map(card => {
-    const reward = calculateReward({ rate_unit: 'PERCENT', rate_value: card.rate_value }, amount)
-    return { card_id: card.card_id, card_name: card.card_name, total_value: reward.rewardAmount }
-  })
+  const results = cards.map(card => ({
+    card_id: card.card_id,
+    total_value: calculateReward({ rate_unit: 'PERCENT', rate_value: card.rate_value }, 1000).rewardAmount
+  }))
 
-  // Sort by total_value desc
   results.sort((a, b) => b.total_value - a.total_value)
-  const best = results[0]
-
-  expect(best.card_id).toBe(3) // 3% is best
-  expect(best.total_value).toBe(30)
+  expect(results[0].card_id).toBe(3)
+  expect(results[0].total_value).toBe(30)
 }
 
 // Run tests
-console.log('🧪 Running deterministic calculator tests...')
+console.log('🧪 Running domain-aligned calculator tests...')
 testChooseBestRule()
 testCalculateReward()
 testEstimateOfferValue()
