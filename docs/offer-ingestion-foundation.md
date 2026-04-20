@@ -254,3 +254,43 @@ fingerprint = "merchant_id|bank_id|card_id|category_id|offer_type|value_type|val
 Input A: `{ channel: "ONLINE", wallet: "Apple" }`
 Input B: `{ wallet: "apple", channel: "online" }`
 → Same canonicalization → Same fingerprint ✅
+
+---
+
+## Ingestion Publish Pipeline v1
+
+### Flow
+
+```
+raw_offer → parseRawOffer() → normalizeParsedOffer() 
+  → generateFingerprint() → checkDuplicate() 
+    → publishOffer() → merchant_offers
+```
+
+### Publish Statuses
+
+| Status | Meaning | Action |
+|--------|----------|--------|
+| published | Clean new offer | Insert to merchant_offers |
+| skipped_duplicate | Exact fingerprint match | Skip insert |
+| review_needed | Near match, different value | Flag for manual review |
+| invalid | Parse/normalization failed | Skip, log reason |
+
+### Pipeline Steps
+
+1. **Parse**: Convert raw_offers to structured object
+2. **Normalize**: Map fields to schema (snake_case)
+3. **Fingerprint**: Generate identity hash
+4. **Duplicate Check**: Query existing offers by fingerprint
+5. **Publish**: Insert clean or skip/flag
+
+### Code Location
+
+- `src/domains/ingestion/publishers/offerPublisher.js`
+
+### Still Manual/Unsupported
+
+- Cron automation for cron jobs
+- Full raw_offers scraping pipeline
+- Admin review UI
+- Confidence score algorithm
