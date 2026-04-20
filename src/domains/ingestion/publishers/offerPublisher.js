@@ -1,12 +1,12 @@
 /**
- * Ingestion Domain - Offer Publisher v1
- * End-to-end publish pipeline with fingerprint dedupe
+ * Ingestion Domain - Offer Publisher v1 + State Persistence
+ * Publish pipeline with result persistence
  */
 
 import { generateFingerprint } from '../../offers/utils/fingerprint'
 import { findOffers } from '../../offers/repositories/offersRepository'
 import { normalizeOffer } from '../../offers/repositories/offersRepository'
-import { supabase } from '../../../lib/supabase-server'
+import { getSupabase } from '../../../lib/db'
 
 const PUBLISH_STATUS = {
   PUBLISHED: 'published',
@@ -15,13 +15,51 @@ const PUBLISH_STATUS = {
   INVALID: 'invalid'
 }
 
+const RAW_OFFER_STATUS = {
+  NEW: 'new',
+  PUBLISHED: 'published',
+  SKIPPED: 'skipped',
+  REVIEW: 'review',
+  INVALID: 'invalid'
+}
+
 /**
- * Parse raw offer text into structured object
+ * Update raw_offers status after publish attempt
+ */
+async function updateRawOfferStatus(rawOfferId, newStatus, details = {}) {
+  const supabase = getSupabase()
+  
+  // Build status_notes JSON
+  const statusNotes = {
+    status: newStatus,
+    updatedAt: new Date().toISOString(),
+    ...details
+  }
+  
+  try {
+    const { error } = await supabase
+      .from('raw_offers')
+      .update({
+        status: newStatus,
+        status_notes: JSON.stringify(statusNotes),
+        processed_at: new Date().toISOString()
+      })
+      .eq('id', rawOfferId)
+    
+    if (error) throw error
+    return true
+  } catch (e) {
+    console.warn('Failed to update raw_offer status:', e.message)
+    return false
+  }
+}
+
+/**
+ * Parse raw offer
  */
 export function parseRawOffer(rawOffer) {
   if (!rawOffer) return { valid: false, reason: 'no_raw_offer' }
   
-  // Basic parsing from raw_offers table
   const parsed = {
     merchantId: rawOffer.merchant_id,
     bankId: rawOffer.bank_id,
@@ -40,7 +78,6 @@ export function parseRawOffer(rawOffer) {
     parsedAt: new Date().toISOString()
   }
   
-  // Basic validation
   if (!parsed.title) return { valid: false, reason: 'missing_title' }
   if (!parsed.valueType) return { valid: false, reason: 'missing_value_type' }
   if (!parsed.value || parsed.value <= 0) return { valid: false, reason: 'invalid_value' }
@@ -67,62 +104,56 @@ export function normalizeParsedOffer(parsed) {
 }
 
 /**
- * Check for duplicates using fingerprint
+ * Check for duplicates
  */
-export async function checkDuplicate(normalizedOffer) {
-  const fingerprint = generateFingerprint(normalizedOffer)
-  
-  // Get all active offers
+export async function checkDuplicate(normalized) {
+  const fingerprint = generateFingerprint(normalized)
   const offers = await findOffers({})
   
-  // Find exact match
-  const exactMatch = offers.find(o => generateFingerprint(o) === fingerprint)
-  
-  if (exactMatch) {
-    return {
-      isDuplicate: true,
-      exactMatch: true,
-      reason: 'exact_fingerprint_match',
-      existingId: exactMatch.id
-    }
+  // Exact match
+  const exact = offers.find(o => generateFingerprint(o) === fingerprint)
+  if (exact) {
+    return { isDuplicate: true, exactMatch: true, existingId: exact.id }
   }
   
-  // Check for near/ambiguous duplicates (same target different value)
-  const nearMatches = offers.filter(o => {
+  // Near match (same target, different value)
+  const parts = fingerprint.split('|')
+  const near = offers.filter(o => {
     const fp = generateFingerprint(o)
-    const parts = fp.split('|')
-    const normParts = fingerprint.split('|')
-    // Same targeting, different value
-    return parts[0] === normParts[0] && // merchant_id
-           parts[4] === normParts[4] && // offer_type
-           fp !== fingerprint // but different value
+    const p = fp.split('|')
+    return p[0] === parts[0] && p[4] === parts[4] && fp !== fingerprint
   })
   
-  if (nearMatches.length > 0) {
-    return {
-      isDuplicate: true,
-      exactMatch: false,
-      reason: 'near_match_conflict',
-      nearMatches: nearMatches.map(m => m.id),
-      note: 'Different value, may need review'
-    }
+  if (near.length > 0) {
+    return { isDuplicate: true, exactMatch: false, nearMatches: near.map(m => m.id) }
   }
   
   return { isDuplicate: false }
 }
 
 /**
- * Publish v1 pipeline
+ * Main publish pipeline with state persistence
  */
 export async function publishOffer(rawOffer) {
+  const result = {
+    status: null,
+    fingerprint: null,
+    rawOfferId: rawOffer?.id,
+    merchantOfferId: null,
+    reason: null,
+    details: null
+  }
+  
   // Step 1: Parse
   const parseResult = parseRawOffer(rawOffer)
   if (!parseResult.valid) {
-    return {
-      status: PUBLISH_STATUS.INVALID,
-      reason: parseResult.reason,
-      rawOfferId: rawOffer?.id
-    }
+    result.status = PUBLISH_STATUS.INVALID
+    result.reason = parseResult.reason
+    // Persist invalid state
+    await updateRawOfferStatus(rawOffer.id, RAW_OFFER_STATUS.INVALID, {
+      reason: parseResult.reason
+    })
+    return result
   }
   
   // Step 2: Normalize
@@ -130,32 +161,41 @@ export async function publishOffer(rawOffer) {
   
   // Step 3: Generate fingerprint
   const fingerprint = generateFingerprint(normalized)
+  result.fingerprint = fingerprint
   
   // Step 4: Check duplicates
   const duplicateCheck = await checkDuplicate(normalized)
   
   if (duplicateCheck.isDuplicate) {
     if (duplicateCheck.exactMatch) {
-      return {
-        status: PUBLISH_STATUS.SKIPPED_DUPLICATE,
-        reason: duplicateCheck.reason,
+      result.status = PUBLISH_STATUS.SKIPPED_DUPLICATE
+      result.reason = 'exact_fingerprint_match'
+      result.details = { existingId: duplicateCheck.exactMatch }
+      
+      // Persist skipped state
+      await updateRawOfferStatus(rawOffer.id, RAW_OFFER_STATUS.SKIPPED, {
         fingerprint,
-        rawOfferId: rawOffer.id,
-        existingId: duplicateCheck.existingId
-      }
+        reason: 'exact_match',
+        duplicateOf: duplicateCheck.existingId
+      })
     } else {
-      return {
-        status: PUBLISH_STATUS.REVIEW_NEEDED,
-        reason: duplicateCheck.reason,
+      result.status = PUBLISH_STATUS.REVIEW_NEEDED
+      result.reason = 'near_match_conflict'
+      result.details = { nearMatches: duplicateCheck.nearMatches }
+      
+      // Persist review state
+      await updateRawOfferStatus(rawOffer.id, RAW_OFFER_STATUS.REVIEW, {
         fingerprint,
-        rawOfferId: rawOffer.id,
-        note: duplicateCheck.note
-      }
+        reason: 'near_match',
+        nearMatches: duplicateCheck.nearMatches
+      })
     }
+    return result
   }
   
   // Step 5: Publish
   try {
+    const supabase = getSupabase()
     const { data, error } = await supabase
       .from('merchant_offers')
       .insert({
@@ -176,7 +216,7 @@ export async function publishOffer(rawOffer) {
         source_name: parseResult.parsed.sourceName,
         parser_version: parseResult.parsed.parserVersion,
         parsed_at: parseResult.parsed.parsedAt,
-        confidence: 'LOW',  // New offers start low
+        confidence: 'LOW',
         is_verified: false
       })
       .select()
@@ -184,21 +224,29 @@ export async function publishOffer(rawOffer) {
     
     if (error) throw error
     
-    return {
-      status: PUBLISH_STATUS.PUBLISHED,
-      reason: 'success',
+    result.status = PUBLISH_STATUS.PUBLISHED
+    result.reason = 'success'
+    result.merchantOfferId = data.id
+    
+    // Persist published state
+    await updateRawOfferStatus(rawOffer.id, RAW_OFFER_STATUS.PUBLISHED, {
       fingerprint,
-      rawOfferId: rawOffer.id,
       merchantOfferId: data.id
-    }
+    })
+    
+    return result
   } catch (e) {
-    return {
-      status: PUBLISH_STATUS.INVALID,
-      reason: 'insert_failed: ' + e.message,
-      rawOfferId: rawOffer.id
-    }
+    result.status = PUBLISH_STATUS.INVALID
+    result.reason = 'insert_failed: ' + e.message
+    
+    // Persist invalid state
+    await updateRawOfferStatus(rawOffer.id, RAW_OFFER_STATUS.INVALID, {
+      reason: e.message
+    })
+    
+    return result
   }
 }
 
-export { PUBLISH_STATUS }
-export default { publishOffer, PUBLISH_STATUS }
+export { PUBLISH_STATUS, RAW_OFFER_STATUS }
+export default { publishOffer, PUBLISH_STATUS, RAW_OFFER_STATUS }

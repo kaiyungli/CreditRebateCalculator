@@ -294,3 +294,41 @@ raw_offer → parseRawOffer() → normalizeParsedOffer()
 - Full raw_offers scraping pipeline
 - Admin review UI
 - Confidence score algorithm
+
+---
+
+## Publish Result Persistence
+
+### State Transitions
+
+| Publish Status | Raw Offer Status | Persisted To |
+|----------------|------------------|--------------|
+| published | published | raw_offer → status: published |
+| skipped_duplicate | skipped | raw_offer → status: skipped |
+| review_needed | review | raw_offer → status: review |
+| invalid | invalid | raw_offer → status: invalid |
+
+### What is Persisted
+
+- **raw_offers.status**: transitions to new state
+- **raw_offers.status_notes**: JSON with fingerprint, reason, etc.
+- **raw_offers.processed_at**: timestamp
+- **merchant_offers.raw_offer_id**: link back to source (if published)
+
+### Result Object
+
+```js
+{
+  status: 'published' | 'skipped_duplicate' | 'review_needed' | 'invalid',
+  fingerprint: 'fp-string',
+  rawOfferId: 1,
+  merchantOfferId: 100,  // only if published
+  reason: 'success' | 'exact_match' | etc,
+  details: { ... }
+}
+```
+
+### Current Limitations
+
+- **Confidence/review flags not updated**: After manual review
+- **Link chain incomplete**: raw_offer -> merchant_offer link exists but no reverse query in v1
