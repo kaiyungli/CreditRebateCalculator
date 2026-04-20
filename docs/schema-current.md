@@ -221,3 +221,15 @@ Current engine is functioning fully but ingestion pipeline expects fields that d
   - Can run after production scales
 
 ---
+
+---
+
+## Migration Status
+
+### Verified
+
+- Migration 001: **Ready to run**
+- Migration 002: Optional, ready later
+- Code assumptions: **Verified match**
+
+See docs/schema-migration-verification.md for full verification details.
