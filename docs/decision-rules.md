@@ -224,3 +224,34 @@ Do NOT mix stackable + non-stackable offers in v1
 | stackable | ✅ Support | v1 implemented |
 | threshold_type | ❌ NOT USED | Exists in schema |
 | conditions_json | ❌ NOT USED | Exists in schema |
+
+---
+
+## threshold_type v1 Behavior
+
+### Supported
+- **PER_TXN**: Default, applies per transaction (fully supported)
+
+### Not Yet Supported
+- **MONTHLY_ACCUMULATED**: Returns 0, logs assumption "offerSkipped:threshold_type:MONTHLY_ACCUMULATED"
+- **CAMPAIGN_ACCUMULATED**: Returns 0, logs assumption "offerSkipped:threshold_type:CAMPAIGN_ACCUMULATED"
+
+### Implementation
+- `offersRepository`: maps `threshold_type` field
+- `offerEvaluator.isThresholdTypeSupported()`: checks support
+- `offerEvaluator.getApplicableOffersWithDetails()`: tracks skipped reasons
+- `resultFormatter`: includes assumptions array
+
+### Default Behavior
+- If `thresholdType` is NULL/undefined → treat as PER_TXN
+- If unsupported type → return 0 value, add to assumptions
+
+---
+
+## threshold_type Status
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| threshold_type=PER_TXN | ✅ Supported | v1 implemented |
+| threshold_type=MONTHLY_ACCUMULATED | ❌ Skipped | Needs monthly tracking |
+| threshold_type=CAMPAIGN_ACCUMULATED | ❌ Skipped | Needs campaign tracking |

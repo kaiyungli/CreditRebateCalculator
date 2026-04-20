@@ -24,10 +24,11 @@ function normalizeOffer(offer) {
     value: Number(offer.value) || 0,
     minSpend: offer.min_spend ? Number(offer.min_spend) : null,
     maxReward: offer.max_reward ? Number(offer.max_reward) : null,
+    thresholdType: offer.threshold_type || 'PER_TXN',  // Default: PER_TXN
     startDate: offer.start_date || null,
     endDate: offer.end_date || null,
     isActive: offer.is_active !== false,
-    stackable: offer.stackable === true,  // v1: explicit boolean
+    stackable: offer.stackable === true,
     source: offer.source || null,
     isVerified: offer.is_verified === true,
     status: offer.status

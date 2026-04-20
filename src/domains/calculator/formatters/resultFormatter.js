@@ -1,12 +1,12 @@
 /**
  * Calculator Domain - Result Formatter
- * Output includes explanation-ready fields
+ * Output includes explanation-ready fields and skipped reason tracking
  */
 
 /**
- * Format a single card result with placeholders for explanation
+ * Format a single card result
  */
-export function formatCardResult(card, rule, rewardCalc, offers, offerValue, offerDetails = []) {
+export function formatCardResult(card, rule, rewardCalc, offers, offerValue, offerDetails = [], skippedOffers = []) {
   const cardId = card.cardId
 
   return {
@@ -25,23 +25,25 @@ export function formatCardResult(card, rule, rewardCalc, offers, offerValue, off
       rewardKind: rewardCalc.rewardKind,
       effectiveRate: rewardCalc.effectiveRate
     },
-    // Applied offers with details (for debugging/explanation)
-    appliedOfferIds: offerDetails.map(o => o.id),
-    offers: offerDetails.map(o => ({
+    // Applied offers
+    appliedOfferIds: offers.map(o => o.id),
+    offers: offers.map(o => ({
       id: o.id,
       title: o.title,
       offerType: o.offerType,
       valueType: o.valueType,
       value: o.value,
       stackable: o.stackable,
+      thresholdType: o.thresholdType,
       estimatedValue: o.estimatedValue
     })),
     offerValue,
     totalValue: Math.round((rewardCalc.rewardAmount + offerValue) * 100) / 100,
-    // Placeholder for assumptions/explanation
+    // Skipped offers for debugging
     assumptions: [
-      // Can add reasoning later
-    ]
+      ...skippedOffers.map(s => `offerSkipped:${s}`),
+      rule?.thresholdType ? `ruleThresholdType:${rule.thresholdType}` : null
+    ].filter(Boolean)
   }
 }
 
@@ -56,7 +58,7 @@ export function sortResults(results) {
 }
 
 /**
- * Format full calculation response
+ * Format full response
  */
 export function formatCalculationResponse(results, bestCard) {
   return {

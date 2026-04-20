@@ -1,13 +1,32 @@
 /**
  * Offers Domain - Offer Evaluator
- * Pure offer value calculation with stackable v1 support
+ * Pure offer value calculation with threshold_type v1 support
  */
+
+const THRESHOLD_TYPES = {
+  PER_TXN: 'PER_TXN',
+  MONTHLY_ACCUMULATED: 'MONTHLY_ACCUMULATED',
+  CAMPAIGN_ACCUMULATED: 'CAMPAIGN_ACCUMULATED'
+}
+
+/**
+ * Check if threshold_type is supported in v1
+ */
+export function isThresholdTypeSupported(offer) {
+  return !offer.thresholdType || offer.thresholdType === THRESHOLD_TYPES.PER_TXN
+}
 
 /**
  * Estimate offer value for a given amount
+ * v1: Only PER_TXN is supported
  */
 export function estimateOfferValue(offer, amount) {
   if (!offer) return 0
+
+  // Check threshold_type - v1 only supports PER_TXN
+  if (!isThresholdTypeSupported(offer)) {
+    return 0  // Unsupported threshold type returns 0 in v1
+  }
 
   if (offer.minSpend && amount < Number(offer.minSpend)) {
     return 0
@@ -28,63 +47,78 @@ export function estimateOfferValue(offer, amount) {
 }
 
 /**
- * Calculate total value for multiple offers
- * Stackable v1 logic:
- * - If ALL offers are stackable → sum them
- * - If ANY non-stackable exists → pick highest non-stackable only
- * - Do NOT mix stackable + non-stackable in v1
- */
-export function calculateTotalOfferValue(offers, amount) {
-  if (!offers || offers.length === 0) return 0
-
-  // Separate stackable and non-stackable offers
-  const stackableOffers = offers.filter(o => o.stackable === true)
-  const nonStackableOffers = offers.filter(o => o.stackable !== true)
-
-  // Calculate values
-  const stackableValue = stackableOffers.reduce((sum, offer) => {
-    return sum + estimateOfferValue(offer, amount)
-  }, 0)
-
-  const nonStackableValues = nonStackableOffers.map(offer => ({
-    offer,
-    value: estimateOfferValue(offer, amount)
-  }))
-
-  // V1 Logic:
-  // - If we have non-stackable offers, use the highest one only
-  // - If all are stackable (or no non-stackable), sum stackable offers
-  // - Do NOT combine stackable + non-stackable in v1
-  
-  if (nonStackableOffers.length > 0) {
-    // Has non-stackable: pick highest non-stackable only
-    const bestNonStackable = nonStackableValues
-      .sort((a, b) => b.value - a.value)[0]
-    return bestNonStackable ? bestNonStackable.value : 0
-  } else {
-    // All stackable or no offers
-    return stackableValue
-  }
-}
-
-/**
- * Get applicable offers with their values and stackable status
- * Returns array for debugging/explanation
+ * Get offer details with skip reason for unsupported threshold_type
  */
 export function getApplicableOffersWithDetails(offers, amount) {
   if (!offers || offers.length === 0) return []
 
-  return offers.map(offer => ({
-    id: offer.id,
-    title: offer.title,
-    offerType: offer.offerType,
-    valueType: offer.valueType,
-    value: offer.value,
-    minSpend: offer.minSpend,
-    maxReward: offer.maxReward,
-    stackable: offer.stackable,
-    estimatedValue: estimateOfferValue(offer, amount)
-  })).filter(o => o.estimatedValue > 0)
+  return offers.map(offer => {
+    if (!isThresholdTypeSupported(offer)) {
+      return {
+        id: offer.id,
+        title: offer.title,
+        offerType: offer.offerType,
+        valueType: offer.valueType,
+        value: offer.value,
+        minSpend: offer.minSpend,
+        maxReward: offer.maxReward,
+        stackable: offer.stackable,
+        thresholdType: offer.thresholdType,
+        estimatedValue: 0,
+        skippedReason: `threshold_type:${offer.thresholdType}`
+      }
+    }
+    
+    if (offer.minSpend && amount < Number(offer.minSpend)) {
+      return {
+        id: offer.id,
+        title: offer.title,
+        estimatedValue: 0,
+        skippedReason: 'minSpend:not_met'
+      }
+    }
+    
+    const estimatedValue = estimateOfferValue(offer, amount)
+    
+    return {
+      id: offer.id,
+      title: offer.title,
+      offerType: offer.offerType,
+      valueType: offer.valueType,
+      value: offer.value,
+      minSpend: offer.minSpend,
+      maxReward: offer.maxReward,
+      stackable: offer.stackable,
+      thresholdType: offer.thresholdType,
+      estimatedValue
+    }
+  }).filter(o => o.estimatedValue > 0 || o.skippedReason)
+}
+
+/**
+ * Calculate total value with stackable v1 and threshold_type v1
+ */
+export function calculateTotalOfferValue(offers, amount) {
+  if (!offers || offers.length === 0) return 0
+
+  // Separate by stackable
+  const stackable = offers.filter(o => o.stackable === true && isThresholdTypeSupported(o))
+  const nonStackable = offers.filter(o => o.stackable !== true && isThresholdTypeSupported(o))
+
+  const stackableValue = stackable.reduce((sum, offer) => {
+    return sum + estimateOfferValue(offer, amount)
+  }, 0)
+
+  const nonStackableValues = nonStackable.map(offer => ({
+    offer,
+    value: estimateOfferValue(offer, amount)
+  }))
+
+  if (nonStackable.length > 0) {
+    return Math.max(...nonStackableValues.map(n => n.value))
+  }
+  
+  return stackableValue
 }
 
 /**
@@ -99,3 +133,5 @@ export function filterOffersForCard(offers, cardId, bankId) {
     return true
   })
 }
+
+export { THRESHOLD_TYPES }
