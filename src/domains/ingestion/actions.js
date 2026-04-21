@@ -61,7 +61,7 @@ export async function checkDuplicateForApprove(rawOffer) {
   const supabase = getClient()
   
   // Generate fingerprint
-  const { generateFingerprint } = await import('./utils/fingerprint.js')
+  const { generateFingerprint } = await import('../offers/utils/fingerprint.js')
   const fingerprint = generateFingerprint({
     merchantId: rawOffer.merchant_id,
     bankId: rawOffer.bank_id,
@@ -231,7 +231,7 @@ export async function approveReview(rawOfferId, approvedBy = 'system') {
   }
   
   // Generate fingerprint
-  const { generateFingerprint } = await import('./utils/fingerprint.js')
+  const { generateFingerprint } = await import('../offers/utils/fingerprint.js')
   const fingerprint = generateFingerprint({
     merchantId: raw.merchant_id,
     bankId: raw.bank_id,
