@@ -1,8 +1,8 @@
 /**
- * Review Action System
+ * Review Action System v2
  * 
  * Handles manual resolution of review_needed offers
- * Actions: approve, reject, merge
+ * With safeguards and audit trail
  */
 
 import { createClient } from '@supabase/supabase-js'
@@ -24,8 +24,130 @@ export const REVIEW_ACTION = {
   MERGE: 'merged'
 }
 
+/** Invalid starting states for review actions */
+const VALID_START_STATE = 'review'
+
+/** Parse status_notes safely */
+export function parseStatusNotes(raw) {
+  try {
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
 /**
- * Approve: Convert raw_offer to merchant_offer
+ * Validate preconditions for review action
+ */
+export function validateReviewPreconditions(rawOffer) {
+  const errors = []
+  
+  if (!rawOffer) {
+    errors.push('Raw offer not found')
+    return { valid: false, errors }
+  }
+  
+  if (rawOffer.status !== VALID_START_STATE) {
+    errors.push(`Invalid starting state: expected '${VALID_START_STATE}', got '${rawOffer.status}'`)
+  }
+  
+  return { valid: errors.length === 0, errors }
+}
+
+/**
+ * Check for duplicates before approve
+ */
+export async function checkDuplicateForApprove(rawOffer) {
+  const supabase = getClient()
+  
+  // Generate fingerprint
+  const { generateFingerprint } = await import('./utils/fingerprint.js')
+  const fingerprint = generateFingerprint({
+    merchantId: rawOffer.merchant_id,
+    bankId: rawOffer.bank_id,
+    cardId: rawOffer.card_id,
+    categoryId: rawOffer.category_id,
+    offerType: rawOffer.offer_type || 'general',
+    valueType: rawOffer.value_type,
+    value: rawOffer.value,
+    minSpend: rawOffer.min_spend,
+    maxReward: rawOffer.max_reward,
+    stackable: rawOffer.stackable,
+    thresholdType: rawOffer.threshold_type
+  })
+  
+  // Check for exact duplicate
+  const { data: existing } = await supabase
+    .from('merchant_offers')
+    .select('id, title')
+    .eq('fingerprint', fingerprint)
+    .limit(1)
+    
+  if (existing && existing.length > 0) {
+    return {
+      hasDuplicate: true,
+      duplicateId: existing[0].id,
+      duplicateTitle: existing[0].title,
+      action: 'skipped_duplicate'
+    }
+  }
+  
+  // Check for near duplicate (same merchant, different source)
+  if (rawOffer.merchant_id) {
+    const { data: near } = await supabase
+      .from('merchant_offers')
+      .select('id, title, source')
+      .eq('merchant_id', rawOffer.merchant_id)
+      .eq('value', rawOffer.value)
+      .limit(1)
+      
+    if (near && near.length > 0) {
+      return {
+        hasNearDuplicate: true,
+        nearDuplicateId: near[0].id,
+        nearDuplicateSource: near[0].source,
+        action: 'review_needed',
+        reason: 'near_duplicate_detected'
+      }
+    }
+  }
+  
+  return { hasDuplicate: false, action: 'approve' }
+}
+
+/**
+ * Build standardized audit payload
+ */
+export function buildAuditPayload(action, params = {}) {
+  const { 
+    reason, 
+    targetMerchantOfferId, 
+    fingerprint, 
+    confidence,
+    originalStatus,
+    duplicateCheck = null
+  } = params
+  
+  const payload = {
+    action,
+    timestamp: new Date().toISOString()
+  }
+  
+  if (reason) payload.reason = reason
+  if (targetMerchantOfferId) payload.targetMerchantOfferId = targetMerchantOfferId
+  if (fingerprint) payload.fingerprint = fingerprint
+  if (confidence) payload.confidence = confidence
+  if (originalStatus) payload.originalStatus = originalStatus
+  
+  if (duplicateCheck) {
+    payload.duplicateCheck = duplicateCheck
+  }
+  
+  return payload
+}
+
+/**
+ * Approve: Convert raw_offer to merchant_offer (with safeguard)
  */
 export async function approveReview(rawOfferId, approvedBy = 'system') {
   const supabase = getClient()
@@ -41,7 +163,74 @@ export async function approveReview(rawOfferId, approvedBy = 'system') {
     throw new Error(`Raw offer not found: ${rawOfferId}`)
   }
   
-  // Generate fingerprint if not exists
+  // Validate preconditions
+  const validation = validateReviewPreconditions(raw)
+  if (!validation.valid) {
+    throw new Error(`Precondition failed: ${validation.errors.join(', ')}`)
+  }
+  
+  // Check for duplicates before approve
+  const duplicateCheck = await checkDuplicateForApprove(raw)
+  
+  if (duplicateCheck.hasDuplicate) {
+    // Block approve - duplicate now exists
+    const audit = buildAuditPayload(REVIEW_ACTION.APPROVE, {
+      reason: duplicateCheck.action,
+      originalStatus: raw.status,
+      fingerprint: duplicateCheck.fingerprint,
+      duplicateCheck: {
+        result: duplicateCheck.action,
+        duplicateId: duplicateCheck.duplicateId,
+        title: duplicateCheck.duplicateTitle
+      }
+    })
+    
+    await supabase
+      .from('raw_offers')
+      .update({
+        status: duplicateCheck.action,
+        status_notes: JSON.stringify(audit),
+        processed_at: new Date().toISOString()
+      })
+      .eq('id', rawOfferId)
+      
+    return {
+      success: false,
+      action: duplicateCheck.action,
+      reason: 'duplicate_now_exists',
+      duplicateId: duplicateCheck.duplicateId
+    }
+  }
+  
+  if (duplicateCheck.hasNearDuplicate) {
+    // Send back to review
+    const audit = buildAuditPayload(REVIEW_ACTION.APPROVE, {
+      reason: duplicateCheck.reason,
+      originalStatus: raw.status,
+      duplicateCheck: {
+        result: 'review_needed',
+        nearDuplicateId: duplicateCheck.nearDuplicateId
+      }
+    })
+    
+    await supabase
+      .from('raw_offers')
+      .update({
+        status: 'review',
+        status_notes: JSON.stringify(audit),
+        processed_at: new Date().toISOString()
+      })
+      .eq('id', rawOfferId)
+      
+    return {
+      success: false,
+      action: 'review_needed',
+      reason: 'near_duplicate_detected',
+      nearDuplicateId: duplicateCheck.nearDuplicateId
+    }
+  }
+  
+  // Generate fingerprint
   const { generateFingerprint } = await import('./utils/fingerprint.js')
   const fingerprint = generateFingerprint({
     merchantId: raw.merchant_id,
@@ -99,17 +288,18 @@ export async function approveReview(rawOfferId, approvedBy = 'system') {
     throw new Error(`Failed to insert merchant offer: ${insertError.message}`)
   }
   
-  // Update raw offer status
+  // Update with standardized audit
+  const audit = buildAuditPayload(REVIEW_ACTION.APPROVE, {
+    originalStatus: raw.status,
+    fingerprint,
+    confidence: raw.confidence || 'MEDIUM'
+  })
+  
   await supabase
     .from('raw_offers')
     .update({
       status: REVIEW_ACTION.APPROVE,
-      status_notes: JSON.stringify({
-        action: REVIEW_ACTION.APPROVE,
-        approvedBy,
-        merchantOfferId: inserted.id,
-        fingerprint
-      }),
+      status_notes: JSON.stringify(audit),
       processed_at: new Date().toISOString()
     })
     .eq('id', rawOfferId)
@@ -123,16 +313,35 @@ export async function approveReview(rawOfferId, approvedBy = 'system') {
 export async function rejectReview(rawOfferId, reason, rejectedBy = 'system') {
   const supabase = getClient()
   
+  // Get raw offer
+  const { data: raw, error: fetchError } = await supabase
+    .from('raw_offers')
+    .select('*')
+    .eq('id', rawOfferId)
+    .single()
+    
+  if (fetchError || !raw) {
+    throw new Error(`Raw offer not found: ${rawOfferId}`)
+  }
+  
+  // Validate preconditions
+  const validation = validateReviewPreconditions(raw)
+  if (!validation.valid) {
+    throw new Error(`Precondition failed: ${validation.errors.join(', ')}`)
+  }
+  
+  // Build audit payload
+  const audit = buildAuditPayload(REVIEW_ACTION.REJECT, {
+    reason,
+    originalStatus: raw.status
+  })
+  
   // Update raw offer status
   const { error: updateError } = await supabase
     .from('raw_offers')
     .update({
       status: REVIEW_ACTION.REJECT,
-      status_notes: JSON.stringify({
-        action: REVIEW_ACTION.REJECT,
-        reason,
-        rejectedBy
-      }),
+      status_notes: JSON.stringify(audit),
       processed_at: new Date().toISOString()
     })
     .eq('id', rawOfferId)
@@ -150,6 +359,23 @@ export async function rejectReview(rawOfferId, reason, rejectedBy = 'system') {
 export async function mergeReview(rawOfferId, targetMerchantOfferId, mergedBy = 'system') {
   const supabase = getClient()
   
+  // Get raw offer
+  const { data: raw, error: fetchError } = await supabase
+    .from('raw_offers')
+    .select('*')
+    .eq('id', rawOfferId)
+    .single()
+    
+  if (fetchError || !raw) {
+    throw new Error(`Raw offer not found: ${rawOfferId}`)
+  }
+  
+  // Validate preconditions
+  const validation = validateReviewPreconditions(raw)
+  if (!validation.valid) {
+    throw new Error(`Precondition failed: ${validation.errors.join(', ')}`)
+  }
+  
   // Verify target exists
   const { data: target, error: targetError } = await supabase
     .from('merchant_offers')
@@ -161,17 +387,19 @@ export async function mergeReview(rawOfferId, targetMerchantOfferId, mergedBy = 
     throw new Error(`Target merchant offer not found: ${targetMerchantOfferId}`)
   }
   
+  // Build audit payload
+  const audit = buildAuditPayload(REVIEW_ACTION.MERGE, {
+    targetMerchantOfferId,
+    targetTitle: target.title,
+    originalStatus: raw.status
+  })
+  
   // Update raw offer with merge info
   const { error: updateError } = await supabase
     .from('raw_offers')
     .update({
       status: REVIEW_ACTION.MERGE,
-      status_notes: JSON.stringify({
-        action: REVIEW_ACTION.MERGE,
-        mergedBy,
-        targetMerchantOfferId,
-        targetTitle: target.title
-      }),
+      status_notes: JSON.stringify(audit),
       processed_at: new Date().toISOString()
     })
     .eq('id', rawOfferId)
@@ -203,6 +431,10 @@ export async function executeReviewAction(rawOfferId, action, params = {}) {
 
 export default {
   REVIEW_ACTION,
+  validateReviewPreconditions,
+  checkDuplicateForApprove,
+  buildAuditPayload,
+  parseStatusNotes,
   approveReview,
   rejectReview,
   mergeReview,
