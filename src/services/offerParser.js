@@ -1,9 +1,8 @@
 /**
- * Offer Parser v1 - With Safety Gate
+ * Offer Parser v1 - Fixed Metadata + Welcome Branch
  * 
- * Reads raw_offers (status='new')
- * Validates offer-like before insert
- * Proper status transitions
+ * Fixed: source_name, source_url, raw_offer_id propagation
+ * Fixed: welcome_offers insert path
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qcvileuzjzoltwttrjli.supabase.co'
@@ -18,15 +17,15 @@ const NON_OFFER_KEYWORDS = [
   'debit card', 'employee banking'
 ]
 
-/** Positive offer keywords - must have at least one */
+/** Positive offer keywords */
 const OFFER_KEYWORDS = [
   'offer', 'promotion', 'cashback', 'discount',
   'reward', 'welcome', 'bonus', 'gift',
   'exclusive', 'privilege', 'spend', 'get',
-  'earn', 'mile', 'point', 'voucher', 'coupon'
+  'earn', 'mile', 'point', 'voucher', 'coupon', 'special'
 ]
 
-/** Read raw offers needing parsing */
+/** Get raw offers needing parsing */
 async function getRawOffers() {
   const response = await fetch(
     SUPABASE_URL + '/rest/v1/raw_offers?status=eq.new&select=*&limit=20',
@@ -50,25 +49,15 @@ async function updateRawStatus(id, status, statusNotes) {
   })
 }
 
-/** Safety gate - is row offer-like? */
+/** Safety gate */
 function isLikelyOffer(text) {
   const t = text.toLowerCase()
-  
-  // Check for explicit non-offer content
   for (const kw of NON_OFFER_KEYWORDS) {
     if (t.includes(kw)) return { valid: false, reason: 'non_offer_keyword:' + kw }
   }
-  
-  // Must have at least one positive offer keyword
-  let hasOfferKeyword = false
-  for (const kw of OFFER_KEYWORDS) {
-    if (t.includes(kw)) { hasOfferKeyword = true; break }
-  }
-  if (!hasOfferKeyword) return { valid: false, reason: 'no_offer_keyword' }
-  
-  // Must have meaningful content (not too short)
+  let hasOffer = OFFER_KEYWORDS.some(k => t.includes(k))
+  if (!hasOffer) return { valid: false, reason: 'no_offer_keyword' }
   if (text.length < 20) return { valid: false, reason: 'too_short' }
-  
   return { valid: true }
 }
 
@@ -88,13 +77,12 @@ function detectOfferType(text) {
   return 'GENERAL'
 }
 
-/** Extract min_spend */
+/** Extract values */
 function extractMinSpend(text) {
   const match = text.match(/(?:spend|upon|minimum)[\s\$ HK]*?(\d+)/i)
   return match ? parseInt(match[1]) : null
 }
 
-/** Extract value */
 function extractValue(text) {
   const pm = text.match(/(\d+)\s*%/i)
   if (pm) return { type: 'PERCENT', value: parseInt(pm[1]) }
@@ -118,8 +106,29 @@ async function insertMerchantOffer(payload) {
   return response.ok
 }
 
-/** Insert into welcome_offers */
+/** Insert into welcome_offers - FIXED payload */
 async function insertWelcomeOffer(payload) {
+  // Build minimal payload that matches schema
+  const welcomePayload = {
+    title: payload.title,
+    description: payload.description || payload.title,
+    offer_type: 'WELCOME',
+    reward_kind: payload.value_type || 'FIXED',
+    value: payload.value || null,
+    value_type: payload.value_type || null,
+    min_spend: payload.min_spend || null,
+    new_customer_only: true,
+    approval_required: true,
+    application_channel: payload.source_url || 'ONLINE',
+    source: payload.source_name || payload.source,
+    source_url: payload.source_url,
+    source_name: payload.source_name,
+    raw_offer_id: payload.raw_offer_id,
+    parsed_at: payload.parsed_at,
+    confidence: payload.confidence || 'MEDIUM',
+    status: 'ACTIVE'
+  }
+  
   const response = await fetch(SUPABASE_URL + '/rest/v1/welcome_offers', {
     method: 'POST',
     headers: {
@@ -128,9 +137,13 @@ async function insertWelcomeOffer(payload) {
       'Authorization': 'Bearer ' + SERVICE_KEY,
       'Prefer': 'return=minimal'
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(welcomePayload)
   })
-  if (!response.ok) throw new Error('welcome_offers insert failed')
+  
+  if (!response.ok) {
+    const err = await response.text()
+    throw new Error(err)
+  }
   return true
 }
 
@@ -138,11 +151,11 @@ async function insertWelcomeOffer(payload) {
 async function parseRawOffer(raw) {
   const text = (raw.title || '') + ' ' + (raw.description || '')
   
-  // SAFETY GATE - check if offer-like first
-  const safetyCheck = isLikelyOffer(text)
-  if (!safetyCheck.valid) {
-    await updateRawStatus(raw.id, 'needs_review', JSON.stringify({ action: 'needs_review', reason: safetyCheck.reason, content: raw.title }))
-    return { success: false, target: 'needs_review', id: raw.id, reason: safetyCheck.reason }
+  // Safety gate
+  const safety = isLikelyOffer(text)
+  if (!safety.valid) {
+    await updateRawStatus(raw.id, 'needs_review', JSON.stringify({ action: 'needs_review', reason: safety.reason }))
+    return { success: false, target: 'needs_review', id: raw.id }
   }
   
   const isWelcome = isWelcomeOffer(text)
@@ -150,6 +163,13 @@ async function parseRawOffer(raw) {
   const value = extractValue(text)
   const minSpend = extractMinSpend(text)
   const now = new Date().toISOString()
+  
+  // Metadata from raw row
+  const metadata = {
+    source_name: raw.source,
+    source_url: raw.url,
+    raw_offer_id: raw.id
+  }
 
   // Handle welcome offer
   if (isWelcome) {
@@ -157,27 +177,22 @@ async function parseRawOffer(raw) {
       title: raw.title,
       description: (raw.description || text).slice(0, 1000),
       offer_type: 'WELCOME',
-      reward_kind: value ? value.type : 'FIXED',
+      reward_kind: value?.type || 'FIXED',
       value: value?.value || null,
       value_type: value?.type || null,
       min_spend: minSpend,
-      new_customer_only: true,
-      approval_required: true,
-      source: raw.source,
-      source_url: raw.url,
-      source_name: raw.source,
-      raw_offer_id: raw.id,
+      ...metadata,
       parsed_at: now,
-      confidence: 'MEDIUM',
-      status: 'ACTIVE'
+      confidence: 'MEDIUM'
     }
+    
     try {
       await insertWelcomeOffer(payload)
       await updateRawStatus(raw.id, 'parsed', JSON.stringify({ action: 'parsed', target: 'welcome_offers' }))
       return { success: true, target: 'welcome_offers', id: raw.id }
     } catch (e) {
       await updateRawStatus(raw.id, 'needs_review', JSON.stringify({ action: 'needs_review', reason: 'welcome_insert_failed', error: e.message }))
-      return { success: false, target: 'needs_review', id: raw.id }
+      return { success: false, target: 'needs_review', id: raw.id, reason: e.message }
     }
   }
 
@@ -193,10 +208,7 @@ async function parseRawOffer(raw) {
     fulfillment_type: 'POST_TRANSACTION',
     calculation_mode: 'FLAT_RATE',
     registration_required: false,
-    source: raw.source,
-    source_url: raw.url,
-    source_name: raw.source,
-    raw_offer_id: raw.id,
+    ...metadata,  // source_name, source_url, raw_offer_id
     parsed_at: now,
     confidence: 'MEDIUM',
     status: 'ACTIVE'
@@ -215,7 +227,7 @@ async function parseRawOffer(raw) {
 /** Process all */
 exports.processAll = async function() {
   const rawOffers = await getRawOffers()
-  console.log('=== Parser v1 - Safety Gate ===')
+  console.log('=== Parser v1 - Fixed Metadata ===')
   console.log('Total read:', rawOffers.length)
   
   const stats = { merchant: 0, welcome: 0, review: 0, error: 0 }
@@ -245,4 +257,3 @@ exports.processAll = async function() {
 
 exports.parseRawOffer = parseRawOffer
 exports.getRawOffers = getRawOffers
-exports.isLikelyOffer = isLikelyOffer
