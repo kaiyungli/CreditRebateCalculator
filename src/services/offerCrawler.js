@@ -1,7 +1,7 @@
 /**
- * Offer Crawler - Raw Collection Only v3
+ * Offer Crawler - Raw Collection Only v4
  * 
- * Uses direct REST API with workaround for sequence permission
+ * With duplicate detection before insert
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qcvileuzjzoltwttrjli.supabase.co'
@@ -27,8 +27,30 @@ exports.SOURCES = [
   }
 ]
 
-/** Direct REST API insert with proper auth */
+/** Check if title already exists */
+async function checkDuplicate(title, source) {
+  if (!SERVICE_KEY) return false
+  const response = await fetch(
+    SUPABASE_URL + '/rest/v1/raw_offers?title=eq.' + encodeURIComponent(title.substring(0,200)) + '&source=eq.' + source + '&select=id&limit=1',
+    {
+      headers: {
+        'apikey': SERVICE_KEY,
+        'Authorization': 'Bearer ' + SERVICE_KEY
+      }
+    }
+  )
+  const data = await response.json()
+  return Array.isArray(data) && data.length > 0
+}
+
+/** Insert with duplicate check */
 async function insertRawOffer(offer) {
+  // Check for duplicate first
+  const isDuplicate = await checkDuplicate(offer.title, offer.source)
+  if (isDuplicate) {
+    return { inserted: false, reason: 'duplicate' }
+  }
+  
   const response = await fetch(SUPABASE_URL + '/rest/v1/raw_offers', {
     method: 'POST',
     headers: {
@@ -51,7 +73,7 @@ async function insertRawOffer(offer) {
     const error = await response.text()
     throw new Error('Insert failed: ' + response.status + ' - ' + error)
   }
-  return true
+  return { inserted: true }
 }
 
 /** Fetch HTML */
@@ -72,7 +94,6 @@ function extractItems(html) {
   const items = []
   const seen = new Set()
   
-  // Headings
   const headings = html.match(/<h[1-3][^>]*>([^<]+)<\/h[1-3]>/gi) || []
   for (const h of headings.slice(0, 10)) {
     const text = h.replace(/<[^>]+>/g, '').trim()
@@ -82,7 +103,6 @@ function extractItems(html) {
     }
   }
   
-  // Paragraphs
   const paragraphs = html.match(/<p[^>]*>([^<]{30,})<\/p>/gi) || []
   for (const p of paragraphs.slice(0, 20)) {
     const text = p.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -97,7 +117,7 @@ function extractItems(html) {
 
 /** Crawl a source */
 async function crawlSource(sourceConfig) {
-  const results = { source: sourceConfig.name, found: 0, inserted: 0, errors: [] }
+  const results = { source: sourceConfig.name, found: 0, inserted: 0, skipped: 0, errors: [] }
   
   try {
     const html = await fetchPage(sourceConfig.url)
@@ -113,14 +133,18 @@ async function crawlSource(sourceConfig) {
     
     for (const item of items) {
       try {
-        await insertRawOffer({
+        const result = await insertRawOffer({
           title: item.title,
           description: item.raw.slice(0, 2000),
           source: sourceConfig.name,
           url: sourceConfig.url,
           scraped_at: now
         })
-        results.inserted++
+        if (result.inserted) {
+          results.inserted++
+        } else {
+          results.skipped++
+        }
       } catch (e) {
         results.errors.push(e.message)
       }
@@ -141,7 +165,7 @@ exports.crawlAll = async function(sources) {
     console.log('Crawling ' + source.name + '...')
     const result = await crawlSource(source)
     results.push(result)
-    console.log('  Found: ' + result.found + ', Inserted: ' + result.inserted)
+    console.log('  Found: ' + result.found + ', Inserted: ' + result.inserted + ', Skipped: ' + result.skipped)
   }
   
   return results
