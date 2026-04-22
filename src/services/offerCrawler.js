@@ -1,31 +1,72 @@
 /**
- * Offer Crawler - Raw Collection Only v4
+ * Offer Crawler - Raw Collection Only v5
  * 
- * With duplicate detection before insert
+ * With improved source selection and non-offer filtering
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qcvileuzjzoltwttrjli.supabase.co'
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-/** Source configurations */
+/** 
+ * Better source URLs - specific promotion/offer pages 
+ * Not broad "credit-cards" landing pages
+ */
 exports.SOURCES = [
   {
-    name: 'HSBC',
-    url: 'https://www.hsbc.com.hk/credit-cards/'
+    name: 'HSBC_RedHot',
+    url: 'https://www.redhotoffers.hsbc.com.hk/en/home/'
   },
   {
-    name: 'StandardChartered', 
-    url: 'https://www.sc.com/hk/en/credit-cards/offers/'
-  },
-  {
-    name: 'BOC',
-    url: 'https://www.bochk.com/en/personal/cards/creditcard/promotions.html'
-  },
-  {
-    name: 'HangSeng',
-    url: 'https://www.hangseng.com/en-hk/personal/cards/credit-cards/'
+    name: 'HSBC_Promotions', 
+    url: 'https://www.hsbc.com.hk/credit-cards/en/promotions/'
   }
 ]
+
+/** Non-offer keywords to filter out */
+const NON_OFFER_KEYWORDS = [
+  'account', 'payroll', 'mobile app', 'debit card', 'currency',
+  'phishing', 'security', 'support', 'help', 'login',
+  'all-in-one', 'employee banking', 'beware', 'fraud',
+  'currency &', 'rmb', 'exchange rate'
+]
+
+/** Check if content is likely an offer */
+function isOfferContent(title, description) {
+  const text = (title + ' ' + (description || '')).toLowerCase()
+  
+  // Check for non-offer keywords
+  for (const keyword of NON_OFFER_KEYWORDS) {
+    if (text.includes(keyword.toLowerCase())) {
+      return { valid: false, reason: 'non_offer_keyword:' + keyword }
+    }
+  }
+  
+  // Check for offer-like keywords (must have at least one)
+  const offerKeywords = [
+    'offer', 'reward', 'cashback', 'discount', 'promotion',
+    'spend', 'dining', 'shopping', 'travel', 'mile',
+    'welcome', 'bonus', 'gift', 'privilege', 'exclusive'
+  ]
+  
+  let hasOfferKeyword = false
+  for (const keyword of offerKeywords) {
+    if (text.includes(keyword)) {
+      hasOfferKeyword = true
+      break
+    }
+  }
+  
+  // If no offer keyword but has numeric value like %, $ - likely offer
+  if (!hasOfferKeyword && (text.match(/\d+%/) || text.match(/\$\d+/) || text.match(/HK\$/))) {
+    hasOfferKeyword = true
+  }
+  
+  if (!hasOfferKeyword) {
+    return { valid: false, reason: 'no_offer_keyword' }
+  }
+  
+  return { valid: true }
+}
 
 /** Check if title already exists */
 async function checkDuplicate(title, source) {
@@ -43,12 +84,18 @@ async function checkDuplicate(title, source) {
   return Array.isArray(data) && data.length > 0
 }
 
-/** Insert with duplicate check */
+/** Insert with filtering */
 async function insertRawOffer(offer) {
-  // Check for duplicate first
+  // Check for duplicate
   const isDuplicate = await checkDuplicate(offer.title, offer.source)
   if (isDuplicate) {
     return { inserted: false, reason: 'duplicate' }
+  }
+  
+  // Check if it's offer content
+  const check = isOfferContent(offer.title, offer.description)
+  if (!check.valid) {
+    return { inserted: false, reason: check.reason }
   }
   
   const response = await fetch(SUPABASE_URL + '/rest/v1/raw_offers', {
@@ -89,26 +136,33 @@ async function fetchPage(url) {
   return response.text()
 }
 
-/** Extract raw items */
+/** Extract raw items with better selectors */
 function extractItems(html) {
   const items = []
   const seen = new Set()
   
-  const headings = html.match(/<h[1-3][^>]*>([^<]+)<\/h[1-3]>/gi) || []
-  for (const h of headings.slice(0, 10)) {
+  // Look for offer-specific elements
+  // Promotional headings
+  const promoHeadings = html.match(/<h[1-3][^>]*>([^<]{20,})<\/h[1-3]>/gi) || []
+  for (const h of promoHeadings.slice(0, 15)) {
     const text = h.replace(/<[^>]+>/g, '').trim()
-    if (text.length > 10 && !seen.has(text)) {
+    if (text.length > 15 && !seen.has(text)) {
       seen.add(text)
       items.push({ title: text.slice(0, 200), raw: text })
     }
   }
   
-  const paragraphs = html.match(/<p[^>]*>([^<]{30,})<\/p>/gi) || []
-  for (const p of paragraphs.slice(0, 20)) {
+  // Promotional paragraphs
+  const promoParagraphs = html.match(/<p[^>]*>([^<]{40,})<\/p>/gi) || []
+  for (const p of promoParagraphs.slice(0, 25)) {
     const text = p.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-    if (text.length > 30 && !seen.has(text) && !text.toLowerCase().includes('copyright')) {
-      seen.add(text)
-      items.push({ title: text.slice(0, 100), raw: text })
+    // Only keep if has offer-like keywords or values
+    if (text.length > 40 && !seen.has(text)) {
+      const check = isOfferContent(text, '')
+      if (check.valid) {
+        seen.add(text)
+        items.push({ title: text.slice(0, 120), raw: text })
+      }
     }
   }
   
@@ -117,7 +171,7 @@ function extractItems(html) {
 
 /** Crawl a source */
 async function crawlSource(sourceConfig) {
-  const results = { source: sourceConfig.name, found: 0, inserted: 0, skipped: 0, errors: [] }
+  const results = { source: sourceConfig.name, found: 0, inserted: 0, skipped: 0, filtered: 0, errors: [] }
   
   try {
     const html = await fetchPage(sourceConfig.url)
@@ -142,8 +196,10 @@ async function crawlSource(sourceConfig) {
         })
         if (result.inserted) {
           results.inserted++
-        } else {
+        } else if (result.reason === 'duplicate') {
           results.skipped++
+        } else {
+          results.filtered++
         }
       } catch (e) {
         results.errors.push(e.message)
@@ -165,7 +221,7 @@ exports.crawlAll = async function(sources) {
     console.log('Crawling ' + source.name + '...')
     const result = await crawlSource(source)
     results.push(result)
-    console.log('  Found: ' + result.found + ', Inserted: ' + result.inserted + ', Skipped: ' + result.skipped)
+    console.log('  Found: ' + result.found + ', Inserted: ' + result.inserted + ', Skipped: ' + result.skipped + ', Filtered: ' + result.filtered)
   }
   
   return results
