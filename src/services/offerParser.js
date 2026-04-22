@@ -1,13 +1,30 @@
 /**
- * Offer Parser v1 - Fixed Status Transitions
+ * Offer Parser v1 - With Safety Gate
  * 
  * Reads raw_offers (status='new')
- * Classifies into: merchant_offers or welcome_offers
- * Proper status transitions: parsed / needs_review / error
+ * Validates offer-like before insert
+ * Proper status transitions
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qcvileuzjzoltwttrjli.supabase.co'
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+/** Non-offer keywords to reject */
+const NON_OFFER_KEYWORDS = [
+  'phishing', 'fraud', 'security', 'beware', 'scam',
+  'support', 'help', 'login', 'password',
+  'account', 'payroll', 'all-in-one',
+  'mobile app', 'currency', 'rmb', 'exchange',
+  'debit card', 'employee banking'
+]
+
+/** Positive offer keywords - must have at least one */
+const OFFER_KEYWORDS = [
+  'offer', 'promotion', 'cashback', 'discount',
+  'reward', 'welcome', 'bonus', 'gift',
+  'exclusive', 'privilege', 'spend', 'get',
+  'earn', 'mile', 'point', 'voucher', 'coupon'
+]
 
 /** Read raw offers needing parsing */
 async function getRawOffers() {
@@ -19,7 +36,7 @@ async function getRawOffers() {
   return Array.isArray(data) ? data : []
 }
 
-/** Update raw offer status - only set after insert succeeds */
+/** Update raw offer status */
 async function updateRawStatus(id, status, statusNotes) {
   await fetch(SUPABASE_URL + '/rest/v1/raw_offers?id=eq.' + id, {
     method: 'PATCH',
@@ -33,11 +50,32 @@ async function updateRawStatus(id, status, statusNotes) {
   })
 }
 
+/** Safety gate - is row offer-like? */
+function isLikelyOffer(text) {
+  const t = text.toLowerCase()
+  
+  // Check for explicit non-offer content
+  for (const kw of NON_OFFER_KEYWORDS) {
+    if (t.includes(kw)) return { valid: false, reason: 'non_offer_keyword:' + kw }
+  }
+  
+  // Must have at least one positive offer keyword
+  let hasOfferKeyword = false
+  for (const kw of OFFER_KEYWORDS) {
+    if (t.includes(kw)) { hasOfferKeyword = true; break }
+  }
+  if (!hasOfferKeyword) return { valid: false, reason: 'no_offer_keyword' }
+  
+  // Must have meaningful content (not too short)
+  if (text.length < 20) return { valid: false, reason: 'too_short' }
+  
+  return { valid: true }
+}
+
 /** Check if welcome offer */
 function isWelcomeOffer(text) {
   const t = text.toLowerCase()
-  const keywords = ['welcome', 'new customer', 'apply online', 'approval', 'first ', 'application', 'sign up', 'approved']
-  return keywords.some(k => t.includes(k))
+  return ['welcome', 'new customer', 'apply online', 'approval', 'first ', 'application', 'sign up'].some(k => t.includes(k))
 }
 
 /** Detect offer type */
@@ -52,7 +90,7 @@ function detectOfferType(text) {
 
 /** Extract min_spend */
 function extractMinSpend(text) {
-  const match = text.match(/(?:spend|upon|minimum)[\s\$ HK]*?(\d+)/i) || text.match(/HK?[\$¥]\s*?(\d+)/i)
+  const match = text.match(/(?:spend|upon|minimum)[\s\$ HK]*?(\d+)/i)
   return match ? parseInt(match[1]) : null
 }
 
@@ -92,16 +130,21 @@ async function insertWelcomeOffer(payload) {
     },
     body: JSON.stringify(payload)
   })
-  if (!response.ok) {
-    const err = await response.text()
-    throw new Error(err)
-  }
+  if (!response.ok) throw new Error('welcome_offers insert failed')
   return true
 }
 
 /** Parse single raw offer */
 async function parseRawOffer(raw) {
   const text = (raw.title || '') + ' ' + (raw.description || '')
+  
+  // SAFETY GATE - check if offer-like first
+  const safetyCheck = isLikelyOffer(text)
+  if (!safetyCheck.valid) {
+    await updateRawStatus(raw.id, 'needs_review', JSON.stringify({ action: 'needs_review', reason: safetyCheck.reason, content: raw.title }))
+    return { success: false, target: 'needs_review', id: raw.id, reason: safetyCheck.reason }
+  }
+  
   const isWelcome = isWelcomeOffer(text)
   const offerType = detectOfferType(text)
   const value = extractValue(text)
@@ -133,9 +176,8 @@ async function parseRawOffer(raw) {
       await updateRawStatus(raw.id, 'parsed', JSON.stringify({ action: 'parsed', target: 'welcome_offers' }))
       return { success: true, target: 'welcome_offers', id: raw.id }
     } catch (e) {
-      // Insert failed - mark needs_review, not parsed
       await updateRawStatus(raw.id, 'needs_review', JSON.stringify({ action: 'needs_review', reason: 'welcome_insert_failed', error: e.message }))
-      return { success: false, target: 'needs_review', id: raw.id, reason: e.message }
+      return { success: false, target: 'needs_review', id: raw.id }
     }
   }
 
@@ -156,8 +198,8 @@ async function parseRawOffer(raw) {
     source_name: raw.source,
     raw_offer_id: raw.id,
     parsed_at: now,
-    confidence: value ? 'MEDIUM' : 'LOW',
-    status: value ? 'ACTIVE' : 'DRAFT'
+    confidence: 'MEDIUM',
+    status: 'ACTIVE'
   }
 
   try {
@@ -165,34 +207,30 @@ async function parseRawOffer(raw) {
     await updateRawStatus(raw.id, 'parsed', JSON.stringify({ action: 'parsed', target: 'merchant_offers' }))
     return { success: true, target: 'merchant_offers', id: raw.id }
   } catch (e) {
-    // Insert failed
     await updateRawStatus(raw.id, 'error', JSON.stringify({ action: 'error', reason: e.message }))
-    return { success: false, target: 'error', id: raw.id, reason: e.message }
+    return { success: false, target: 'error', id: raw.id }
   }
 }
 
-/** Process all new raw offers */
+/** Process all */
 exports.processAll = async function() {
   const rawOffers = await getRawOffers()
-  console.log('=== Parser v1 - Fixed Status Transitions ===')
+  console.log('=== Parser v1 - Safety Gate ===')
   console.log('Total read:', rawOffers.length)
   
   const stats = { merchant: 0, welcome: 0, review: 0, error: 0 }
-  const results = []
 
   for (const raw of rawOffers) {
     try {
       const result = await parseRawOffer(raw)
-      results.push(result)
       if (result.target === 'merchant_offers') stats.merchant++
       else if (result.target === 'welcome_offers') stats.welcome++
       else if (result.target === 'needs_review') stats.review++
       else stats.error++
-      console.log('ID ' + raw.id + ': ' + result.target)
+      console.log('ID ' + raw.id + ': ' + result.target + (result.reason ? ' (' + result.reason + ')' : ''))
     } catch (e) {
       stats.error++
-      await updateRawStatus(raw.id, 'error', JSON.stringify({ action: 'error', reason: e.message }))
-      console.log('ID ' + raw.id + ': error - ' + e.message)
+      console.log('ID ' + raw.id + ': error')
     }
   }
 
@@ -202,8 +240,9 @@ exports.processAll = async function() {
   console.log('needs_review:', stats.review)
   console.log('error:', stats.error)
   
-  return { rawOffers, stats, results }
+  return { rawOffers, stats }
 }
 
 exports.parseRawOffer = parseRawOffer
 exports.getRawOffers = getRawOffers
+exports.isLikelyOffer = isLikelyOffer
