@@ -1,89 +1,80 @@
 /**
- * Offer Crawler - Raw Collection Only
+ * Offer Crawler - Raw Collection Only v3
  * 
- * Collects raw offer data from public sources
- * Does NOT parse offer meaning (no bank_id, card_id, value, etc.)
+ * Uses direct REST API with workaround for sequence permission
  */
 
-import { createClient } from '@supabase/supabase-js'
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qcvileuzjzoltwttrjli.supabase.co'
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qcvileuzjzoltwttrjli.supabase.co'
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-function getClient() {
-  if (!supabaseUrl || !serviceKey) {
-    throw new Error('Missing Supabase config')
-  }
-  return createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
-}
-
-/** Source configurations - public offer pages */
-export const SOURCES = [
+/** Source configurations */
+exports.SOURCES = [
   {
     name: 'HSBC',
-    url: 'https://www.hsbc.com.hk/credit-cards/',
-    titleSelector: 'h1, h2, h3',
-    descSelector: 'p',
-    itemSelector: 'article, .promotion, .offer'
+    url: 'https://www.hsbc.com.hk/credit-cards/'
   },
   {
-    name: 'Citi',
-    url: 'https://www.citibank.com.hk/sgc/cards/credit-cards/offers/',
-    titleSelector: 'h1, h2, h3',
-    descSelector: 'p',
-    itemSelector: 'article, .promo, .offer'
-  },
-  {
-    name: 'StandardChartered',
-    url: 'https://www.sc.com/hk/en/credit-cards/offers/',
-    titleSelector: 'h1, h2, h3',
-    descSelector: 'p',
-    itemSelector: 'article, .promo, .offer'
+    name: 'StandardChartered', 
+    url: 'https://www.sc.com/hk/en/credit-cards/offers/'
   },
   {
     name: 'BOC',
-    url: 'https://www.bochk.com/en/personal/cards/creditcard/promotions.html',
-    titleSelector: 'h1, h2, h3',
-    descSelector: 'p',
-    itemSelector: 'article, .promotion, .offer'
+    url: 'https://www.bochk.com/en/personal/cards/creditcard/promotions.html'
   },
   {
     name: 'HangSeng',
-    url: 'https://www.hangseng.com/en-hk/personal/cards/credit-cards/',
-    titleSelector: 'h1, h2, h3',
-    descSelector: 'p',
-    itemSelector: 'article, .promotion, .offer'
+    url: 'https://www.hangseng.com/en-hk/personal/cards/credit-cards/'
   }
 ]
 
-/** Fetch a single page */
-async function fetchPage(url) {
-  const response = await fetch(url, {
+/** Direct REST API insert with proper auth */
+async function insertRawOffer(offer) {
+  const response = await fetch(SUPABASE_URL + '/rest/v1/raw_offers', {
+    method: 'POST',
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-    }
+      'Content-Type': 'application/json',
+      'apikey': SERVICE_KEY,
+      'Authorization': 'Bearer ' + SERVICE_KEY,
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({
+      title: offer.title,
+      description: offer.description,
+      source: offer.source,
+      url: offer.url,
+      scraped_at: offer.scraped_at,
+      status: 'new'
+    })
   })
   
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`)
+    const error = await response.text()
+    throw new Error('Insert failed: ' + response.status + ' - ' + error)
   }
-  
+  return true
+}
+
+/** Fetch HTML */
+async function fetchPage(url) {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    }
+  })
+  if (!response.ok) {
+    throw new Error('HTTP ' + response.status)
+  }
   return response.text()
 }
 
-/** Extract items using simple heuristics */
-function extractItems(html, sourceName) {
+/** Extract raw items */
+function extractItems(html) {
   const items = []
-  
-  // Extract headings and paragraphs
-  const headingMatches = html.match(/<h[1-3][^>]*>([^<]+)<\/h[1-3]>/gi) || []
-  const paraMatches = html.match(/<p[^>]*>([^<]{30,})<\/p>/gi) || []
-  
-  // Combine with unique text
   const seen = new Set()
   
-  for (const h of headingMatches.slice(0, 10)) {
+  // Headings
+  const headings = html.match(/<h[1-3][^>]*>([^<]+)<\/h[1-3]>/gi) || []
+  for (const h of headings.slice(0, 10)) {
     const text = h.replace(/<[^>]+>/g, '').trim()
     if (text.length > 10 && !seen.has(text)) {
       seen.add(text)
@@ -91,7 +82,9 @@ function extractItems(html, sourceName) {
     }
   }
   
-  for (const p of paraMatches.slice(0, 20)) {
+  // Paragraphs
+  const paragraphs = html.match(/<p[^>]*>([^<]{30,})<\/p>/gi) || []
+  for (const p of paragraphs.slice(0, 20)) {
     const text = p.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
     if (text.length > 30 && !seen.has(text) && !text.toLowerCase().includes('copyright')) {
       seen.add(text)
@@ -102,13 +95,13 @@ function extractItems(html, sourceName) {
   return items
 }
 
-/** Crawl a single source */
+/** Crawl a source */
 async function crawlSource(sourceConfig) {
   const results = { source: sourceConfig.name, found: 0, inserted: 0, errors: [] }
   
   try {
     const html = await fetchPage(sourceConfig.url)
-    const items = extractItems(html, sourceConfig.name)
+    const items = extractItems(html)
     results.found = items.length
     
     if (items.length === 0) {
@@ -116,24 +109,20 @@ async function crawlSource(sourceConfig) {
       return results
     }
     
-    const supabase = getClient()
     const now = new Date().toISOString()
     
     for (const item of items) {
-      // Store as raw text only - NO parsing
-      const { error } = await supabase.from('raw_offers').insert({
-        title: item.title,
-        description: item.raw.slice(0, 2000),
-        source: sourceConfig.name,
-        url: sourceConfig.url,
-        scraped_at: now,
-        status: 'new'
-      })
-      
-      if (error) {
-        results.errors.push(error.message)
-      } else {
+      try {
+        await insertRawOffer({
+          title: item.title,
+          description: item.raw.slice(0, 2000),
+          source: sourceConfig.name,
+          url: sourceConfig.url,
+          scraped_at: now
+        })
         results.inserted++
+      } catch (e) {
+        results.errors.push(e.message)
       }
     }
   } catch (e) {
@@ -144,28 +133,32 @@ async function crawlSource(sourceConfig) {
 }
 
 /** Crawl all sources */
-export async function crawlAll(sources = SOURCES) {
+exports.crawlAll = async function(sources) {
+  sources = sources || exports.SOURCES
   const results = []
   
   for (const source of sources) {
-    console.log(`Crawling ${source.name}...`)
+    console.log('Crawling ' + source.name + '...')
     const result = await crawlSource(source)
     results.push(result)
-    console.log(`  Found: ${result.found}, Inserted: ${result.inserted}`)
+    console.log('  Found: ' + result.found + ', Inserted: ' + result.inserted)
   }
   
   return results
 }
 
-/** Summary */
-export async function getCrawlSummary() {
-  const supabase = getClient()
-  const { count } = await supabase
-    .from('raw_offers')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'new')
-  
-  return { newOffers: count || 0 }
+/** Get count */
+exports.getCrawlSummary = async function() {
+  if (!SERVICE_KEY) return { newOffers: 0 }
+  const response = await fetch(
+    SUPABASE_URL + '/rest/v1/raw_offers?status=eq.new&select=id',
+    {
+      headers: {
+        'apikey': SERVICE_KEY,
+        'Authorization': 'Bearer ' + SERVICE_KEY
+      }
+    }
+  )
+  const data = await response.json()
+  return { newOffers: Array.isArray(data) ? data.length : 0 }
 }
-
-export default { SOURCES, crawlAll, getCrawlSummary }
