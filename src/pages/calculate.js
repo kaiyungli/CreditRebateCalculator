@@ -1,10 +1,11 @@
 /**
- * 最佳回贈計算 - Calculator UI v1
+ * 最佳回贈計算 - Calculator UI v2 (Enriched)
  */
 
 import { useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import { getCardName, getCardBank } from '../services/cardNames'
 
 const MERCHANTS = [
   { id: '', name: '其他 / Other' },
@@ -65,20 +66,22 @@ export default function Calculate() {
     }
   }
 
+  const bestCard = result?.results?.[0]
+  const bestCardName = getCardName(result?.best_card_id)
+  const bestCardBank = getCardBank(result?.best_card_id)
+
   return (
     <div style={styles.container}>
       <Head>
         <title>最佳回贈計算 - CreditRebateCalculator</title>
       </Head>
       
-      {/* Header */}
       <header style={styles.header}>
         <Link href="/" style={styles.homeLink}>← Home</Link>
         <h1 style={styles.title}>最佳回贈計算</h1>
         <p style={styles.subtitle}>輸入消費，找出最抵信用卡</p>
       </header>
       
-      {/* Input Section */}
       <div style={styles.inputSection}>
         <div style={styles.field}>
           <label style={styles.label}>消費金額</label>
@@ -110,43 +113,42 @@ export default function Calculate() {
         </button>
       </div>
       
-      {/* Error */}
       {error && <div style={styles.error}>{error}</div>}
       
-      {/* Result */}
       {result && (
         <div style={styles.result}>
           {/* Best Card */}
-          {result.best_card_id && (
+          {bestCard && (
             <div style={styles.bestCard}>
               <div style={styles.bestLabel}>🏆 最抵</div>
-              <div style={styles.bestAmount}>卡 #{result.best_card_id}</div>
+              <div style={styles.bestName}>{bestCardName}</div>
+              {bestCardBank && <div style={styles.bestBank}>{bestCardBank}</div>}
               <div style={styles.bestValue}>
-                總回贈：${result.results?.[0]?.total_value || 0}
+                總回贈：${bestCard.total_value}
               </div>
             </div>
           )}
           
           {/* Breakdown */}
-          {result.results?.[0] && (
+          {bestCard && (
             <div style={styles.breakdown}>
               <h3 style={styles.sectionTitle}>📊 Breakdown</h3>
               <div style={styles.breakdownRow}>
                 <span>基本回贈：</span>
-                <span>${result.results[0].breakdown?.base_reward || 0}</span>
+                <span>${bestCard.breakdown?.base_reward || 0}</span>
               </div>
               <div style={styles.breakdownRow}>
                 <span>優惠回贈：</span>
-                <span>${result.results[0].breakdown?.offer_reward || 0}</span>
+                <span>${bestCard.breakdown?.offer_reward || 0}</span>
               </div>
             </div>
           )}
           
           {/* Details */}
-          {result.results?.[0]?.details?.length > 0 && (
+          {bestCard?.details?.length > 0 && (
             <div style={styles.details}>
               <h3 style={styles.sectionTitle}>📋 Details</h3>
-              {result.results[0].details.map((d, i) => (
+              {bestCard.details.map((d, i) => (
                 <div key={i} style={styles.detailItem}>
                   • {d.type === 'reward_rule' ? '基本回贈' : '優惠'}：${d.value}
                 </div>
@@ -160,7 +162,7 @@ export default function Calculate() {
               <h3 style={styles.sectionTitle}>其他卡片</h3>
               {result.results.slice(1, 5).map((r, i) => (
                 <div key={i} style={styles.otherCard}>
-                  卡 #{r.card_id} → ${r.total_value}
+                  {getCardName(r.card_id)} → ${r.total_value}
                 </div>
               ))}
             </div>
@@ -187,7 +189,8 @@ const styles = {
   result: { backgroundColor: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #ddd' },
   bestCard: { textAlign: 'center', padding: '16px', backgroundColor: '#d00', color: '#fff', borderRadius: '8px', marginBottom: '16px' },
   bestLabel: { fontSize: '14px' },
-  bestAmount: { fontSize: '20px', fontWeight: 'bold' },
+  bestName: { fontSize: '22px', fontWeight: 'bold' },
+  bestBank: { fontSize: '14px', marginTop: '4px' },
   bestValue: { fontSize: '18px', marginTop: '8px' },
   breakdown: { marginBottom: '16px' },
   sectionTitle: { fontSize: '16px', fontWeight: 'bold', margin: '0 0 8px 0' },
