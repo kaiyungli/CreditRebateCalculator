@@ -1,216 +1,136 @@
 /**
- * Offer Crawler - Raw Collection Only v7
- * 
- * Expanded sources - working URLs found via search
+ * Offer Crawler v8 - Third-party aggregators
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qcvileuzjzoltwttrjli.supabase.co'
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-/** 
- * Working source list via search
- */
 exports.SOURCES = [
-  {
-    name: 'HSBC_RedHot',
-    url: 'https://www.redhotoffers.hsbc.com.hk/en/home/'
-  },
-  {
-    name: 'HSBC_Offers',
-    url: 'https://www.hsbc.com/offers/'
-  },
-  {
-    name: 'HSBC_Cards',
-    url: 'https://www.hsbc.com.hk/credit-cards/'
-  },
-  {
-    name: 'HangSeng_Cards',
-    url: 'https://www.hangseng.com/en/credit-cards/'
-  },
-  {
-    name: 'BOC_Cards',
-    url: 'https://www.boc.hk/en/credit-cards/'
-  }
+  { name: 'HKCashRebate', url: 'https://hkcashrebate.com/combo' },
+  { name: 'FlyForMiles', url: 'https://flyformiles.hk/544/%E9%A3%9F%E9%A3%AF%E4%BF%A1%E7%94%A8%E5%8D%A1%E5%84%AA%E6%83%A0' },
+  { name: 'MoneySmart', url: 'https://www.moneysmart.hk/zh-hk/credit-cards' },
+  { name: 'HongKongCard', url: 'https://www.hongkongcard.com/cards' },
+  { name: 'MrMiles', url: 'https://www.mrmiles.hk/dining-card/' }
 ]
 
-/** Non-offer keywords to filter out */
 const NON_OFFER_KEYWORDS = [
   'account', 'payroll', 'mobile app', 'debit card', 'currency',
-  'phishing', 'security', 'support', 'help', 'login',
-  'all-in-one', 'employee banking', 'beware', 'fraud',
-  'currency &', 'rmb', 'exchange rate', 'insurance',
-  'investment', 'fund', 'stocks', 'bonds'
+  'phishing', 'security', 'support', 'login', 'insurance',
+  '投資', 'fund', 'stocks', 'bonds', '借貸', 'loan'
 ]
 
-/** Check if content is likely an offer */
-function isOfferContent(title, description) {
-  const text = (title + ' ' + (description || '')).toLowerCase()
-  
-  for (const keyword of NON_OFFER_KEYWORDS) {
-    if (text.includes(keyword.toLowerCase())) {
-      return { valid: false, reason: 'non_offer_keyword:' + keyword }
-    }
+function isOfferContent(text) {
+  const lower = text.toLowerCase()
+  for (const kw of NON_OFFER_KEYWORDS) {
+    if (lower.includes(kw)) return { valid: false, reason: kw }
   }
-  
-  const offerKeywords = [
-    'offer', 'reward', 'cashback', 'discount', 'promotion',
-    'spend', 'dining', 'shopping', 'travel', 'mile',
-    'welcome', 'bonus', 'gift', 'privilege', 'exclusive', '回贈'
-  ]
-  
-  let hasOfferKeyword = false
-  for (const keyword of offerKeywords) {
-    if (text.includes(keyword)) {
-      hasOfferKeyword = true
-      break
-    }
+  const offerKw = ['回贈', '優惠', 'cashback', '折扣', '里數', 'mile', '迎新', 'bonus']
+  for (const kw of offerKw) {
+    if (lower.includes(kw)) return { valid: true }
   }
-  
-  if (!hasOfferKeyword && (text.match(/\d+%/) || text.match(/\$\d+/) || text.match(/HK\$/) || text.match(/\d+% off/))) {
-    hasOfferKeyword = true
+  if (lower.match(/\d+%/) || lower.match(/\$\d+/) || lower.match(/HK\$\d+/)) {
+    return { valid: true }
   }
-  
-  return { valid: hasOfferKeyword, reason: hasOfferKeyword ? 'valid' : 'no_offer_keyword' }
+  return { valid: false }
 }
 
-/** Process single source */
 async function processSource(source) {
-  console.log(`\n📥 Processing: ${source.name}`)
-  console.log(`   URL: ${source.url}`)
-  
+  console.log(`\n📥 ${source.name}`)
   try {
     const res = await fetch(source.url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; CreditRebateBot/1.0)'
-      }
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
     })
-    
     if (!res.ok) {
-      console.log(`   ❌ Fetch failed: ${res.status}`)
-      return { source: source.name, fetched: 0, extracted: 0, inserted: 0, filtered: 0, duplicates: 0 }
+      console.log(`   ❌ ${res.status}`)
+      return { source: source.name, fetched: 0, extracted: 0, inserted: 0, dup: 0, filtered: 0 }
     }
-    
     const html = await res.text()
-    console.log(`   📄 Fetched ${html.length} chars`)
+    console.log(`   📄 ${html.length} chars`)
+    
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabase = createClient(SUPABASE_URL, SERVICE_KEY)
     
     const offers = []
     
-    // Look for offer-like links and text
+    // Extract links with offer keywords
     const patterns = [
-      /<a[^>]+href="[^"]*"[^>]*>([^<]*(?:offer|cashback|discount|promotion|回贈|優惠|獎賞|mile|回贈)[^<]*)<\/a>/gi,
-      /<h[1-4][^>]*>([^<]*(?:offer|cashback|discount|promotion|回贈|優惠)[^<]*)<\/h[1-4]>/gi,
-      /<p[^>]*>([^<]*(?:\d+% off|\$\d+|HK\$\d+)[^<]*)<\/p>/gi
+      /<a[^>]+href="[^"]*"[^>]*>([^<]*(?:\d+%|[$HK]?\$\d+|回贈|cashback|里數|mile|優惠|折扣)[^<]*)<\/a>/gi,
+      /<h[23][^>]*>([^<]*(?:\d+%|[$HK]?\$\d+|回贈|優惠|折扣)[^<]*)<\/h[23]>/gi,
+      /class="[^"]*(?:offer|promo|reward|cashback|回贈)[^"]*"[^>]*>([^<]*?)<\/[^>]+>/gi
     ]
     
     for (const pattern of patterns) {
       let match
       while ((match = pattern.exec(html)) !== null) {
         const text = match[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-        if (text.length > 8 && text.length < 200) {
-          const { valid, reason } = isOfferContent(text, '')
-          if (valid) {
-            offers.push({ title: text.substring(0, 150), source: source.name, url: source.url })
-          }
-        }
-      }
-    }
-    
-    // Extract from JSON data in page
-    const jsonData = html.match(/\[[\s\S]*?"title"[\s\S]*?\]/g)
-    if (jsonData) {
-      for (const block of jsonData) {
-        const titles = block.match(/"title"\s*:\s*"([^"]+)"/g)
-        if (titles) {
-          for (const t of titles) {
-            const title = t.replace(/"title"\s*:\s*"/, '').replace(/"$/, '').trim()
-            if (title.length > 5) {
-              const { valid } = isOfferContent(title, '')
-              if (valid) offers.push({ title, source: source.name, url: source.url })
-            }
-          }
+        if (text.length > 5 && text.length < 150) {
+          const { valid } = isOfferContent(text)
+          if (valid) offers.push(text.substring(0, 150))
         }
       }
     }
     
     // Dedupe
-    const unique = new Map()
-    for (const o of offers) {
-      const key = o.title.toLowerCase().substring(0, 50)
-      if (!unique.has(key)) unique.set(key, o)
-    }
-    const deduped = Array.from(unique.values())
+    const unique = [...new Set(offers)]
+    console.log(`   📊 ${unique.length} candidates`)
     
-    console.log(`   📊 Extracted: ${deduped.length} unique offers`)
-    
-    // Insert to DB
     let inserted = 0, duplicates = 0, filtered = 0
-    if (deduped.length > 0 && SERVICE_KEY) {
-      for (const o of deduped) {
-        const { data: existing } = await exports.supabase
-          .from('raw_offers')
-          .select('id')
-          .eq('title', o.title)
-          .limit(1)
-          
-        if (existing?.length > 0) {
-          duplicates++
-          continue
-        }
-        
-        const { error } = await exports.supabase
-          .from('raw_offers')
-          .insert({
-            title: o.title,
-            source_name: o.source,
-            source_url: o.url,
-            status: 'new',
-            raw_content: o.title
-          })
-          
-        if (!error) inserted++
-        else filtered++
+    for (const title of unique) {
+      const { data: existing } = await supabase
+        .from('raw_offers')
+        .select('id')
+        .ilike('title', `%${title.substring(0, 30)}%`)
+        .limit(1)
+      
+      if (existing?.length > 0) {
+        duplicates++
+        continue
+      }
+      
+      const { error } = await supabase
+        .from('raw_offers')
+        .insert({ title, source_name: source.name })
+      
+      if (error) filtered++
+      else {
+        inserted++
+        console.log(`   ✅ ${title.substring(0, 60)}`)
       }
     }
     
-    console.log(`   ✅ Inserted: ${inserted}, Duplicates: ${duplicates}, Filtered: ${filtered}`)
-    return { source: source.name, fetched: 1, extracted: deduped.length, inserted, filtered, duplicates }
+    console.log(`   📊 Result: inserted=${inserted}, dup=${duplicates}, filtered=${filtered}`)
+    return { source: source.name, fetched: 1, extracted: unique.length, inserted, duplicates, filtered }
     
   } catch (e) {
-    console.log(`   ❌ Error: ${e.message}`)
-    return { source: source.name, fetched: 0, extracted: 0, inserted: 0, filtered: 0, duplicates: 0 }
+    console.log(`   ❌ ${e.message}`)
+    return { source: source.name, fetched: 0, extracted: 0, inserted: 0, dup: 0, filtered: 0 }
   }
 }
 
-/** Run all sources */
 exports.run = async function() {
-  console.log('🎯 Crawler v7 - Working Sources')
+  console.log('🎯 Crawler v8 - Aggregators')
   console.log('='.repeat(40))
   
   if (!SERVICE_KEY) {
-    console.log('❌ SUPABASE_SERVICE_ROLE_KEY not set')
+    console.log('❌ No service key')
     process.exit(1)
   }
-  
-  const { createClient } = await import('@supabase/supabase-js')
-  exports.supabase = createClient(SUPABASE_URL, SERVICE_KEY)
   
   const results = []
   for (const source of exports.SOURCES) {
     const r = await processSource(source)
     results.push(r)
-    await new Promise(r => setTimeout(r, 1500)) // delay
+    await new Promise(r => setTimeout(r, 2000))
   }
   
   console.log('\n📊 Summary:')
-  console.log('='.repeat(40))
   for (const r of results) {
-    console.log(`${r.source}: extracted=${r.extracted}, inserted=${r.inserted}, dup=${r.duplicates}, filtered=${r.filtered}`)
+    console.log(`${r.source}: inserted=${r.inserted}, dup=${r.duplicates}, filtered=${r.filtered}`)
   }
   
   return results
 }
 
-// Run if called directly
 if (process.argv[1]?.includes('offerCrawler')) {
   exports.run().then(() => process.exit(0))
 }
