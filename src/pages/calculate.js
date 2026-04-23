@@ -1,362 +1,199 @@
-import ResultCard from './components/ResultCard';
+/**
+ * 最佳回贈計算 - Calculator UI v1
+ */
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import Head from 'next/head';
-import { getUserCards } from '../lib/userCards';
+import { useState } from 'react'
+import Head from 'next/head'
+import Link from 'next/link'
+
+const MERCHANTS = [
+  { id: '', name: '其他 / Other' },
+  { id: '1', name: 'Kai Tai Mall 啟德廣場' },
+  { id: '2', name: '壽司郎 Sushiro' },
+  { id: '3', name: '時代廣場 Times Square' },
+  { id: '4', name: '超市 Supermarket' }
+]
+
+const CATEGORIES = [
+  { id: '', name: '全部 / All' },
+  { id: '1', name: '餐飲 Dining' },
+  { id: '2', name: '購物 Shopping' },
+  { id: '3', name: '旅遊 Travel' },
+  { id: '4', name: '超市 Supermarket' }
+]
 
 export default function Calculate() {
-  const router = useRouter();
-  const { card_id: queryCardId } = router.query;
+  const [amount, setAmount] = useState('')
+  const [merchantId, setMerchantId] = useState('')
+  const [categoryId, setCategoryId] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState(null)
 
-  const [amount, setAmount] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedCard, setSelectedCard] = useState('');
-  const [categories, setCategories] = useState([]);
-  const [cards, setCards] = useState([]);
-  const [userCardIds, setUserCardIds] = useState([]);
-  const [showMyCardsOnly, setShowMyCardsOnly] = useState(false);
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  // 載入數據
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [catRes, cardsRes] = await Promise.all([
-          fetch('/api/categories'),
-          fetch('/api/cards')
-        ]);
-        
-        const catData = await catRes.json();
-        const cardsData = await cardsRes.json();
-        
-        if (catData.categories) setCategories(catData.categories);
-        if (cardsData.cards) setCards(cardsData.cards);
-        
-        // 載入用戶已選擇的卡
-        const savedUserCards = getUserCards();
-        setUserCardIds(savedUserCards);
-      } catch (err) {
-        console.error('載入數據失敗:', err);
-      }
+  const handleCalculate = async () => {
+    if (!amount || amount <= 0) {
+      setError('請輸入金額')
+      return
     }
-    loadData();
-  }, []);
-
-  // 設置初始選中的信用卡
-  useEffect(() => {
-    if (queryCardId && cards.length > 0) {
-      const card = cards.find(c => c.id.toString() === queryCardId.toString());
-      if (card) setSelectedCard(card.id);
-    }
-  }, [queryCardId, cards]);
-
-  // 計算回贈
-  async function calculate() {
-    if (!amount) {
-      setError('請輸入消費金額');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setResult(null);
-
-    // 準備 card_ids 如果用戶選擇咗「我既卡」
-    const cardIdsParam = showMyCardsOnly && userCardIds.length > 0 
-      ? userCardIds 
-      : undefined;
-
+    
+    setLoading(true)
+    setError(null)
+    setResult(null)
+    
     try {
       const res = await fetch('/api/calculate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: [{
-            amount: parseFloat(amount),
-            category_id: selectedCategory ? parseInt(selectedCategory) : null,
-          }],
-          card_ids: cardIdsParam,
-        }),
-      });
+          amount: parseFloat(amount),
+          merchant_id: merchantId ? parseInt(merchantId) : null,
+          category_id: categoryId ? parseInt(categoryId) : null
+        })
+      })
       
-      const data = await res.json();
-
-      if (data.error) {
-        setError(data.error);
-      } else if (data.ok) {
-        // Transform API response to match ResultCard format
-        const transformedResults = data.plan.map((item, index) => ({
-          id: index,
-          categoryName: item.item.category_id ? getCategoryName(item.item.category_id) : '消費',
-          categoryIcon: '💳',
-          merchantName: null,
-          amount: item.item.amount,
-          bestCard: {
-            bank_name: item.card.bank_name,
-            card_name: item.card.name,
-            icon: '💳',
-            base_rate: item.rule.rate_value / 100,
-          },
-          rebate: item.rewardHKD,
-        }));
-
-        setResult({
-          results: transformedResults,
-          totalAmount: transformedResults.reduce((sum, r) => sum + r.amount, 0),
-          totalRebate: data.totalHKD,
-        });
+      const data = await res.json()
+      
+      if (data.success) {
+        setResult(data)
+      } else {
+        setError(data.error || '計算失敗')
       }
-    } catch (err) {
-      setError('計算失敗，請稍後再試');
-      console.error('Calculate error:', err);
+    } catch (e) {
+      setError('計算失敗，請稍後再試')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
-  function getCategoryName(categoryId) {
-    const cat = categories.find(c => c.id === categoryId);
-    return cat ? cat.name : '消費';
-  }
-
   return (
-    <>
+    <div style={styles.container}>
       <Head>
-        <title>🔢 回贈計算器 - CardCal</title>
-        <meta name="description" content="計算信用卡回贈金額" />
+        <title>最佳回贈計算 - CreditRebateCalculator</title>
       </Head>
-
-      {/* 導航欄 */}
-      <nav className="navbar container">
-        <div style={{ fontSize: '24px', fontWeight: '800' }}>💳 CardCal</div>
-        <div className="nav-links">
-          <a href="/" className="nav-link">首頁</a>
-          <a href="/cards" className="nav-link">信用卡比較</a>
-          <a href="/calculate" className="nav-link" style={{ color: '#0066FF' }}>回贈計算</a>
+      
+      {/* Header */}
+      <header style={styles.header}>
+        <Link href="/" style={styles.homeLink}>← Home</Link>
+        <h1 style={styles.title}>最佳回贈計算</h1>
+        <p style={styles.subtitle}>輸入消費，找出最抵信用卡</p>
+      </header>
+      
+      {/* Input Section */}
+      <div style={styles.inputSection}>
+        <div style={styles.field}>
+          <label style={styles.label}>消費金額</label>
+          <input
+            type="number"
+            placeholder="輸入金額（例如：500）"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            style={styles.input}
+          />
         </div>
-      </nav>
-
-      <div className="container" style={{ maxWidth: '800px' }}>
-        {/* Header */}
-        <div style={{ marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: '800', marginBottom: '8px 🔢 詳細' }}>
-           回贈計算
-          </h1>
-          <p style={{ color: '#64748B' }}>
-            輸入消費資訊，計算可獲得的回贈
-          </p>
+        
+        <div style={styles.field}>
+          <label style={styles.label}>商戶</label>
+          <select value={merchantId} onChange={(e) => setMerchantId(e.target.value)} style={styles.select}>
+            {MERCHANTS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
         </div>
-
-        {/* 計算表單 */}
-        <div className="card" style={{ marginBottom: '32px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '24px' }}>
-            📝 輸入消費資訊
-          </h2>
-
-          {/* 錯誤提示 */}
-          {error && (
-            <div style={{ 
-              background: '#FEE2E2', 
-              color: '#DC2626', 
-              padding: '12px 16px', 
-              borderRadius: '8px',
-              marginBottom: '16px'
-            }}>
-              {error}
+        
+        <div style={styles.field}>
+          <label style={styles.label}>類別</label>
+          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} style={styles.select}>
+            {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+        
+        <button onClick={handleCalculate} disabled={loading} style={styles.button}>
+          {loading ? '計算中...' : '計算最抵卡'}
+        </button>
+      </div>
+      
+      {/* Error */}
+      {error && <div style={styles.error}>{error}</div>}
+      
+      {/* Result */}
+      {result && (
+        <div style={styles.result}>
+          {/* Best Card */}
+          {result.best_card_id && (
+            <div style={styles.bestCard}>
+              <div style={styles.bestLabel}>🏆 最抵</div>
+              <div style={styles.bestAmount}>卡 #{result.best_card_id}</div>
+              <div style={styles.bestValue}>
+                總回贈：${result.results?.[0]?.total_value || 0}
+              </div>
             </div>
           )}
-
-          {/* 消費金額 */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '8px', 
-              fontWeight: '600',
-              color: '#374151'
-            }}>
-              消費金額 (HKD)
-            </label>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="輸入消費金額"
-              className="input-field"
-            />
-          </div>
-
-          {/* 商戶類別 */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '8px', 
-              fontWeight: '600',
-              color: '#374151'
-            }}>
-              商戶類別（可留空以比較所有卡）
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="input-field"
-              style={{ cursor: 'pointer' }}
-            >
-              <option value="">不限類別（自動推薦最佳卡片）</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id.toString()}>
-                  {cat.icon} {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* 指定信用卡 */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '8px', 
-              fontWeight: '600',
-              color: '#374151'
-            }}>
-              指定信用卡（可留空以比較所有卡）
-            </label>
-            
-            {/* Toggle: My Cards vs All Cards */}
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '16px', 
-              marginBottom: '12px',
-              padding: '12px 16px',
-              background: '#F8FAFC',
-              borderRadius: '8px'
-            }}>
-              <span style={{ fontWeight: '600', color: '#374151' }}>顯示:</span>
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '6px', 
-                cursor: 'pointer',
-                color: showMyCardsOnly ? '#374151' : '#0066FF',
-                fontWeight: showMyCardsOnly ? '400' : '600'
-              }}>
-                <input
-                  type="radio"
-                  name="cardFilter"
-                  checked={!showMyCardsOnly}
-                  onChange={() => setShowMyCardsOnly(false)}
-                  style={{ accentColor: '#0066FF' }}
-                />
-                全部卡
-              </label>
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '6px', 
-                cursor: 'pointer',
-                color: showMyCardsOnly ? '#0066FF' : '#374151',
-                fontWeight: showMyCardsOnly ? '600' : '400'
-              }}>
-                <input
-                  type="radio"
-                  name="cardFilter"
-                  checked={showMyCardsOnly}
-                  onChange={() => setShowMyCardsOnly(true)}
-                  style={{ accentColor: '#0066FF' }}
-                />
-                我既卡
-              </label>
-              {showMyCardsOnly && userCardIds.length > 0 && (
-                <span style={{ 
-                  fontSize: '12px', 
-                  color: '#64748B',
-                  background: '#E2E8F0',
-                  padding: '2px 8px',
-                  borderRadius: '12px'
-                }}>
-                  {userCardIds.length} 張
-                </span>
-              )}
-              {showMyCardsOnly && userCardIds.length === 0 && (
-                <span style={{ 
-                  fontSize: '12px', 
-                  color: '#DC2626',
-                  background: '#FEE2E2',
-                  padding: '2px 8px',
-                  borderRadius: '12px'
-                }}>
-                  未選擇任何卡
-                </span>
-              )}
+          
+          {/* Breakdown */}
+          {result.results?.[0] && (
+            <div style={styles.breakdown}>
+              <h3 style={styles.sectionTitle}>📊 Breakdown</h3>
+              <div style={styles.breakdownRow}>
+                <span>基本回贈：</span>
+                <span>${result.results[0].breakdown?.base_reward || 0}</span>
+              </div>
+              <div style={styles.breakdownRow}>
+                <span>優惠回贈：</span>
+                <span>${result.results[0].breakdown?.offer_reward || 0}</span>
+              </div>
             </div>
-            
-            <select
-              value={selectedCard}
-              onChange={(e) => setSelectedCard(e.target.value)}
-              className="input-field"
-              style={{ cursor: 'pointer' }}
-              disabled={showMyCardsOnly && userCardIds.length === 0}
-            >
-              <option value="">不限信用卡（自動推薦最佳卡片）</option>
-              {(showMyCardsOnly 
-                ? cards.filter(card => userCardIds.includes(card.id))
-                : cards
-              ).map((card) => (
-                <option key={card.id} value={card.id}>
-                  {card.bank_name} {card.card_name}
-                </option>
+          )}
+          
+          {/* Details */}
+          {result.results?.[0]?.details?.length > 0 && (
+            <div style={styles.details}>
+              <h3 style={styles.sectionTitle}>📋 Details</h3>
+              {result.results[0].details.map((d, i) => (
+                <div key={i} style={styles.detailItem}>
+                  • {d.type === 'reward_rule' ? '基本回贈' : '優惠'}：${d.value}
+                </div>
               ))}
-            </select>
-          </div>
-
-          {/* 計算按鈕 */}
-          <button
-            onClick={calculate}
-            disabled={loading}
-            className="btn-primary"
-            style={{ width: '100%' }}
-          >
-            {loading ? '計算中...' : '🔥 計算回贈'}
-          </button>
+            </div>
+          )}
+          
+          {/* Other Cards */}
+          {result.results?.length > 1 && (
+            <div style={styles.otherCards}>
+              <h3 style={styles.sectionTitle}>其他卡片</h3>
+              {result.results.slice(1, 5).map((r, i) => (
+                <div key={i} style={styles.otherCard}>
+                  卡 #{r.card_id} → ${r.total_value}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      )}
+    </div>
+  )
+}
 
-        {/* 計算結果 - 使用 ResultCard 組件 */}
-        {result && result.results && (
-          <ResultCard
-            results={result.results}
-            totalAmount={result.totalAmount}
-            totalRebate={result.totalRebate}
-            onReset={() => {
-              setResult(null);
-              setAmount('');
-              setSelectedCategory('');
-              setSelectedCard('');
-            }}
-          />
-        )}
-
-        {/* 小提示 */}
-        <div className="card" style={{ 
-          background: '#FEF3C7', 
-          border: 'none',
-          borderLeft: '4px solid #F59E0B'
-        }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '8px', color: '#92400E' }}>
-            💡 小提示
-          </h3>
-          <ul style={{ fontSize: '14px', color: '#92400E', paddingLeft: '20px' }}>
-            <li>部分信用卡設有回贈上限，請留意条款细则</li>
-            <li>外幣消費可能另設回贈率</li>
-            <li>實際回贈可能受消費門檻影響</li>
-            <li>數據僅供參考，請以銀行官方資料為準</li>
-          </ul>
-        </div>
-      </div>
-    </>
-  );
+const styles = {
+  container: { maxWidth: '500px', margin: '0 auto', padding: '16px', fontFamily: 'sans-serif' },
+  header: { textAlign: 'center', marginBottom: '24px' },
+  homeLink: { display: 'inline-block', marginBottom: '8px', color: '#666', textDecoration: 'none' },
+  title: { fontSize: '24px', fontWeight: 'bold', margin: '0 0 4px 0' },
+  subtitle: { fontSize: '14px', color: '#666', margin: 0 },
+  inputSection: { backgroundColor: '#f5f5f5', padding: '16px', borderRadius: '8px', marginBottom: '16px' },
+  field: { marginBottom: '12px' },
+  label: { display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' },
+  input: { width: '100%', padding: '10px', fontSize: '16px', borderRadius: '4px', border: '1px solid #ddd' },
+  select: { width: '100%', padding: '10px', fontSize: '16px', borderRadius: '4px', border: '1px solid #ddd' },
+  button: { width: '100%', padding: '12px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#d00', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' },
+  error: { color: 'red', textAlign: 'center', padding: '12px', backgroundColor: '#fee', borderRadius: '4px', marginBottom: '16px' },
+  result: { backgroundColor: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #ddd' },
+  bestCard: { textAlign: 'center', padding: '16px', backgroundColor: '#d00', color: '#fff', borderRadius: '8px', marginBottom: '16px' },
+  bestLabel: { fontSize: '14px' },
+  bestAmount: { fontSize: '20px', fontWeight: 'bold' },
+  bestValue: { fontSize: '18px', marginTop: '8px' },
+  breakdown: { marginBottom: '16px' },
+  sectionTitle: { fontSize: '16px', fontWeight: 'bold', margin: '0 0 8px 0' },
+  breakdownRow: { display: 'flex', justifyContent: 'space-between', padding: '4px 0' },
+  details: { marginBottom: '16px' },
+  detailItem: { padding: '4px 0', fontSize: '14px' },
+  otherCards: { borderTop: '1px solid #eee', paddingTop: '16px' },
+  otherCard: { padding: '8px 0', fontSize: '14px', color: '#666' }
 }
