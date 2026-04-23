@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { getCardName, getCardBank } from '../services/cardNames'
 
 const MERCHANTS = [
@@ -20,6 +21,7 @@ const CATEGORIES = [
 ]
 
 export default function Calculate() {
+  const router = useRouter()
   const [amount, setAmount] = useState('')
   const [merchantId, setMerchantId] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -27,11 +29,19 @@ export default function Calculate() {
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
 
-  const handleCalculate = async () => {
-    if (!amount || amount <= 0) {
-      setError('請輸入金額')
-      return
+  // Auto-run if URL has params
+  useEffect(() => {
+    const { amount: a, category_id: c, merchant_id: m } = router.query
+    if (a) setAmount(a)
+    if (c) setCategoryId(c)
+    if (m) setMerchantId(m)
+    if (a || c || m) {
+      handleCalculate()
     }
+  }, [router.query])
+
+  const handleCalculate = async () => {
+    if (!amount || amount <= 0) return
     setLoading(true)
     setError(null)
     setResult(null)
@@ -56,9 +66,11 @@ export default function Calculate() {
   }
 
   const best = result?.results?.[0]
+  const second = result?.results?.[1]
   const cardName = getCardName(result?.best_card_id)
   const cardBank = getCardBank(result?.best_card_id)
   const effectiveRate = best && amount > 0 ? ((best.total_value / amount) * 100).toFixed(1) : null
+  const diff = best && second ? best.total_value - second.total_value : null
 
   return (
     <div style={styles.container}>
@@ -68,6 +80,10 @@ export default function Calculate() {
         <Link href="/" style={styles.homeLink}>← 首頁</Link>
         <h1 style={styles.title}>最佳回贈計算</h1>
       </header>
+      
+      {!result && !loading && !error && (
+        <div style={styles.hint}>試試以下熱門情境，快速查看最抵信用卡</div>
+      )}
       
       <div style={styles.inputSection}>
         <div style={styles.field}>
@@ -93,58 +109,28 @@ export default function Calculate() {
       
       {error && <div style={styles.error}>{error}</div>}
       
-      {/* Empty hint */}
-      {!result && !loading && !error && (
-        <div style={styles.hint}>輸入金額並選擇條件，查看最抵信用卡</div>
-      )}
-      
-      {/* Result */}
       {result && best && (
         <div style={styles.result}>
-          {/* Best Card */}
           <div style={styles.bestCard}>
             <div style={styles.bestLabel}>🏆 最抵信用卡</div>
             <div style={styles.bestName}>{cardName}</div>
             {cardBank && <div style={styles.bestBank}>{cardBank}</div>}
             <div style={styles.bestValue}>💰 總回贈：${best.total_value}</div>
             {effectiveRate && <div style={styles.rate}>回贈率：約 {effectiveRate}%</div>}
+            {diff && diff > 0 && <div style={styles.insight}>比第二名多賺 ${diff}</div>}
           </div>
           
-          {/* Breakdown */}
           <div style={styles.section}>
             <h3 style={styles.sectionTitle}>📊 回贈詳情</h3>
-            {best.breakdown?.base_reward > 0 && (
-              <div style={styles.breakdown}>
-                <span>基本回贈</span>
-                <span>${best.breakdown.base_reward}</span>
-              </div>
-            )}
-            {best.breakdown?.offer_reward > 0 && (
-              <div style={styles.breakdown}>
-                <span>優惠回贈</span>
-                <span>${best.breakdown.offer_reward}</span>
-              </div>
-            )}
+            {best.breakdown?.base_reward > 0 && <div style={styles.breakdown}><span>基本回贈</span><span>${best.breakdown.base_reward}</span></div>}
+            {best.breakdown?.offer_reward > 0 && <div style={styles.breakdown}><span>優惠回贈</span><span>${best.breakdown.offer_reward}</span></div>}
           </div>
           
-          {/* Details */}
-          {best.details?.length > 0 && (
-            <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>📋 詳情</h3>
-              {best.details.map((d, i) => (
-                <div key={i} style={styles.detail}>• {d.type === 'reward_rule' ? '基本回贈' : '優惠'}：${d.value}</div>
-              ))}
-            </div>
-          )}
-          
-          {/* Other Cards */}
           {result.results?.length > 1 && (
             <div style={styles.section}>
               <h3 style={styles.sectionTitle}>其他選擇</h3>
               {result.results.slice(1, 5).map((r, i) => (
-                <div key={i} style={styles.otherCard}>
-                  {getCardName(r.card_id)} — ${r.total_value}
-                </div>
+                <div key={i} style={styles.otherCard}>{getCardName(r.card_id)} — ${r.total_value}</div>
               ))}
             </div>
           )}
@@ -156,9 +142,10 @@ export default function Calculate() {
 
 const styles = {
   container: { maxWidth: '480px', margin: '0 auto', padding: '16px', fontFamily: 'sans-serif' },
-  header: { textAlign: 'center', marginBottom: '20px' },
+  header: { textAlign: 'center', marginBottom: '16px' },
   homeLink: { display: 'inline-block', marginBottom: '8px', color: '#666', textDecoration: 'none' },
   title: { fontSize: '22px', fontWeight: 'bold', margin: 0 },
+  hint: { textAlign: 'center', color: '#999', padding: '20px 0', fontSize: '15px', marginBottom: '8px' },
   inputSection: { backgroundColor: '#f8f8f8', padding: '16px', borderRadius: '10px', marginBottom: '16px' },
   field: { marginBottom: '12px' },
   label: { display: 'block', fontSize: '13px', fontWeight: 'bold', marginBottom: '4px', color: '#333' },
@@ -166,7 +153,6 @@ const styles = {
   select: { width: '100%', padding: '10px', fontSize: '15px', borderRadius: '6px', border: '1px solid #ddd' },
   button: { width: '100%', padding: '14px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#d00', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' },
   error: { color: 'red', textAlign: 'center', padding: '12px', backgroundColor: '#fee', borderRadius: '6px', marginBottom: '16px' },
-  hint: { textAlign: 'center', color: '#999', padding: '40px 0', fontSize: '15px' },
   result: { backgroundColor: '#fff', padding: '16px', borderRadius: '10px', border: '1px solid #eee' },
   bestCard: { textAlign: 'center', padding: '20px', backgroundColor: '#d00', color: '#fff', borderRadius: '10px', marginBottom: '16px' },
   bestLabel: { fontSize: '14px', marginBottom: '4px' },
@@ -174,9 +160,9 @@ const styles = {
   bestBank: { fontSize: '14px', marginTop: '4px' },
   bestValue: { fontSize: '20px', marginTop: '12px' },
   rate: { fontSize: '14px', marginTop: '6px' },
+  insight: { fontSize: '14px', marginTop: '8px', backgroundColor: 'rgba(255,255,255,0.2)', padding: '6px 12px', borderRadius: '4px' },
   section: { marginBottom: '14px' },
   sectionTitle: { fontSize: '15px', fontWeight: 'bold', margin: '0 0 8px 0' },
   breakdown: { display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '14px' },
-  detail: { padding: '4px 0', fontSize: '14px', color: '#555' },
   otherCard: { padding: '8px 0', fontSize: '14px', color: '#666' }
 }
